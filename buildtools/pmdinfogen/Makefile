@@ -4,15 +4,17 @@
 
 include $(RTE_SDK)/mk/rte.vars.mk
 
-#
-# library name
-#
+# application name
 HOSTAPP = dpdk-pmdinfogen
 
-#
-# all sources are stored in SRCS-y
-#
+# target-specific object file image parsing library
+IMAGELIB-linux += elf.c
+IMAGELIB-freebsd += elf.c
+IMAGELIB-windows += coff.c
+
 SRCS-y += pmdinfogen.c
+SRCS-y += mmap.c
+SRCS-y += $(IMAGELIB-$(RTE_EXEC_ENV))
 
 HOST_CFLAGS += $(HOST_WERROR_FLAGS) -g
 HOST_CFLAGS += -I$(RTE_OUTPUT)/include

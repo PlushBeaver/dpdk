@@ -37,12 +37,14 @@ SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_log.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_vfio.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_vfio_mp_sync.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_memalloc.c
+SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_module.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_debug.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_lcore.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_timer.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_interrupts.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_alarm.c
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_dev.c
+SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_filesystem.c
 
 # from common dir
 SRCS-$(CONFIG_RTE_EXEC_ENV_LINUX) += eal_common_lcore.c

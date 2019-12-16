@@ -14,6 +14,7 @@
 #include <termios.h>
 
 #include "cmdline_parse.h"
+#include "cmdline_private.h"
 #include "cmdline_rdline.h"
 #include "cmdline_socket.h"
 #include "cmdline.h"

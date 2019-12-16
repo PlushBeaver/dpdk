@@ -378,9 +378,9 @@ rx_queue_infos_display(portid_t port_id, uint16_t queue_id)
 	       info_border, port_id, queue_id, info_border);
 
 	printf("\nMempool: %s", (qinfo.mp == NULL) ? "NULL" : qinfo.mp->name);
-	printf("\nRX prefetch threshold: %hhu", qinfo.conf.rx_thresh.pthresh);
-	printf("\nRX host threshold: %hhu", qinfo.conf.rx_thresh.hthresh);
-	printf("\nRX writeback threshold: %hhu", qinfo.conf.rx_thresh.wthresh);
+	printf("\nRX prefetch threshold: %u", qinfo.conf.rx_thresh.pthresh);
+	printf("\nRX host threshold: %u", qinfo.conf.rx_thresh.hthresh);
+	printf("\nRX writeback threshold: %u", qinfo.conf.rx_thresh.wthresh);
 	printf("\nRX free threshold: %hu", qinfo.conf.rx_free_thresh);
 	printf("\nRX drop packets: %s",
 		(qinfo.conf.rx_drop_en != 0) ? "on" : "off");
@@ -418,9 +418,9 @@ tx_queue_infos_display(portid_t port_id, uint16_t queue_id)
 	printf("\n%s Infos for port %-2u, TX queue %-2u %s",
 	       info_border, port_id, queue_id, info_border);
 
-	printf("\nTX prefetch threshold: %hhu", qinfo.conf.tx_thresh.pthresh);
-	printf("\nTX host threshold: %hhu", qinfo.conf.tx_thresh.hthresh);
-	printf("\nTX writeback threshold: %hhu", qinfo.conf.tx_thresh.wthresh);
+	printf("\nTX prefetch threshold: %u", qinfo.conf.tx_thresh.pthresh);
+	printf("\nTX host threshold: %u", qinfo.conf.tx_thresh.hthresh);
+	printf("\nTX writeback threshold: %u", qinfo.conf.tx_thresh.wthresh);
 	printf("\nTX RS threshold: %hu", qinfo.conf.tx_rs_thresh);
 	printf("\nTX free threshold: %hu", qinfo.conf.tx_free_thresh);
 	printf("\nTX deferred start: %s",
@@ -2002,7 +2002,7 @@ port_rss_hash_conf_show(portid_t port_id, int show_rss_key)
 
 void
 port_rss_hash_key_update(portid_t port_id, char rss_type[], uint8_t *hash_key,
-			 uint hash_key_len)
+			 unsigned int hash_key_len)
 {
 	struct rte_eth_rss_conf rss_conf;
 	int diag;

@@ -23,6 +23,10 @@ extern "C" {
 #include <rte_mbuf.h>
 #include <rte_byteorder.h>
 
+#ifdef s_addr
+#undef s_addr
+#endif
+
 #define RTE_ETHER_ADDR_LEN  6 /**< Length of Ethernet address. */
 #define RTE_ETHER_TYPE_LEN  2 /**< Length of Ethernet type field. */
 #define RTE_ETHER_CRC_LEN   4 /**< Length of Ethernet CRC. */

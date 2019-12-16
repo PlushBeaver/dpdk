@@ -306,7 +306,8 @@ __rte_mbuf_dynfield_register_offset(const struct rte_mbuf_dynfield *params,
 		shm->free_space[i] = 0;
 	process_score();
 
-	RTE_LOG(DEBUG, MBUF, "Registered dynamic field %s (sz=%zu, al=%zu, fl=0x%x) -> %zd\n",
+	RTE_LOG(DEBUG, MBUF, "Registered dynamic field %s "
+		"(sz=%"RTE_PRIzu", al=%"RTE_PRIzu", fl=0x%x) -> %"RTE_PRIzd"\n",
 		params->name, params->size, params->align, params->flags,
 		offset);
 
@@ -528,7 +529,7 @@ void rte_mbuf_dyn_dump(FILE *out)
 		mbuf_dynfield_tailq.head, mbuf_dynfield_list);
 	TAILQ_FOREACH(te, mbuf_dynfield_list, next) {
 		dynfield = (struct mbuf_dynfield_elt *)te->data;
-		fprintf(out, "  name=%s offset=%zd size=%zd align=%zd flags=%x\n",
+		fprintf(out, "  name=%s offset=%"RTE_PRIzd" size=%"RTE_PRIzd" align=%"RTE_PRIzd" flags=%x\n",
 			dynfield->params.name, dynfield->offset,
 			dynfield->params.size, dynfield->params.align,
 			dynfield->params.flags);
@@ -545,7 +546,7 @@ void rte_mbuf_dyn_dump(FILE *out)
 	fprintf(out, "Free space in mbuf (0 = free, value = zone alignment):\n");
 	for (i = 0; i < sizeof(struct rte_mbuf); i++) {
 		if ((i % 8) == 0)
-			fprintf(out, "  %4.4zx: ", i);
+			fprintf(out, "  %4.4"RTE_PRIzx": ", i);
 		fprintf(out, "%2.2x%s", shm->free_space[i],
 			(i % 8 != 7) ? " " : "\n");
 	}

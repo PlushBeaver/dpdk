@@ -9,21 +9,20 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/queue.h>
-#include <sys/mman.h>
 
+#include <rte_bus.h>
+#include <rte_bus_pci.h>
+#include <rte_common.h>
+#include <rte_devargs.h>
+#include <rte_eal.h>
 #include <rte_errno.h>
 #include <rte_interrupts.h>
 #include <rte_log.h>
-#include <rte_bus.h>
-#include <rte_pci.h>
-#include <rte_bus_pci.h>
-#include <rte_per_lcore.h>
 #include <rte_memory.h>
-#include <rte_eal.h>
+#include <rte_pci.h>
+#include <rte_per_lcore.h>
+#include <sys/queue.h>
 #include <rte_string_fns.h>
-#include <rte_common.h>
-#include <rte_devargs.h>
 #include <rte_vfio.h>
 
 #include "private.h"
@@ -482,12 +481,12 @@ pci_hot_unplug_handler(struct rte_device *dev)
 					       RTE_DEV_EVENT_REMOVE);
 		break;
 #endif
-	case RTE_KDRV_IGB_UIO:
-	case RTE_KDRV_UIO_GENERIC:
-	case RTE_KDRV_NIC_UIO:
-		/* BARs resource is invalid, remap it to be safe. */
-		ret = pci_uio_remap_resource(pdev);
-		break;
+	// case RTE_KDRV_IGB_UIO:
+	// case RTE_KDRV_UIO_GENERIC:
+	// case RTE_KDRV_NIC_UIO:
+	// 	/* BARs resource is invalid, remap it to be safe. */
+	// 	ret = pci_uio_remap_resource(pdev);
+	// 	break;
 	default:
 		RTE_LOG(DEBUG, EAL,
 			"Not managed by a supported kernel driver, skipped\n");
@@ -552,8 +551,11 @@ pci_dma_map(struct rte_device *dev, void *addr, uint64_t iova, size_t len)
 		rte_errno = EINVAL;
 		return -1;
 	}
+
 	if (pdev->driver->dma_map)
 		return pdev->driver->dma_map(pdev, addr, iova, len);
+
+#ifdef RTE_EAL_VFIO
 	/**
 	 *  In case driver don't provides any specific mapping
 	 *  try fallback to VFIO.
@@ -562,6 +564,8 @@ pci_dma_map(struct rte_device *dev, void *addr, uint64_t iova, size_t len)
 		return rte_vfio_container_dma_map
 				(RTE_VFIO_DEFAULT_CONTAINER_FD, (uintptr_t)addr,
 				 iova, len);
+#endif
+
 	rte_errno = ENOTSUP;
 	return -1;
 }
@@ -575,8 +579,11 @@ pci_dma_unmap(struct rte_device *dev, void *addr, uint64_t iova, size_t len)
 		rte_errno = EINVAL;
 		return -1;
 	}
+
 	if (pdev->driver->dma_unmap)
 		return pdev->driver->dma_unmap(pdev, addr, iova, len);
+
+#ifdef RTE_EAL_VFIO
 	/**
 	 *  In case driver don't provides any specific mapping
 	 *  try fallback to VFIO.
@@ -585,6 +592,8 @@ pci_dma_unmap(struct rte_device *dev, void *addr, uint64_t iova, size_t len)
 		return rte_vfio_container_dma_unmap
 				(RTE_VFIO_DEFAULT_CONTAINER_FD, (uintptr_t)addr,
 				 iova, len);
+#endif
+
 	rte_errno = ENOTSUP;
 	return -1;
 }

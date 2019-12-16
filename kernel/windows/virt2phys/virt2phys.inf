@@ -1,0 +1,86 @@
+;
+; virt2phys.inf
+;
+
+[Version]
+Signature = "$WINDOWS NT$"
+Class = %ClassName%
+ClassGuid = {78A1C341-4539-11d3-B88D-00C04FAD5171}
+Provider = %ManufacturerName%
+CatalogFile = virt2phys.cat
+DriverVer =
+
+[DestinationDirs]
+DefaultDestDir = 12
+virt2phys_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg = virt2phys_ClassReg
+
+[virt2phys_ClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+virt2phys.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll = 1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%virt2phys.DeviceDesc%=virt2phys_Device, Root\virt2phys
+
+[virt2phys_Device.NT]
+CopyFiles = Drivers_Dir
+
+[Drivers_Dir]
+virt2phys.sys
+
+;-------------- Service installation
+[virt2phys_Device.NT.Services]
+AddService = virt2phys,%SPSVCINST_ASSOCSERVICE%, virt2phys_Service_Inst
+
+; -------------- virt2phys driver install sections
+[virt2phys_Service_Inst]
+DisplayName    = %virt2phys.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\virt2phys.sys
+
+;
+;--- virt2phys_Device Coinstaller installation ------
+;
+
+[virt2phys_Device.NT.CoInstallers]
+AddReg = virt2phys_Device_CoInstaller_AddReg
+CopyFiles = virt2phys_Device_CoInstaller_CopyFiles
+
+[virt2phys_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[virt2phys_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[virt2phys_Device.NT.Wdf]
+KmdfService = virt2phys, virt2phys_wdfsect
+[virt2phys_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE = 0x00000002
+ManufacturerName = "Dmitry Kozlyuk"
+ClassName = "virt2phys"
+DiskName = "virt2phys Installation Disk"
+virt2phys.DeviceDesc = "virt2phys Device"
+virt2phys.SVCDESC = "virt2phys Service"

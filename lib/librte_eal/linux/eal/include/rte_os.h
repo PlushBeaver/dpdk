@@ -11,6 +11,7 @@
  * linux OS. Functions will be added in future releases.
  */
 
+#include <linux/limits.h>
 #include <sched.h>
 
 typedef cpu_set_t rte_cpuset_t;
@@ -29,5 +30,61 @@ typedef cpu_set_t rte_cpuset_t;
 	RTE_CPU_FILL(&tmp); \
 	CPU_XOR(dst, &tmp, src); \
 } while (0)
+
+#define RTE_PATH_MAX PATH_MAX
+
+/**
+ * The most precise floating-point type supported by target platform.
+ * 
+ * @see RTE_PRILf
+ */
+typedef long double rte_long_double;
+
+/**
+ * Formatting specifiers for (s)size_t and @code rte_long_double @endcode.
+ */
+#define RTE_PRILf "#Lf"
+#define RTE_PRIzd "zd"
+#define RTE_PRIzu "zu"
+#define RTE_PRIzx "zx"
+
+/**
+ * Dynamically loded module descriptor.
+ */
+typedef void* rte_module;
+
+/**
+ * Invalid @code rte_module @endcode value.
+ */
+#define RTE_INVALID_MODULE NULL
+
+/**
+ * Opened device descriptor.
+ * 
+ * This type must be used to abstract platform-specific descriptors.
+ * For operations involving only standard C API, int is sufficient.
+ */
+typedef int rte_fd;
+
+/**
+ * Invalid @code rte_fd @endcode value.
+ */
+#define RTE_INVALID_FD (-1)
+
+/**
+ * Check whether an @code rte_fd @endcode is invalid.
+ */
+#define RTE_FD_INVALID(fd) ((fd) < 0)
+
+/**
+ * Formatting specifier for @code rte_fd @endcode.
+ */
+#define RTE_PRI_FD "d"
+
+/**
+ * Invalid value for lock descriptor.
+ * This constant is private to EAL.
+ */
+#define EAL_INVALID_LOCK RTE_INVALID_FD
 
 #endif /* _RTE_OS_H_ */

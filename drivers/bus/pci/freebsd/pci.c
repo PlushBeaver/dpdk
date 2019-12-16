@@ -556,8 +556,10 @@ rte_pci_ioport_map(struct rte_pci_device *dev, int bar,
 		break;
 	}
 
-	if (!ret)
+	if (!ret) {
 		p->dev = dev;
+		p->bar = bar;
+	}
 
 	return ret;
 }

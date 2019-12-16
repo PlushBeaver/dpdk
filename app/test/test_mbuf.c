@@ -1433,7 +1433,7 @@ test_tx_offload(void)
 
 	tm = rte_rdtsc_precise() - tm;
 	printf("%s set tx_offload by bit-fields: %u iterations, %"
-		PRIu64 " cycles, %#Lf cycles/iter\n",
+		PRIu64 " cycles, " RTE_PRILf " cycles/iter\n",
 		__func__, num, tm, (long double)tm / num);
 
 	v1 = mb[rte_rand() % num].tx_offload;
@@ -1447,7 +1447,7 @@ test_tx_offload(void)
 
 	tm = rte_rdtsc_precise() - tm;
 	printf("%s set raw tx_offload: %u iterations, %"
-		PRIu64 " cycles, %#Lf cycles/iter\n",
+		PRIu64 " cycles, " RTE_PRILf " cycles/iter\n",
 		__func__, num, tm, (long double)tm / num);
 
 	v2 = mb[rte_rand() % num].tx_offload;

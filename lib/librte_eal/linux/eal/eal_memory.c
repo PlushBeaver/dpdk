@@ -89,6 +89,115 @@ uint64_t eal_get_baseaddr(void)
 	return 0x100000000ULL;
 }
 
+int
+rte_get_page_size(void)
+{
+	return getpagesize();
+}
+
+static void*
+mem_map(void* requested_addr, size_t size, int prot, int flags,
+		int fd, size_t offset)
+{
+	void *virt = mmap(requested_addr, size, prot, flags, fd, offset);
+	if (virt == MAP_FAILED) {
+		RTE_LOG(ERR, EAL,
+				"%s(): cannot mmap(%p, 0x%zx, 0x%x, 0x%x, %d, 0x%zx): %s\n",
+				__func__, requested_addr, size, prot, flags, fd, offset,
+				strerror(errno));
+		rte_errno = errno;
+	}
+	return virt;
+}
+
+static int
+mem_unmap(void* virt, size_t size)
+{
+	int ret;
+
+	ret = munmap(virt, size);
+	if (ret < 0) {
+		RTE_LOG(ERR, EAL, "%s(): cannot munmap(%p, 0x%zx): %s\n",
+				__func__, virt, size, strerror(errno));
+		rte_errno = errno;
+	}
+
+	return ret;
+}
+
+void*
+rte_mem_reserve_virtual(void *requested_addr, size_t size,
+		enum rte_mem_reserve_flags flags)
+{
+	int sys_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+
+	if (flags & RTE_RESERVE_HUGEPAGES)
+		sys_flags |= MAP_HUGETLB;
+	if (flags & RTE_RESERVE_EXACT_ADDRESS)
+		sys_flags |= MAP_FIXED;
+
+	return mem_map(requested_addr, size, PROT_READ, sys_flags, -1, 0);
+}
+
+void
+rte_mem_free_virtual(void *virt, size_t size)
+{
+	mem_unmap(virt, size);
+}
+
+void*
+rte_mem_map(void* requested_addr, size_t size, enum rte_mem_prot prot,
+		enum rte_map_flags flags, int fd, size_t offset)
+{
+	int sys_prot = 0;
+	int sys_flags = 0;
+
+	if (prot & RTE_PROT_READ)
+		sys_prot |= PROT_READ;
+	if (prot & RTE_PROT_WRITE)
+		sys_prot |= PROT_WRITE;
+
+	if (flags & RTE_MAP_SHARED)
+		sys_flags |= MAP_SHARED;
+	if (flags & RTE_MAP_ANONYMOUS)
+		sys_flags |= MAP_ANONYMOUS;
+	if (flags & RTE_MAP_PRIVATE)
+		sys_flags |= MAP_PRIVATE;
+	if (flags & RTE_MAP_FIXED)
+		sys_flags |= MAP_FIXED;
+
+	return mem_map(requested_addr, size, sys_prot, sys_flags, fd, offset);
+}
+
+int
+rte_mem_unmap(void* virt, size_t size)
+{
+	return mem_unmap(virt, size);
+}
+
+int
+rte_mem_lock(const void* virt, size_t size)
+{
+	return mlock(virt, size);
+}
+
+int
+rte_mem_lockall(enum rte_mem_lockall_flags flags)
+{
+	int sys_flags = 0, ret;
+
+	if (flags & RTE_LOCKALL_CURRENT)
+		flags |= MCL_CURRENT;
+	if (flags & RTE_LOCKALL_FUTURE)
+		flags |= MCL_FUTURE;
+
+	ret = mlockall(sys_flags);
+	if (ret) {
+		rte_errno = errno;
+	}
+	return ret;
+}
+
 /*
  * Get physical address of any mapped virtual address in the current process.
  */
@@ -833,7 +942,7 @@ alloc_memseg_list(struct rte_memseg_list *msl, uint64_t page_sz,
 	msl->base_va = NULL;
 	msl->heap = 1; /* mark it as a heap segment */
 
-	RTE_LOG(DEBUG, EAL, "Memseg list allocated: 0x%zxkB at socket %i\n",
+	RTE_LOG(DEBUG, EAL, "Memseg list allocated: 0x%"RTE_PRIzx"kB at socket %i\n",
 			(size_t)page_sz >> 10, socket_id);
 
 	return 0;
@@ -845,12 +954,11 @@ alloc_va_space(struct rte_memseg_list *msl)
 	uint64_t page_sz;
 	size_t mem_sz;
 	void *addr;
-	int flags = 0;
 
 	page_sz = msl->page_sz;
 	mem_sz = page_sz * msl->memseg_arr.len;
 
-	addr = eal_get_virtual_area(msl->base_va, &mem_sz, page_sz, 0, flags);
+	addr = eal_get_virtual_area(msl->base_va, &mem_sz, page_sz, 0, 0);
 	if (addr == NULL) {
 		if (rte_errno == EADDRNOTAVAIL)
 			RTE_LOG(ERR, EAL, "Could not mmap %llu bytes at [%p] - "

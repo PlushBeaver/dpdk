@@ -15,6 +15,7 @@
 #include <rte_per_lcore.h>
 #include <rte_eal.h>
 #include <rte_launch.h>
+#include <rte_os.h>
 
 #ifdef __cplusplus
 extern "C" {

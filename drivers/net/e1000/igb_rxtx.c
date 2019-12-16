@@ -2,8 +2,6 @@
  * Copyright(c) 2010-2016 Intel Corporation
  */
 
-#include <sys/queue.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +35,7 @@
 #include <rte_tcp.h>
 #include <rte_sctp.h>
 #include <rte_net.h>
+#include <sys/queue.h>
 #include <rte_string_fns.h>
 
 #include "e1000_logs.h"

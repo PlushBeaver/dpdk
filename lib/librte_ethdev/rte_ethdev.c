@@ -3,7 +3,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/queue.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <inttypes.h>
-#include <netinet/in.h>
+#include <sys/queue.h>
 
 #include <rte_byteorder.h>
 #include <rte_log.h>
@@ -38,6 +37,7 @@
 #include <rte_kvargs.h>
 #include <rte_class.h>
 #include <rte_ether.h>
+#include <rte_ip.h>
 
 #include "rte_ethdev.h"
 #include "rte_ethdev_driver.h"
@@ -4100,7 +4100,8 @@ rte_eth_dev_probing_finish(struct rte_eth_dev *dev)
 }
 
 int
-rte_eth_dev_rx_intr_ctl(uint16_t port_id, int epfd, int op, void *data)
+rte_eth_dev_rx_intr_ctl(
+		uint16_t port_id, rte_fd epfd, int op, void *data)
 {
 	uint32_t vec;
 	struct rte_eth_dev *dev;
@@ -4128,7 +4129,7 @@ rte_eth_dev_rx_intr_ctl(uint16_t port_id, int epfd, int op, void *data)
 		rc = rte_intr_rx_ctl(intr_handle, epfd, op, vec, data);
 		if (rc && rc != -EEXIST) {
 			RTE_ETHDEV_LOG(ERR,
-				"p %u q %u rx ctl error op %d epfd %d vec %u\n",
+				"p %u q %u rx ctl error op %d epfd %"RTE_PRI_FD" vec %u\n",
 				port_id, qid, op, epfd, vec);
 		}
 	}
@@ -4136,33 +4137,33 @@ rte_eth_dev_rx_intr_ctl(uint16_t port_id, int epfd, int op, void *data)
 	return 0;
 }
 
-int
+rte_fd
 rte_eth_dev_rx_intr_ctl_q_get_fd(uint16_t port_id, uint16_t queue_id)
 {
 	struct rte_intr_handle *intr_handle;
 	struct rte_eth_dev *dev;
 	unsigned int efd_idx;
 	uint32_t vec;
-	int fd;
+	rte_fd fd = RTE_INVALID_FD;
 
-	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, -1);
+	RTE_ETH_VALID_PORTID_OR_ERR_RET(port_id, fd);
 
 	dev = &rte_eth_devices[port_id];
 
 	if (queue_id >= dev->data->nb_rx_queues) {
 		RTE_ETHDEV_LOG(ERR, "Invalid RX queue_id=%u\n", queue_id);
-		return -1;
+		return fd;
 	}
 
 	if (!dev->intr_handle) {
 		RTE_ETHDEV_LOG(ERR, "RX Intr handle unset\n");
-		return -1;
+		return fd;
 	}
 
 	intr_handle = dev->intr_handle;
 	if (!intr_handle->intr_vec) {
 		RTE_ETHDEV_LOG(ERR, "RX Intr vector unset\n");
-		return -1;
+		return fd;
 	}
 
 	vec = intr_handle->intr_vec[queue_id];
@@ -4282,7 +4283,7 @@ rte_eth_dev_destroy(struct rte_eth_dev *ethdev,
 
 int
 rte_eth_dev_rx_intr_ctl_q(uint16_t port_id, uint16_t queue_id,
-			  int epfd, int op, void *data)
+			  rte_fd epfd, int op, void *data)
 {
 	uint32_t vec;
 	struct rte_eth_dev *dev;
@@ -4312,7 +4313,7 @@ rte_eth_dev_rx_intr_ctl_q(uint16_t port_id, uint16_t queue_id,
 	rc = rte_intr_rx_ctl(intr_handle, epfd, op, vec, data);
 	if (rc && rc != -EEXIST) {
 		RTE_ETHDEV_LOG(ERR,
-			"p %u q %u rx ctl error op %d epfd %d vec %u\n",
+			"p %u q %u rx ctl error op %d epfd %"RTE_PRI_FD" vec %u\n",
 			port_id, queue_id, op, epfd, vec);
 		return rc;
 	}

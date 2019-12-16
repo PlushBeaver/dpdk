@@ -6,15 +6,23 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <syslog.h>
 #include <ctype.h>
 #include <limits.h>
 #include <errno.h>
 #include <getopt.h>
-#include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+
+#if defined(RTE_EXECENV_LINUX) || defined(RTE_EXECENV_FREBSD)
+#define RTE_HAVE_SYSLOG 1
+#endif
+
+#ifdef RTE_HAVE_SYSLOG
+#include <syslog.h>
+#else
+#define LOG_DAEMON 0
+#endif
 
 #include <rte_string_fns.h>
 #include <rte_eal.h>
@@ -25,6 +33,8 @@
 #include <rte_version.h>
 #include <rte_devargs.h>
 #include <rte_memcpy.h>
+#include <rte_module.h>
+#include <rte_os.h>
 
 #include "eal_internal_cfg.h"
 #include "eal_options.h"
@@ -75,7 +85,9 @@ eal_long_options[] = {
 	{OPT_PROC_TYPE,         1, NULL, OPT_PROC_TYPE_NUM        },
 	{OPT_SOCKET_MEM,        1, NULL, OPT_SOCKET_MEM_NUM       },
 	{OPT_SOCKET_LIMIT,      1, NULL, OPT_SOCKET_LIMIT_NUM     },
+#ifdef RTE_HAVE_SYSLOG
 	{OPT_SYSLOG,            1, NULL, OPT_SYSLOG_NUM           },
+#endif
 	{OPT_VDEV,              1, NULL, OPT_VDEV_NUM             },
 	{OPT_VFIO_INTR,         1, NULL, OPT_VFIO_INTR_NUM        },
 	{OPT_VMWARE_TSC_MAP,    0, NULL, OPT_VMWARE_TSC_MAP_NUM   },
@@ -91,8 +103,8 @@ TAILQ_HEAD(shared_driver_list, shared_driver);
 struct shared_driver {
 	TAILQ_ENTRY(shared_driver) next;
 
-	char    name[PATH_MAX];
-	void*   lib_handle;
+	char name[RTE_PATH_MAX];
+	rte_module lib_handle;
 };
 
 /* List of external loadable drivers */
@@ -201,7 +213,7 @@ eal_reset_internal_config(struct internal_config *internal_cfg)
 	for (i = 0; i < MAX_HUGEPAGE_SIZES; i++) {
 		memset(&internal_cfg->hugepage_info[i], 0,
 				sizeof(internal_cfg->hugepage_info[0]));
-		internal_cfg->hugepage_info[i].lock_descriptor = -1;
+		internal_cfg->hugepage_info[i].lock_descriptor = EAL_INVALID_LOCK;
 	}
 	internal_cfg->base_virtaddr = 0;
 
@@ -297,9 +309,9 @@ eal_plugins_init(void)
 		} else {
 			RTE_LOG(DEBUG, EAL, "open shared lib %s\n",
 				solib->name);
-			solib->lib_handle = dlopen(solib->name, RTLD_NOW);
-			if (solib->lib_handle == NULL) {
-				RTE_LOG(ERR, EAL, "%s\n", dlerror());
+			solib->lib_handle = rte_module_load(solib->name, RTE_MODULE_BIND_NOW);
+			if (solib->lib_handle == RTE_INVALID_MODULE) {
+				RTE_LOG(ERR, EAL, "%s\n", rte_module_error());
 				return -1;
 			}
 		}
@@ -927,6 +939,8 @@ err:
 	return ret;
 }
 
+#ifdef RTE_HAVE_SYSLOG
+
 static int
 eal_parse_syslog(const char *facility, struct internal_config *conf)
 {
@@ -965,6 +979,8 @@ eal_parse_syslog(const char *facility, struct internal_config *conf)
 	}
 	return -1;
 }
+
+#endif /* RTE_HAVE_SYSLOG */
 
 static int
 eal_parse_log_priority(const char *level)
@@ -1389,6 +1405,7 @@ eal_parse_common_option(int opt, const char *optarg,
 		}
 		break;
 
+#ifdef RTE_HAVE_SYSLOG
 	case OPT_SYSLOG_NUM:
 		if (eal_parse_syslog(optarg, conf) < 0) {
 			RTE_LOG(ERR, EAL, "invalid parameters for --"
@@ -1396,6 +1413,7 @@ eal_parse_common_option(int opt, const char *optarg,
 			return -1;
 		}
 		break;
+#endif
 
 	case OPT_LOG_LEVEL_NUM: {
 		if (eal_parse_log_level(optarg) < 0) {
@@ -1464,9 +1482,7 @@ eal_auto_detect_cores(struct rte_config *cfg)
 	unsigned int removed = 0;
 	rte_cpuset_t affinity_set;
 
-	if (pthread_getaffinity_np(pthread_self(), sizeof(rte_cpuset_t),
-				&affinity_set))
-		CPU_ZERO(&affinity_set);
+	rte_thread_get_affinity(&affinity_set);
 
 	for (lcore_id = 0; lcore_id < RTE_MAX_LCORE; lcore_id++) {
 		if (cfg->lcore_role[lcore_id] == ROLE_RTE &&
@@ -1493,10 +1509,7 @@ compute_ctrl_threads_cpuset(struct internal_config *internal_cfg)
 	}
 	RTE_CPU_NOT(cpuset, cpuset);
 
-	if (pthread_getaffinity_np(pthread_self(), sizeof(rte_cpuset_t),
-				&default_set))
-		CPU_ZERO(&default_set);
-
+	rte_thread_get_affinity(&default_set);
 	RTE_CPU_AND(cpuset, cpuset, &default_set);
 
 	/* if no remaining cpu, use master lcore cpu affinity */
@@ -1578,7 +1591,7 @@ eal_check_common_options(struct internal_config *internal_cfg)
 		RTE_LOG(ERR, EAL, "Invalid length of --" OPT_MBUF_POOL_OPS_NAME" option\n");
 		return -1;
 	}
-	if (index(eal_get_hugefile_prefix(), '%') != NULL) {
+	if (strchr(eal_get_hugefile_prefix(), '%') != NULL) {
 		RTE_LOG(ERR, EAL, "Invalid char, '%%', in --"OPT_FILE_PREFIX" "
 			"option\n");
 		return -1;
@@ -1675,7 +1688,9 @@ eal_common_usage(void)
 	       "                      (can be used multiple times)\n"
 	       "  --"OPT_VMWARE_TSC_MAP"    Use VMware TSC map instead of native RDTSC\n"
 	       "  --"OPT_PROC_TYPE"         Type of this process (primary|secondary|auto)\n"
+#ifdef RTE_HAVE_SYSLOG
 	       "  --"OPT_SYSLOG"            Set syslog facility\n"
+#endif
 	       "  --"OPT_LOG_LEVEL"=<int>   Set global log level\n"
 	       "  --"OPT_LOG_LEVEL"=<type-match>:<int>\n"
 	       "                      Set specific log level\n"

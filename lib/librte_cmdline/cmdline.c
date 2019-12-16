@@ -11,14 +11,18 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <fcntl.h>
-#include <poll.h>
 #include <errno.h>
 #include <termios.h>
 #include <netinet/in.h>
 
+#ifndef RTE_EXEC_ENV_WINDOWS
+#include <poll.h>
+#endif
+
 #include <rte_string_fns.h>
 
 #include "cmdline_parse.h"
+#include "cmdline_private.h"
 #include "cmdline_rdline.h"
 #include "cmdline.h"
 
@@ -63,6 +67,11 @@ cmdline_write_char(struct rdline *rdl, char c)
 	return ret;
 }
 
+struct rdline*
+cmdline_get_rdline(struct cmdline *cl)
+{
+	return &cl->rdl;
+}
 
 void
 cmdline_set_prompt(struct cmdline *cl, const char *prompt)
@@ -178,6 +187,33 @@ cmdline_quit(struct cmdline *cl)
 	rdline_quit(&cl->rdl);
 }
 
+#ifdef RTE_EXEC_ENV_WINDOWS
+
+int
+cmdline_poll(struct cmdline *cl)
+{
+	int status;
+	ssize_t read_status;
+	char c;
+
+	if (!cl)
+		return -EINVAL;
+	else if (cl->rdl.status == RDLINE_EXITED)
+		return RDLINE_EXITED;
+
+	read_status = read(cl->s_in, &c, 1);
+	if (read_status < 0)
+		return read_status;
+
+	status = cmdline_in(cl, &c, 1);
+	if (status < 0 && cl->rdl.status != RDLINE_EXITED)
+		return status;
+
+	return cl->rdl.status;
+}
+
+#else
+
 int
 cmdline_poll(struct cmdline *cl)
 {
@@ -211,6 +247,8 @@ cmdline_poll(struct cmdline *cl)
 
 	return cl->rdl.status;
 }
+
+#endif /* !RTE_EXEC_ENV_WINDOWS */
 
 void
 cmdline_interact(struct cmdline *cl)

@@ -226,7 +226,7 @@ rte_eal_hugepage_init(void)
 			rte_fbarray_set_used(arr, ms_idx);
 
 			RTE_LOG(INFO, EAL, "Mapped memory segment %u @ %p: physaddr:0x%"
-					PRIx64", len %zu\n",
+					PRIx64", len %"RTE_PRIz"\n",
 					seg_idx++, addr, physaddr, page_sz);
 
 			total_mem += seg->len;
@@ -356,7 +356,7 @@ alloc_memseg_list(struct rte_memseg_list *msl, uint64_t page_sz,
 	msl->socket_id = socket_id;
 	msl->base_va = NULL;
 
-	RTE_LOG(DEBUG, EAL, "Memseg list allocated: 0x%zxkB at socket %i\n",
+	RTE_LOG(DEBUG, EAL, "Memseg list allocated: 0x%"RTE_PRIzx"kB at socket %i\n",
 			(size_t)page_sz >> 10, socket_id);
 
 	return 0;
@@ -368,10 +368,10 @@ alloc_va_space(struct rte_memseg_list *msl)
 	uint64_t page_sz;
 	size_t mem_sz;
 	void *addr;
-	int flags = 0;
+	enum rte_mem_reserve_flags flags = 0;
 
 #ifdef RTE_ARCH_PPC_64
-	flags |= MAP_HUGETLB;
+	flags |= RTE_RESERVE_HUGEPAGES;
 #endif
 
 	page_sz = msl->page_sz;

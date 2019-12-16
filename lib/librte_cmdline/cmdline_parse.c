@@ -18,6 +18,7 @@
 
 #include "cmdline_rdline.h"
 #include "cmdline_parse.h"
+#include "cmdline_private.h"
 #include "cmdline.h"
 
 #ifdef RTE_LIBRTE_CMDLINE_DEBUG

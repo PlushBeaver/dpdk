@@ -372,9 +372,9 @@ print_try_lcore_stats(const struct try_rwlock_lcore *tlc, uint32_t lc)
 		"\tfail=%" PRIu64 ",\n"
 		"\tsuccess=%" PRIu64 ",\n"
 		"\tcycles=%" PRIu64 ",\n"
-		"\tcycles/op=%#Lf,\n"
-		"\tcycles/success=%#Lf,\n"
-		"\tsuccess/fail=%#Lf,\n"
+		"\tcycles/op=" RTE_PRILf ",\n"
+		"\tcycles/success=" RTE_PRILf ",\n"
+		"\tsuccess/fail=" RTE_PRILf ",\n"
 		"};\n",
 		lc,
 		tlc->rc,

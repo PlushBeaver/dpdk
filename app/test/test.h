@@ -148,8 +148,8 @@ extern int last_test_result;
 
 #define RECURSIVE_ENV_VAR "RTE_TEST_RECURSIVE"
 
-#include <cmdline_parse.h>
-#include <cmdline_parse_string.h>
+// #include <cmdline_parse.h>
+// #include <cmdline_parse_string.h>
 
 extern const char *prgname;
 
@@ -158,9 +158,9 @@ int commands_init(void);
 int test_mp_secondary(void);
 int test_timer_secondary(void);
 
-int test_set_rxtx_conf(cmdline_fixed_string_t mode);
-int test_set_rxtx_anchor(cmdline_fixed_string_t type);
-int test_set_rxtx_sc(cmdline_fixed_string_t type);
+// int test_set_rxtx_conf(cmdline_fixed_string_t mode);
+// int test_set_rxtx_anchor(cmdline_fixed_string_t type);
+// int test_set_rxtx_sc(cmdline_fixed_string_t type);
 
 typedef int (test_callback)(void);
 TAILQ_HEAD(test_commands_list, test_command);

@@ -23,6 +23,11 @@
 #include <rte_byteorder.h>
 #include <rte_mbuf.h>
 
+/* Disable Windows compatibility macro when using DPDK network headers. */
+#ifdef s_addr
+#undef s_addr
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,6 +47,21 @@ struct rte_ipv4_hdr {
 	rte_be32_t src_addr;		/**< source address */
 	rte_be32_t dst_addr;		/**< destination address */
 } __attribute__((__packed__));
+
+/** Generic Routing Encapsulation protocol code. */
+#ifndef IPPROTO_GRE
+#define IPPROTO_GRE 47
+#endif
+
+/** IP-over-IP protocol code. */
+#ifndef IPPROTO_IPIP
+#define IPPROTO_IPIP 94
+#endif
+
+/** Stream Control Transmission Protocol code. */
+#ifndef IPPROTO_SCTP
+#define IPPROTO_SCTP 132
+#endif
 
 /** Create IPv4 address */
 #define RTE_IPV4(a, b, c, d) ((uint32_t)(((a) & 0xff) << 24) | \

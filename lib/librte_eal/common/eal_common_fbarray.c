@@ -5,15 +5,16 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <sys/mman.h>
 #include <stdint.h>
 #include <errno.h>
 #include <sys/file.h>
 #include <string.h>
 
 #include <rte_common.h>
-#include <rte_log.h>
 #include <rte_errno.h>
+#include <rte_filesystem.h>
+#include <rte_log.h>
+#include <rte_memory.h>
 #include <rte_spinlock.h>
 #include <rte_tailq.h>
 
@@ -82,22 +83,19 @@ get_used_mask(void *data, unsigned int elt_sz, unsigned int len)
 static int
 resize_and_map(int fd, void *addr, size_t len)
 {
-	char path[PATH_MAX];
+	char path[RTE_PATH_MAX];
 	void *map_addr;
 
-	if (ftruncate(fd, len)) {
+	if (rte_ftruncate(fd, len)) {
 		RTE_LOG(ERR, EAL, "Cannot truncate %s\n", path);
 		/* pass errno up the chain */
 		rte_errno = errno;
 		return -1;
 	}
 
-	map_addr = mmap(addr, len, PROT_READ | PROT_WRITE,
-			MAP_SHARED | MAP_FIXED, fd, 0);
+	map_addr = rte_mem_map(addr, len, RTE_PROT_READ | RTE_PROT_WRITE,
+			RTE_MAP_SHARED | RTE_MAP_FIXED, fd, 0);
 	if (map_addr != addr) {
-		RTE_LOG(ERR, EAL, "mmap() failed: %s\n", strerror(errno));
-		/* pass errno up the chain */
-		rte_errno = errno;
 		return -1;
 	}
 	return 0;
@@ -714,7 +712,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 		unsigned int elt_sz)
 {
 	size_t page_sz, mmap_len;
-	char path[PATH_MAX];
+	char path[RTE_PATH_MAX];
 	struct used_mask *msk;
 	struct mem_area *ma = NULL;
 	void *data = NULL;
@@ -735,7 +733,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 		return -1;
 	}
 
-	page_sz = sysconf(_SC_PAGESIZE);
+	page_sz = rte_get_page_size();
 	if (page_sz == (size_t)-1) {
 		free(ma);
 		return -1;
@@ -756,9 +754,9 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 
 	if (internal_config.no_shconf) {
 		/* remap virtual area as writable */
-		void *new_data = mmap(data, mmap_len, PROT_READ | PROT_WRITE,
-				MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS, fd, 0);
-		if (new_data == MAP_FAILED) {
+		void *new_data = rte_mem_map(data, mmap_len, RTE_PROT_READ | RTE_PROT_WRITE,
+				RTE_MAP_FIXED | RTE_MAP_PRIVATE | RTE_MAP_ANONYMOUS, fd, 0);
+		if (new_data == NULL) {
 			RTE_LOG(DEBUG, EAL, "%s(): couldn't remap anonymous memory: %s\n",
 					__func__, strerror(errno));
 			goto fail;
@@ -778,7 +776,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 					__func__, path, strerror(errno));
 			rte_errno = errno;
 			goto fail;
-		} else if (flock(fd, LOCK_EX | LOCK_NB)) {
+		} else if (rte_flock(fd, RTE_FLOCK_EXCLUSIVE, RTE_FLOCK_RETURN)) {
 			RTE_LOG(DEBUG, EAL, "%s(): couldn't lock %s: %s\n",
 					__func__, path, strerror(errno));
 			rte_errno = EBUSY;
@@ -789,8 +787,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 		 * still attach to it, but no other process could reinitialize
 		 * it.
 		 */
-		if (flock(fd, LOCK_SH | LOCK_NB)) {
-			rte_errno = errno;
+		if (rte_flock(fd, RTE_FLOCK_SHARED, RTE_FLOCK_RETURN)) {
 			goto fail;
 		}
 
@@ -824,7 +821,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 	return 0;
 fail:
 	if (data)
-		munmap(data, mmap_len);
+		rte_mem_unmap(data, mmap_len);
 	if (fd >= 0)
 		close(fd);
 	free(ma);
@@ -838,7 +835,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 {
 	struct mem_area *ma = NULL, *tmp = NULL;
 	size_t page_sz, mmap_len;
-	char path[PATH_MAX];
+	char path[RTE_PATH_MAX];
 	void *data = NULL;
 	int fd = -1;
 
@@ -862,7 +859,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 		return -1;
 	}
 
-	page_sz = sysconf(_SC_PAGESIZE);
+	page_sz = rte_get_page_size();
 	if (page_sz == (size_t)-1) {
 		free(ma);
 		return -1;
@@ -895,8 +892,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 	}
 
 	/* lock the file, to let others know we're using it */
-	if (flock(fd, LOCK_SH | LOCK_NB)) {
-		rte_errno = errno;
+	if (rte_flock(fd, RTE_FLOCK_SHARED, RTE_FLOCK_RETURN)) {
 		goto fail;
 	}
 
@@ -916,7 +912,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 	return 0;
 fail:
 	if (data)
-		munmap(data, mmap_len);
+		rte_mem_unmap(data, mmap_len);
 	if (fd >= 0)
 		close(fd);
 	free(ma);
@@ -944,8 +940,7 @@ rte_fbarray_detach(struct rte_fbarray *arr)
 	 * really do anything about it, things will blow up either way.
 	 */
 
-	size_t page_sz = sysconf(_SC_PAGESIZE);
-
+	size_t page_sz = rte_get_page_size();
 	if (page_sz == (size_t)-1)
 		return -1;
 
@@ -964,7 +959,7 @@ rte_fbarray_detach(struct rte_fbarray *arr)
 		goto out;
 	}
 
-	munmap(arr->data, mmap_len);
+	rte_mem_unmap(arr->data, mmap_len);
 
 	/* area is unmapped, close fd and remove the tailq entry */
 	if (tmp->fd >= 0)
@@ -984,7 +979,7 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 	struct mem_area *tmp = NULL;
 	size_t mmap_len;
 	int fd, ret;
-	char path[PATH_MAX];
+	char path[RTE_PATH_MAX];
 
 	if (arr == NULL) {
 		rte_errno = EINVAL;
@@ -999,8 +994,7 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 	 * really do anything about it, things will blow up either way.
 	 */
 
-	size_t page_sz = sysconf(_SC_PAGESIZE);
-
+	size_t page_sz = rte_get_page_size();
 	if (page_sz == (size_t)-1)
 		return -1;
 
@@ -1025,7 +1019,7 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 		 * has been detached by all other processes
 		 */
 		fd = tmp->fd;
-		if (flock(fd, LOCK_EX | LOCK_NB)) {
+		if (rte_flock(fd, RTE_FLOCK_EXCLUSIVE, RTE_FLOCK_RETURN)) {
 			RTE_LOG(DEBUG, EAL, "Cannot destroy fbarray - another process is using it\n");
 			rte_errno = EBUSY;
 			ret = -1;
@@ -1042,14 +1036,14 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 			 * we're still holding an exclusive lock, so drop it to
 			 * shared.
 			 */
-			flock(fd, LOCK_SH | LOCK_NB);
+			rte_flock(fd, RTE_FLOCK_SHARED, RTE_FLOCK_RETURN);
 
 			ret = -1;
 			goto out;
 		}
 		close(fd);
 	}
-	munmap(arr->data, mmap_len);
+	rte_mem_unmap(arr->data, mmap_len);
 
 	/* area is unmapped, remove the tailq entry */
 	TAILQ_REMOVE(&mem_area_tailq, tmp, next);

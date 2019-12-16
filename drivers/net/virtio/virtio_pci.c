@@ -548,8 +548,8 @@ get_cfg_addr(struct rte_pci_device *dev, struct virtio_pci_cap *cap)
 
 	if (offset + length > dev->mem_resource[bar].len) {
 		PMD_INIT_LOG(ERR,
-			"invalid cap: overflows bar space: %u > %" PRIu64,
-			offset + length, dev->mem_resource[bar].len);
+			"invalid cap: overflows bar %u space: %u > %" PRIu64,
+			bar, offset + length, dev->mem_resource[bar].len);
 		return NULL;
 	}
 

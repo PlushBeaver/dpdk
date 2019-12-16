@@ -129,7 +129,6 @@ test_ring_negative_tests(void)
 		goto test_fail;
 	}
 
-
 	for (i = 0; i < RTE_DIM(esize); i++) {
 		/* Test if ring size is not power of 2 */
 		rp = test_ring_create("test_bad_ring_size", esize[i],

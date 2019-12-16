@@ -17,7 +17,7 @@
 #include <stdint.h>
 #ifdef RTE_EXEC_ENV_FREEBSD
 #include <sys/endian.h>
-#else
+#elif defined(RTE_EXEC_ENV_LINUX)
 #include <endian.h>
 #endif
 
@@ -45,6 +45,8 @@
 #define RTE_BYTE_ORDER RTE_BIG_ENDIAN
 #elif defined __LITTLE_ENDIAN__
 #define RTE_BYTE_ORDER RTE_LITTLE_ENDIAN
+#elif defined RTE_EXEC_ENV_WINDOWS
+#define RTE_BYTEORDER RTE_LITTLE_ENDIAN
 #endif
 #if !defined(RTE_BYTE_ORDER)
 #error Unknown endianness.

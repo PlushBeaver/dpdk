@@ -2,19 +2,25 @@
  * Copyright(c) 2019 Intel Corporation
  */
 
+#include <inttypes.h>
 #include <io.h>
 
 #include <rte_atomic.h>
 #include <rte_debug.h>
+#include <rte_errno.h>
 #include <rte_launch.h>
 #include <rte_lcore.h>
 #include <rte_per_lcore.h>
 #include <rte_common.h>
 #include <eal_thread.h>
+#include <rte_os.h>
+#include <rte_windows.h>
 
 #include "eal_private.h"
 
-RTE_DEFINE_PER_LCORE(unsigned int, _lcore_id) = LCORE_ID_ANY;
+RTE_DEFINE_PER_LCORE(unsigned, _lcore_id) = LCORE_ID_ANY;
+RTE_DEFINE_PER_LCORE(unsigned, _socket_id) = (unsigned)SOCKET_ID_ANY;
+RTE_DEFINE_PER_LCORE(rte_cpuset_t, _cpuset);
 
 /*
  * Send a message to a slave lcore identified by slave_id to call a
@@ -66,6 +72,22 @@ eal_thread_self(void)
 	return GetCurrentThreadId();
 }
 
+/* set affinity for current EAL thread */
+static int
+eal_thread_set_affinity(void)
+{
+	unsigned lcore_id = rte_lcore_id();
+
+	/* acquire system unique id  */
+	if (rte_gettid() < 0) {
+		rte_panic("cannot get system thread ID\n");
+		return -1;
+	}
+
+	/* update EAL thread core affinity */
+	return rte_thread_set_affinity(&lcore_config[lcore_id].cpuset);
+}
+
 /* main loop of threads */
 void *
 eal_thread_loop(void *arg __rte_unused)
@@ -93,8 +115,13 @@ eal_thread_loop(void *arg __rte_unused)
 	/* set the lcore ID in per-lcore memory area */
 	RTE_PER_LCORE(_lcore_id) = lcore_id;
 
-	RTE_LOG(DEBUG, EAL, "lcore %u is ready (tid=%zx;cpuset=[%s])\n",
-		lcore_id, (uintptr_t)thread_id, cpuset);
+	if (eal_thread_set_affinity() < 0)
+		rte_panic("cannot set affinity\n");
+
+	ret = eal_thread_dump_affinity(cpuset, sizeof(cpuset));
+
+	RTE_LOG(DEBUG, EAL, "lcore %u is ready (tid=%" PRIx64 ";cpuset=[%s])\n",
+		lcore_id, (uintptr_t)thread_id, (ret == 0) ? cpuset : "...");
 
 	/* read on our pipe to get commands */
 	while (1) {
@@ -136,13 +163,20 @@ eal_thread_loop(void *arg __rte_unused)
 	}
 }
 
+__attribute__((noreturn))
+static DWORD
+eal_thread_loop_wrapper(void *arg)
+{
+	eal_thread_loop(arg);
+}
+
 /* function to create threads */
 int
 eal_thread_create(pthread_t *thread)
 {
 	HANDLE th;
 
-	th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)eal_thread_loop,
+	th = CreateThread(NULL, 0, eal_thread_loop_wrapper,
 						NULL, 0, (LPDWORD)thread);
 	if (!th)
 		return -1;
@@ -151,4 +185,19 @@ eal_thread_create(pthread_t *thread)
 	SetThreadPriority(th, THREAD_PRIORITY_TIME_CRITICAL);
 
 	return 0;
+}
+
+int
+rte_sys_gettid(void)
+{
+	return GetCurrentThreadId();
+}
+
+int
+rte_thread_setname(pthread_t id, const char *name)
+{
+	/* TODO: invoke SetThreadDescription() */
+	RTE_SET_USED(id);
+	RTE_SET_USED(name);
+	return -ENOSYS;
 }

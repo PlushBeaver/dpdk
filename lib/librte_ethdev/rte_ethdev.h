@@ -3127,7 +3127,8 @@ int rte_eth_dev_rx_intr_disable(uint16_t port_id, uint16_t queue_id);
  *   - On success, zero.
  *   - On failure, a negative value.
  */
-int rte_eth_dev_rx_intr_ctl(uint16_t port_id, int epfd, int op, void *data);
+int rte_eth_dev_rx_intr_ctl(uint16_t port_id, rte_fd epfd, int op,
+		void *data);
 
 /**
  * RX Interrupt control per queue.
@@ -3151,7 +3152,7 @@ int rte_eth_dev_rx_intr_ctl(uint16_t port_id, int epfd, int op, void *data);
  *   - On failure, a negative value.
  */
 int rte_eth_dev_rx_intr_ctl_q(uint16_t port_id, uint16_t queue_id,
-			      int epfd, int op, void *data);
+			      rte_fd epfd, int op, void *data);
 
 /**
  * @warning
@@ -3166,12 +3167,11 @@ int rte_eth_dev_rx_intr_ctl_q(uint16_t port_id, uint16_t queue_id,
  *   The value must be in the range [0, nb_rx_queue - 1] previously supplied
  *   to rte_eth_dev_configure().
  * @return
- *   - (>=0) the interrupt fd associated to the requested Rx queue if
- *           successful.
- *   - (-1) on error.
+ *   - In successful, the interrupt fd associated to the requested Rx queue.
+ *   - On failure, RTE_INVALID_FD (test with RTE_FD_INVALID).
  */
 __rte_experimental
-int
+rte_fd
 rte_eth_dev_rx_intr_ctl_q_get_fd(uint16_t port_id, uint16_t queue_id);
 
 /**

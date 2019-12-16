@@ -875,9 +875,9 @@ search_ip5tuples(__attribute__((unused)) void *arg)
 	tm = rte_rdtsc() - start;
 	dump_verbose(DUMP_NONE, stdout,
 		"%s  @lcore %u: %" PRIu32 " iterations, %" PRIu64 " pkts, %"
-		PRIu32 " categories, %" PRIu64 " cycles, %#Lf cycles/pkt\n",
+		PRIu32 " categories, %" PRIu64 " cycles, %" RTE_PRILf " cycles/pkt\n",
 		__func__, lcore, i, pkt, config.run_categories,
-		tm, (pkt == 0) ? 0 : (long double)tm / pkt);
+		tm, (pkt == 0) ? 0 : (rte_long_double)tm / pkt);
 
 	return 0;
 }

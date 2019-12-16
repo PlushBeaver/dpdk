@@ -482,7 +482,7 @@ alloc_seg(struct rte_memseg *ms, void *addr, int socket_id,
 	int ret = 0;
 	int fd;
 	size_t alloc_sz;
-	int flags;
+	enum rte_mem_reserve_flags flags;
 	void *new_addr;
 
 	alloc_sz = hi->hugepage_sz;
@@ -630,7 +630,7 @@ alloc_seg(struct rte_memseg *ms, void *addr, int socket_id,
 mapped:
 	munmap(addr, alloc_sz);
 unmapped:
-	flags = MAP_FIXED;
+	flags = RTE_RESERVE_EXACT_ADDRESS;
 	new_addr = eal_get_virtual_area(addr, &alloc_sz, alloc_sz, 0, flags);
 	if (new_addr != addr) {
 		if (new_addr != NULL)

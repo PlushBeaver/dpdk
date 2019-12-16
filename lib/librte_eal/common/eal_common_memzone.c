@@ -19,6 +19,7 @@
 #include <rte_errno.h>
 #include <rte_string_fns.h>
 #include <rte_common.h>
+#include <rte_os.h>
 
 #include "malloc_heap.h"
 #include "malloc_elem.h"
@@ -316,7 +317,7 @@ dump_memzone(const struct rte_memzone *mz, void *arg)
 
 	mz_idx = rte_fbarray_find_idx(&mcfg->memzones, mz);
 
-	fprintf(f, "Zone %u: name:<%s>, len:0x%zx, virt:%p, "
+	fprintf(f, "Zone %u: name:<%s>, len:0x%"RTE_PRIzx", virt:%p, "
 				"socket_id:%"PRId32", flags:%"PRIx32"\n",
 			mz_idx,
 			mz->name,
@@ -341,8 +342,8 @@ dump_memzone(const struct rte_memzone *mz, void *arg)
 
 	do {
 		fprintf(f, "  addr: %p iova: 0x%" PRIx64 " "
-				"len: 0x%zx "
-				"pagesz: 0x%zx\n",
+				"len: 0x%" RTE_PRIzx " "
+				"pagesz: 0x%" RTE_PRIzx "\n",
 			cur_addr, ms->iova, ms->len, page_sz);
 
 		/* advance VA to next page */

@@ -14,6 +14,7 @@
 #include <rte_eal.h>
 #include <rte_log.h>
 #include <rte_per_lcore.h>
+#include <rte_os.h>
 
 #include "eal_private.h"
 
@@ -401,7 +402,7 @@ rte_log_dump(FILE *f)
 	for (i = 0; i < rte_logs.dynamic_types_len; i++) {
 		if (rte_logs.dynamic_types[i].name == NULL)
 			continue;
-		fprintf(f, "id %zu: %s, level is %s\n",
+		fprintf(f, "id %" RTE_PRIzu ": %s, level is %s\n",
 			i, rte_logs.dynamic_types[i].name,
 			loglevel_to_string(rte_logs.dynamic_types[i].loglevel));
 	}

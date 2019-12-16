@@ -293,7 +293,7 @@ eal_memalloc_mem_alloc_validator_register(const char *name,
 
 	ret = 0;
 
-	RTE_LOG(DEBUG, EAL, "Mem alloc validator '%s' on socket %i with limit %zu registered\n",
+	RTE_LOG(DEBUG, EAL, "Mem alloc validator '%s' on socket %i with limit %"RTE_PRIzu" registered\n",
 		name, socket_id, limit);
 
 unlock:
