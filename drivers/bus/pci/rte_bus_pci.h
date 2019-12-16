@@ -294,6 +294,7 @@ struct rte_pci_ioport {
 	struct rte_pci_device *dev;
 	uint64_t base;
 	uint64_t len; /* only filled for memory mapped ports */
+	int bar;
 };
 
 /**

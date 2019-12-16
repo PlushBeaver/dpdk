@@ -7,14 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/wait.h>
 
 #include <rte_common.h>
 #include <rte_debug.h>
 #include <rte_eal.h>
 #include <rte_errno.h>
 #include <rte_malloc.h>
+#include <rte_memory.h>
 #include <rte_ring.h>
 #include <rte_string_fns.h>
 
@@ -541,9 +540,9 @@ test_external_mem(void)
 
 	/* create external memory area */
 	n_pages = RTE_DIM(iova);
-	addr = mmap(NULL, len, PROT_WRITE | PROT_READ,
-			MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (addr == MAP_FAILED) {
+	addr = rte_mem_map(NULL, len, RTE_PROT_WRITE | RTE_PROT_READ,
+			RTE_MAP_ANONYMOUS | RTE_MAP_PRIVATE, -1, 0);
+	if (addr == NULL) {
 		printf("%s():%i: Failed to create dummy memory area\n",
 			__func__, __LINE__);
 		return -1;
@@ -568,7 +567,7 @@ test_external_mem(void)
 	ret |= test_extmem_invalid_param(addr, len, pgsz, NULL, n_pages);
 	ret |= test_extmem_basic(addr, len, pgsz, NULL, n_pages);
 
-	munmap(addr, len);
+	rte_mem_unmap(addr, len);
 
 	return ret;
 }

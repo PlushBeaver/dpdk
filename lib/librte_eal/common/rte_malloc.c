@@ -290,10 +290,10 @@ rte_malloc_dump_stats(FILE *f, __rte_unused const char *type)
 
 		fprintf(f, "Heap id:%u\n", heap_id);
 		fprintf(f, "\tHeap name:%s\n", heap->name);
-		fprintf(f, "\tHeap_size:%zu,\n", sock_stats.heap_totalsz_bytes);
-		fprintf(f, "\tFree_size:%zu,\n", sock_stats.heap_freesz_bytes);
-		fprintf(f, "\tAlloc_size:%zu,\n", sock_stats.heap_allocsz_bytes);
-		fprintf(f, "\tGreatest_free_size:%zu,\n",
+		fprintf(f, "\tHeap_size:%"RTE_PRIzu",\n", sock_stats.heap_totalsz_bytes);
+		fprintf(f, "\tFree_size:%"RTE_PRIzu",\n", sock_stats.heap_freesz_bytes);
+		fprintf(f, "\tAlloc_size:%"RTE_PRIzu",\n", sock_stats.heap_allocsz_bytes);
+		fprintf(f, "\tGreatest_free_size:%"RTE_PRIzu",\n",
 				sock_stats.greatest_free_size);
 		fprintf(f, "\tAlloc_count:%u,\n",sock_stats.alloc_count);
 		fprintf(f, "\tFree_count:%u,\n", sock_stats.free_count);

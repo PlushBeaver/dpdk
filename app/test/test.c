@@ -8,9 +8,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <termios.h>
+// #include <termios.h>
 #include <ctype.h>
-#include <sys/queue.h>
 
 #ifdef RTE_LIBRTE_CMDLINE
 #include <cmdline_rdline.h>
@@ -24,6 +23,7 @@ extern cmdline_parse_ctx_t main_ctx[];
 #include <rte_eal.h>
 #include <rte_cycles.h>
 #include <rte_log.h>
+#include <sys/queue.h>
 #include <rte_string_fns.h>
 #ifdef RTE_LIBRTE_TIMER
 #include <rte_timer.h>

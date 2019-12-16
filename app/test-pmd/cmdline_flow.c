@@ -10,8 +10,8 @@
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+//#include <arpa/inet.h>
+//#include <sys/socket.h>
 
 #include <rte_string_fns.h>
 #include <rte_common.h>
@@ -6553,7 +6553,7 @@ cmd_set_raw_parsed(const struct buffer *in)
 		upper_layer = proto;
 	}
 	if (verbose_level & 0x1)
-		printf("total data size is %zu\n", (*total_size));
+		printf("total data size is %" RTE_PRIzu "\n", (*total_size));
 	RTE_ASSERT((*total_size) <= ACTION_RAW_ENCAP_MAX_DATA);
 	memmove(data, (data_tail - (*total_size)), *total_size);
 }
@@ -6691,7 +6691,7 @@ cmdline_parse_token_string_t cmd_show_set_raw_cmd_what =
 			cmd_what, "raw_encap#raw_decap");
 cmdline_parse_token_num_t cmd_show_set_raw_cmd_index =
 	TOKEN_NUM_INITIALIZER(struct cmd_show_set_raw_result,
-			cmd_index, UINT16);
+			cmd_index, NUMTYPE_UINT16);
 cmdline_parse_token_string_t cmd_show_set_raw_cmd_all =
 	TOKEN_STRING_INITIALIZER(struct cmd_show_set_raw_result,
 			cmd_all, "all");

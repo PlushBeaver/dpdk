@@ -297,7 +297,6 @@ eal_parse_sysfs_value(const char *filename, unsigned long *val)
 	return 0;
 }
 
-
 /* create memory configuration in shared/mmap memory. Take out
  * a write lock on the memsegs, so we can auto-detect primary/secondary.
  * This means we never close the file while running (auto-close on exit).
@@ -971,13 +970,13 @@ rte_eal_init(int argc, char **argv)
 
 	/* checks if the machine is adequate */
 	if (!rte_cpu_is_supported()) {
-		rte_eal_init_alert("unsupported cpu type.");
+		rte_eal_init_alert("Unsupported CPU type.");
 		rte_errno = ENOTSUP;
 		return -1;
 	}
 
 	if (!rte_atomic32_test_and_set(&run_once)) {
-		rte_eal_init_alert("already called initialization.");
+		rte_eal_init_alert("Already called initialization.");
 		rte_errno = EALREADY;
 		return -1;
 	}
@@ -1207,7 +1206,7 @@ rte_eal_init(int argc, char **argv)
 
 	ret = eal_thread_dump_affinity(cpuset, sizeof(cpuset));
 
-	RTE_LOG(DEBUG, EAL, "Master lcore %u is ready (tid=%zx;cpuset=[%s%s])\n",
+	RTE_LOG(DEBUG, EAL, "Master lcore %u is ready (tid=%"RTE_PRIzx";cpuset=[%s%s])\n",
 		rte_config.master_lcore, (uintptr_t)thread_id, cpuset,
 		ret == 0 ? "" : "...");
 

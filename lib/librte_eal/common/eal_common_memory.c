@@ -11,7 +11,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <sys/mman.h>
 #include <sys/queue.h>
 
 #include <rte_fbarray.h>
@@ -43,7 +42,7 @@ static uint64_t system_page_sz;
 #define MAX_MMAP_WITH_DEFINED_ADDR_TRIES 5
 void *
 eal_get_virtual_area(void *requested_addr, size_t *size,
-		size_t page_sz, int flags, int mmap_flags)
+		size_t page_sz, int flags, enum rte_mem_reserve_flags reserve_flags)
 {
 	bool addr_is_hint, allow_shrink, unmap, no_align;
 	uint64_t map_sz;
@@ -51,11 +50,9 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 	uint8_t try = 0;
 
 	if (system_page_sz == 0)
-		system_page_sz = sysconf(_SC_PAGESIZE);
+		system_page_sz = rte_get_page_size();
 
-	mmap_flags |= MAP_PRIVATE | MAP_ANONYMOUS;
-
-	RTE_LOG(DEBUG, EAL, "Ask a virtual area of 0x%zx bytes\n", *size);
+	RTE_LOG(DEBUG, EAL, "Ask a virtual area of 0x%" RTE_PRIzx " bytes\n", *size);
 
 	addr_is_hint = (flags & EAL_VIRTUAL_AREA_ADDR_IS_HINT) > 0;
 	allow_shrink = (flags & EAL_VIRTUAL_AREA_ALLOW_SHRINK) > 0;
@@ -97,24 +94,23 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 			return NULL;
 		}
 
-		mapped_addr = mmap(requested_addr, (size_t)map_sz, PROT_READ,
-				mmap_flags, -1, 0);
-		if (mapped_addr == MAP_FAILED && allow_shrink)
-			*size -= page_sz;
+		mapped_addr = rte_mem_reserve_virtual(
+				requested_addr, (size_t)map_sz, reserve_flags);
+		if ((mapped_addr == NULL) && allow_shrink)
+			size -= page_sz;
 
-		if (mapped_addr != MAP_FAILED && addr_is_hint &&
-		    mapped_addr != requested_addr) {
+		if ((mapped_addr != NULL) && addr_is_hint &&
+				(mapped_addr != requested_addr)) {
 			try++;
 			next_baseaddr = RTE_PTR_ADD(next_baseaddr, page_sz);
 			if (try <= MAX_MMAP_WITH_DEFINED_ADDR_TRIES) {
 				/* hint was not used. Try with another offset */
-				munmap(mapped_addr, map_sz);
-				mapped_addr = MAP_FAILED;
+				rte_mem_free_virtual(mapped_addr, *size);
+				mapped_addr = NULL;
 				requested_addr = next_baseaddr;
 			}
 		}
-	} while ((allow_shrink || addr_is_hint) &&
-		 mapped_addr == MAP_FAILED && *size > 0);
+	} while ((allow_shrink || addr_is_hint) && (mapped_addr == NULL) && (*size > 0));
 
 	/* align resulting address - if map failed, we will ignore the value
 	 * anyway, so no need to add additional checks.
@@ -124,20 +120,17 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 
 	if (*size == 0) {
 		RTE_LOG(ERR, EAL, "Cannot get a virtual area of any size: %s\n",
-			strerror(errno));
-		rte_errno = errno;
+			strerror(rte_errno));
 		return NULL;
-	} else if (mapped_addr == MAP_FAILED) {
+	} else if (mapped_addr == NULL) {
 		RTE_LOG(ERR, EAL, "Cannot get a virtual area: %s\n",
-			strerror(errno));
-		/* pass errno up the call chain */
-		rte_errno = errno;
+			strerror(rte_errno));
 		return NULL;
 	} else if (requested_addr != NULL && !addr_is_hint &&
 			aligned_addr != requested_addr) {
 		RTE_LOG(ERR, EAL, "Cannot get a virtual area at requested address: %p (got %p)\n",
 			requested_addr, aligned_addr);
-		munmap(mapped_addr, map_sz);
+		rte_mem_free_virtual(mapped_addr, map_sz);
 		rte_errno = EADDRNOTAVAIL;
 		return NULL;
 	} else if (requested_addr != NULL && addr_is_hint &&
@@ -149,11 +142,11 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 		next_baseaddr = RTE_PTR_ADD(aligned_addr, *size);
 	}
 
-	RTE_LOG(DEBUG, EAL, "Virtual area found at %p (size = 0x%zx)\n",
+	RTE_LOG(DEBUG, EAL, "Virtual area found at %p (size = 0x%" RTE_PRIzx ")\n",
 		aligned_addr, *size);
 
 	if (unmap) {
-		munmap(mapped_addr, map_sz);
+		rte_mem_free_virtual(mapped_addr, map_sz);
 	} else if (!no_align) {
 		void *map_end, *aligned_end;
 		size_t before_len, after_len;
@@ -165,18 +158,22 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 		 * address space can be unmapped back.
 		 */
 
+		/* FIXME: Windows has no facility for partial unmapping,
+		 * the next calls will silently call and still waste memory.
+		 */
+
 		map_end = RTE_PTR_ADD(mapped_addr, (size_t)map_sz);
 		aligned_end = RTE_PTR_ADD(aligned_addr, *size);
 
 		/* unmap space before aligned mmap address */
 		before_len = RTE_PTR_DIFF(aligned_addr, mapped_addr);
 		if (before_len > 0)
-			munmap(mapped_addr, before_len);
+			rte_mem_free_virtual(mapped_addr, before_len);
 
 		/* unmap space after aligned end mmap address */
 		after_len = RTE_PTR_DIFF(map_end, aligned_end);
 		if (after_len > 0)
-			munmap(aligned_end, after_len);
+			rte_mem_free_virtual(aligned_end, after_len);
 	}
 
 	return aligned_addr;
@@ -331,7 +328,7 @@ dump_memseg(const struct rte_memseg_list *msl, const struct rte_memseg *ms,
 		return -1;
 
 	fd = eal_memalloc_get_seg_fd(msl_idx, ms_idx);
-	fprintf(f, "Segment %i-%i: IOVA:0x%"PRIx64", len:%zu, "
+	fprintf(f, "Segment %i-%i: IOVA:0x%"PRIx64", len:%"RTE_PRIzu", "
 			"virt:%p, socket_id:%"PRId32", "
 			"hugepage_sz:%"PRIu64", nchannel:%"PRIx32", "
 			"nrank:%"PRIx32" fd:%i\n",
@@ -422,7 +419,7 @@ check_iova(const struct rte_memseg_list *msl __rte_unused,
 	if (!(iova & *mask))
 		return 0;
 
-	RTE_LOG(DEBUG, EAL, "memseg iova %"PRIx64", len %zx, out of range\n",
+	RTE_LOG(DEBUG, EAL, "memseg iova %"PRIx64", len %"RTE_PRIzx", out of range\n",
 			    ms->iova, ms->len);
 
 	RTE_LOG(DEBUG, EAL, "\tusing dma mask %"PRIx64"\n", *mask);
@@ -532,10 +529,10 @@ rte_eal_memdevice_init(void)
 int
 rte_mem_lock_page(const void *virt)
 {
-	unsigned long virtual = (unsigned long)virt;
-	int page_size = getpagesize();
-	unsigned long aligned = (virtual & ~(page_size - 1));
-	return mlock((void *)aligned, page_size);
+	uintptr_t virtual = (uintptr_t)virt;
+	int page_size = rte_get_page_size();
+	uintptr_t aligned = (virtual & ~(page_size - 1));
+	return rte_mem_lock((void *)aligned, page_size);
 }
 
 int
@@ -893,7 +890,7 @@ int
 rte_eal_memory_init(void)
 {
 	struct rte_mem_config *mcfg = rte_eal_get_configuration()->mem_config;
-	int retval;
+	int retval = -1;
 	RTE_LOG(DEBUG, EAL, "Setting up physically contiguous memory...\n");
 
 	if (!mcfg)
@@ -903,22 +900,21 @@ rte_eal_memory_init(void)
 	rte_mcfg_mem_read_lock();
 
 	if (rte_eal_memseg_init() < 0)
-		goto fail;
+		goto exit;
 
 	if (eal_memalloc_init() < 0)
-		goto fail;
+		goto exit;
 
 	retval = rte_eal_process_type() == RTE_PROC_PRIMARY ?
 			rte_eal_hugepage_init() :
 			rte_eal_hugepage_attach();
 	if (retval < 0)
-		goto fail;
+		goto exit;
 
 	if (internal_config.no_shconf == 0 && rte_eal_memdevice_init() < 0)
-		goto fail;
+		goto exit;
 
-	return 0;
-fail:
-	rte_mcfg_mem_read_unlock();
-	return -1;
+exit:
+	/* rte_mcfg_mem_read_unlock() called from rte_eal_malloc_heap_init() */
+	return retval;
 }

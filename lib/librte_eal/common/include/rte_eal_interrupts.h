@@ -42,7 +42,7 @@ enum rte_intr_handle_type {
 #define RTE_INTR_EVENT_ADD            1UL
 #define RTE_INTR_EVENT_DEL            2UL
 
-typedef void (*rte_intr_event_cb_t)(int fd, void *arg);
+typedef void (*rte_intr_event_cb_t)(rte_fd fd, void *arg);
 
 struct rte_epoll_data {
 	uint32_t event;               /**< event type */
@@ -60,8 +60,8 @@ enum {
 /** interrupt epoll event obj, taken by epoll_event.ptr */
 struct rte_epoll_event {
 	volatile uint32_t status;  /**< OUT: event status */
-	int fd;                    /**< OUT: event fd */
-	int epfd;       /**< OUT: epoll instance the ev associated with */
+	rte_fd fd;     /**< OUT: event fd */
+	rte_fd epfd;   /**< OUT: epoll instance the ev associated with */
 	struct rte_epoll_data epdata;
 };
 
@@ -72,12 +72,12 @@ struct rte_intr_handle {
 		int vfio_dev_fd;  /**< VFIO device file descriptor */
 		int uio_cfg_fd;  /**< UIO cfg file desc for uio_pci_generic */
 	};
-	int fd;	 /**< interrupt event file descriptor */
+	rte_fd fd;     /**< interrupt event listener descriptor */
 	enum rte_intr_handle_type type;  /**< handle type */
 	uint32_t max_intr;             /**< max interrupt requested */
 	uint32_t nb_efd;               /**< number of available efd(event fd) */
 	uint8_t efd_counter_size;      /**< size of efd counter, used for vdev */
-	int efds[RTE_MAX_RXTX_INTR_VEC_ID];  /**< intr vectors/efds mapping */
+	rte_fd efds[RTE_MAX_RXTX_INTR_VEC_ID];  /**< intr vectors/efds mapping */
 	struct rte_epoll_event elist[RTE_MAX_RXTX_INTR_VEC_ID];
 				       /**< intr vector epoll event */
 	int *intr_vec;                 /**< intr vector number array */
@@ -102,7 +102,7 @@ struct rte_intr_handle {
  *   - On failure, a negative value.
  */
 int
-rte_epoll_wait(int epfd, struct rte_epoll_event *events,
+rte_epoll_wait(rte_fd epfd, struct rte_epoll_event *events,
 	       int maxevents, int timeout);
 
 /**
@@ -123,7 +123,7 @@ rte_epoll_wait(int epfd, struct rte_epoll_event *events,
  *   - On failure, a negative value.
  */
 int
-rte_epoll_ctl(int epfd, int op, int fd,
+rte_epoll_ctl(rte_fd epfd, int op, rte_fd fd,
 	      struct rte_epoll_event *event);
 
 /**
@@ -132,7 +132,7 @@ rte_epoll_ctl(int epfd, int op, int fd,
  * @return
  *   epfd the epoll instance referred to.
  */
-int
+rte_fd
 rte_intr_tls_epfd(void);
 
 /**
@@ -153,7 +153,7 @@ rte_intr_tls_epfd(void);
  */
 int
 rte_intr_rx_ctl(struct rte_intr_handle *intr_handle,
-		int epfd, int op, unsigned int vec, void *data);
+		rte_fd epfd, int op, unsigned int vec, void *data);
 
 /**
  * It deletes registered eventfds.

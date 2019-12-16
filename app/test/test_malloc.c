@@ -45,8 +45,8 @@ addr_to_socket(void *addr);
 static int
 is_memory_overlap(void *p1, size_t len1, void *p2, size_t len2)
 {
-	unsigned long ptr1 = (unsigned long)p1;
-	unsigned long ptr2 = (unsigned long)p2;
+	uintptr_t ptr1 = (uintptr_t)p1;
+	uintptr_t ptr2 = (uintptr_t)p2;
 
 	if (ptr2 >= ptr1 && (ptr2 - ptr1) < len1)
 		return 1;
@@ -58,7 +58,7 @@ is_memory_overlap(void *p1, size_t len1, void *p2, size_t len2)
 static int
 is_aligned(void *p, int align)
 {
-	unsigned long addr = (unsigned long)p;
+	uintptr_t addr = (uintptr_t)p;
 	unsigned mask = align - 1;
 
 	if (addr & mask)

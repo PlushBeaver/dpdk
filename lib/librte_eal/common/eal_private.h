@@ -11,6 +11,7 @@
 
 #include <rte_dev.h>
 #include <rte_lcore.h>
+#include <rte_memory.h>
 
 /**
  * Structure storing internal configuration (per-lcore)
@@ -215,8 +216,8 @@ int rte_eal_check_module(const char *module_name);
  *   Page size on which to align requested virtual area.
  * @param flags
  *   EAL_VIRTUAL_AREA_* flags.
- * @param mmap_flags
- *   Extra flags passed directly to mmap().
+ * @param reserve_flags
+ *   Reservation flags passed to @ref rte_mem_reserve_virtual().
  *
  * @return
  *   Virtual area address if successful.
@@ -232,8 +233,8 @@ int rte_eal_check_module(const char *module_name);
 #define EAL_VIRTUAL_AREA_UNMAP (1 << 2)
 /**< immediately unmap reserved virtual area. */
 void *
-eal_get_virtual_area(void *requested_addr, size_t *size,
-		size_t page_sz, int flags, int mmap_flags);
+eal_get_virtual_area(void *requested_addr, size_t *size, size_t page_sz,
+		int flags, enum rte_mem_reserve_flags reserve_flags);
 
 /**
  * Get cpu core_id.

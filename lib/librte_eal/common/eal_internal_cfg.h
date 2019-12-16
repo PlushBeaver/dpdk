@@ -11,6 +11,7 @@
 #define EAL_INTERNAL_CFG_H
 
 #include <rte_eal.h>
+#include <rte_os.h>
 #include <rte_pci_dev_feature_defs.h>
 
 #include "eal_thread.h"
@@ -30,7 +31,8 @@ struct hugepage_info {
 	char hugedir[PATH_MAX];    /**< dir where hugetlbfs is mounted */
 	uint32_t num_pages[RTE_MAX_NUMA_NODES];
 	/**< number of hugepages of that size on each socket */
-	int lock_descriptor;    /**< file descriptor for hugepage dir */
+	rte_fd lock_descriptor;
+	/**< synchronization object descriptor (e.g. hugepage directory) */
 };
 
 /**

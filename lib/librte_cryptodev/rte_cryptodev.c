@@ -3,7 +3,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/queue.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +33,7 @@
 #include <rte_malloc.h>
 #include <rte_mbuf.h>
 #include <rte_errno.h>
+#include <sys/queue.h>
 #include <rte_spinlock.h>
 #include <rte_string_fns.h>
 

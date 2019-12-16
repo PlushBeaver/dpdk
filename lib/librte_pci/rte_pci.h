@@ -20,12 +20,14 @@ extern "C" {
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
-#include <sys/queue.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <sys/queue.h>
+
 
 #include <rte_debug.h>
 #include <rte_interrupts.h>
+#include <rte_pci_id.h>
 
 /** Formatting string for PCI device identifier: Ex: 0000:00:01.0 */
 #define PCI_PRI_FMT "%.4" PRIx16 ":%.2" PRIx8 ":%.2" PRIx8 ".%" PRIx8
@@ -42,18 +44,6 @@ extern "C" {
 
 /** Maximum number of PCI resources. */
 #define PCI_MAX_RESOURCE 6
-
-/**
- * A structure describing an ID for a PCI driver. Each driver provides a
- * table of these IDs for each device that it supports.
- */
-struct rte_pci_id {
-	uint32_t class_id;            /**< Class ID or RTE_CLASS_ANY_ID. */
-	uint16_t vendor_id;           /**< Vendor ID or PCI_ANY_ID. */
-	uint16_t device_id;           /**< Device ID or PCI_ANY_ID. */
-	uint16_t subsystem_vendor_id; /**< Subsystem vendor ID or PCI_ANY_ID. */
-	uint16_t subsystem_device_id; /**< Subsystem device ID or PCI_ANY_ID. */
-};
 
 /**
  * A structure describing the location of a PCI device.
@@ -95,7 +85,7 @@ struct mapped_pci_resource {
 	TAILQ_ENTRY(mapped_pci_resource) next;
 
 	struct rte_pci_addr pci_addr;
-	char path[PATH_MAX];
+	char path[RTE_PATH_MAX];
 	int nb_maps;
 	struct pci_map maps[PCI_MAX_RESOURCE];
 	struct pci_msix_table msix_table;

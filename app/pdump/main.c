@@ -10,7 +10,9 @@
 #include <getopt.h>
 #include <signal.h>
 #include <stdbool.h>
+#ifndef RTE_EXEC_ENV_WINDOWS
 #include <net/if.h>
+#endif
 
 #include <rte_eal.h>
 #include <rte_alarm.h>

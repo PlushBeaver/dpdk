@@ -5,10 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <inttypes.h>
-#include <sys/queue.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <unistd.h>
@@ -27,6 +27,7 @@
 #include <rte_log.h>
 #include <rte_atomic.h>
 #include <rte_branch_prediction.h>
+#include <sys/queue.h>
 #include <rte_string_fns.h>
 #include <rte_metrics.h>
 #include <rte_cycles.h>

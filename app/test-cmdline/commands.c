@@ -7,12 +7,15 @@
 #include <termios.h>
 #include <inttypes.h>
 
+#include <rte_os.h>
+
 #include <cmdline_rdline.h>
 #include <cmdline_parse.h>
 #include <cmdline_parse_string.h>
 #include <cmdline_parse_num.h>
 #include <cmdline.h>
 
+// #include "cmdline_private.h"
 #include "cmdline_test.h"
 
 /*** quit ***/
@@ -191,7 +194,7 @@ cmd_num_parsed(void *parsed_result,
 }
 
 cmdline_parse_token_num_t cmd_num_tok =
-	TOKEN_NUM_INITIALIZER(struct cmd_num_result, num, UINT32);
+	TOKEN_NUM_INITIALIZER(struct cmd_num_result, num, NUMTYPE_UINT32);
 
 cmdline_parse_inst_t cmd_num = {
 	.f = cmd_num_parsed,  /* function to call */
@@ -292,8 +295,8 @@ cmd_get_history_bufsize_parsed(__attribute__((unused)) void *parsed_result,
 		struct cmdline *cl,
 		__attribute__((unused)) void *data)
 {
-	cmdline_printf(cl, "History buffer size: %zu\n",
-			sizeof(cl->rdl.history_buf));
+	cmdline_printf(cl, "History buffer size: %" RTE_PRIzu "\n",
+			sizeof(cmdline_get_rdline(cl)->history_buf));
 }
 
 cmdline_parse_token_string_t cmd_get_history_bufsize_tok =
@@ -324,7 +327,7 @@ cmd_clear_history_parsed(__attribute__((unused)) void *parsed_result,
 		struct cmdline *cl,
 		__attribute__((unused)) void *data)
 {
-	rdline_clear_history(&cl->rdl);
+	rdline_clear_history(cmdline_get_rdline(cl));
 }
 
 cmdline_parse_token_string_t cmd_clear_history_tok =

@@ -9,7 +9,6 @@
 #include <string.h>
 #include <time.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -636,35 +635,6 @@ calc_mem_size(uint32_t nb_mbufs, uint32_t mbuf_sz, size_t pgsz, size_t *out)
 	return 0;
 }
 
-static int
-pagesz_flags(uint64_t page_sz)
-{
-	/* as per mmap() manpage, all page sizes are log2 of page size
-	 * shifted by MAP_HUGE_SHIFT
-	 */
-	int log2 = rte_log2_u64(page_sz);
-
-	return (log2 << HUGE_SHIFT);
-}
-
-static void *
-alloc_mem(size_t memsz, size_t pgsz, bool huge)
-{
-	void *addr;
-	int flags;
-
-	/* allocate anonymous hugepages */
-	flags = MAP_ANONYMOUS | MAP_PRIVATE;
-	if (huge)
-		flags |= HUGE_FLAG | pagesz_flags(pgsz);
-
-	addr = mmap(NULL, memsz, PROT_READ | PROT_WRITE, flags, -1, 0);
-	if (addr == MAP_FAILED)
-		return NULL;
-
-	return addr;
-}
-
 struct extmem_param {
 	void *addr;
 	size_t len;
@@ -694,7 +664,7 @@ create_extmem(uint32_t nb_mbufs, uint32_t mbuf_sz, struct extmem_param *param,
 
 		/* if we were told not to allocate hugepages, override */
 		if (!huge)
-			cur_pgsz = sysconf(_SC_PAGESIZE);
+			cur_pgsz = rte_get_page_size();
 
 		ret = calc_mem_size(nb_mbufs, mbuf_sz, cur_pgsz, &mem_sz);
 		if (ret < 0) {
@@ -703,7 +673,7 @@ create_extmem(uint32_t nb_mbufs, uint32_t mbuf_sz, struct extmem_param *param,
 		}
 
 		/* allocate our memory */
-		addr = alloc_mem(mem_sz, cur_pgsz, huge);
+		addr = rte_mem_alloc(mem_sz, huge ? cur_pgsz : 0);
 
 		/* if we couldn't allocate memory with a specified page size,
 		 * that doesn't mean we can't do it with other page sizes, so
@@ -723,7 +693,7 @@ create_extmem(uint32_t nb_mbufs, uint32_t mbuf_sz, struct extmem_param *param,
 		}
 		/* lock memory if it's not huge pages */
 		if (!huge)
-			mlock(addr, mem_sz);
+			rte_mem_lock(addr, mem_sz);
 
 		/* populate IOVA addresses */
 		for (cur_page = 0; cur_page < n_pages; cur_page++) {
@@ -759,7 +729,7 @@ fail:
 	if (iovas)
 		free(iovas);
 	if (addr)
-		munmap(addr, mem_sz);
+		rte_mem_free_virtual(addr, mem_sz);
 
 	return -1;
 }
@@ -801,13 +771,13 @@ setup_extmem(uint32_t nb_mbufs, uint32_t mbuf_sz, bool huge)
 
 	if (ret < 0) {
 		TESTPMD_LOG(ERR, "Cannot add memory to heap\n");
-		munmap(param.addr, param.len);
+		rte_mem_free_virtual(param.addr, param.len);
 		return -1;
 	}
 
 	/* success */
 
-	TESTPMD_LOG(DEBUG, "Allocated %zuMB of external memory\n",
+	TESTPMD_LOG(DEBUG, "Allocated %" RTE_PRIzu "MB of external memory\n",
 			param.len >> 20);
 
 	return 0;
@@ -844,7 +814,7 @@ dma_map_cb(struct rte_mempool *mp __rte_unused, void *opaque __rte_unused,
 	   struct rte_mempool_memhdr *memhdr, unsigned mem_idx __rte_unused)
 {
 	uint16_t pid = 0;
-	size_t page_size = sysconf(_SC_PAGESIZE);
+	size_t page_size = rte_get_page_size();
 	int ret;
 
 	ret = rte_extmem_register(memhdr->addr, memhdr->len, NULL, 0,
@@ -3402,13 +3372,6 @@ init_port(void)
 }
 
 static void
-force_quit(void)
-{
-	pmd_test_exit();
-	prompt_exit();
-}
-
-static void
 print_stats(void)
 {
 	uint8_t i;
@@ -3423,6 +3386,19 @@ print_stats(void)
 		nic_stats_display(fwd_ports_ids[i]);
 
 	fflush(stdout);
+}
+
+/* Windows prohibits any I/O or system calls from withing signal
+ * handlers, because they don't interrupt the main thread,
+ * so this app can't make use of signals.
+ */
+#ifndef RTE_EXEC_ENV_WINDOWS
+
+static void
+force_quit(void)
+{
+	pmd_test_exit();
+	prompt_exit();
 }
 
 static void
@@ -3448,6 +3424,8 @@ signal_handler(int signum)
 	}
 }
 
+#endif /* RTE_EXEC_ENV_WINDOWS */
+
 int
 main(int argc, char** argv)
 {
@@ -3456,8 +3434,10 @@ main(int argc, char** argv)
 	uint16_t count;
 	int ret;
 
+#ifndef RTE_EXEC_ENV_WINDOWS
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
+#endif
 
 	testpmd_logtype = rte_log_register("testpmd");
 	if (testpmd_logtype < 0)
@@ -3507,11 +3487,11 @@ main(int argc, char** argv)
 	latencystats_enabled = 0;
 #endif
 
-	/* on FreeBSD, mlockall() is disabled by default */
-#ifdef RTE_EXEC_ENV_FREEBSD
-	do_mlockall = 0;
-#else
+	/* mlockall() is enabled by default only on Linux */
+#ifdef RTE_EXEC_ENV_LINUX
 	do_mlockall = 1;
+#else
+	do_mlockall = 0;
 #endif
 
 	argc -= diag;
@@ -3519,7 +3499,8 @@ main(int argc, char** argv)
 	if (argc > 1)
 		launch_args_parse(argc, argv);
 
-	if (do_mlockall && mlockall(MCL_CURRENT | MCL_FUTURE)) {
+	if (do_mlockall &&
+			rte_mem_lockall(RTE_LOCKALL_CURRENT | RTE_LOCKALL_FUTURE)) {
 		TESTPMD_LOG(NOTICE, "mlockall() failed with error \"%s\"\n",
 			strerror(errno));
 	}

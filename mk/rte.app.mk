@@ -10,9 +10,9 @@ include $(RTE_SDK)/mk/internal/rte.build-pre.mk
 # VPATH contains at least SRCDIR
 VPATH += $(SRCDIR)
 
-_BUILD = $(APP)
+_BUILD = $(APP)$(EXECENV_PROGRAM_SUFFIX)
 _INSTALL = $(INSTALL-FILES-y) $(SYMLINK-FILES-y)
-_INSTALL += $(RTE_OUTPUT)/app/$(APP) $(RTE_OUTPUT)/app/$(APP).map
+_INSTALL += $(RTE_OUTPUT)/app/$(APP)$(EXECENV_PROGRAM_SUFFIX) $(RTE_OUTPUT)/app/$(APP).map
 POSTINSTALL += target-appinstall
 _CLEAN = doclean
 POSTCLEAN += target-appclean
@@ -352,12 +352,16 @@ _LDLIBS-y += --no-whole-archive
 ifeq ($(CONFIG_RTE_BUILD_SHARED_LIB),n)
 # The static libraries do not know their dependencies.
 # So linking with static library requires explicit dependencies.
-_LDLIBS-$(CONFIG_RTE_LIBRTE_EAL)            += -lrt
+ifneq ($(CONFIG_RTE_EXEC_ENV_WINDOWS),y)
+_LDLIBS-$(CONFIG_RTE_LIBRTE_EAL) += -lrt
+endif
 ifeq ($(CONFIG_RTE_EXEC_ENV_LINUX)$(CONFIG_RTE_EAL_NUMA_AWARE_HUGEPAGES),yy)
 _LDLIBS-$(CONFIG_RTE_LIBRTE_EAL)            += -lnuma
 endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_SCHED)          += -lm
+ifneq ($(CONFIG_RTE_EXEC_ENV_WINDOWS),y)
 _LDLIBS-$(CONFIG_RTE_LIBRTE_SCHED)          += -lrt
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MEMBER)         += -lm
 _LDLIBS-$(CONFIG_RTE_LIBRTE_METER)          += -lm
 ifeq ($(CONFIG_RTE_LIBRTE_VHOST_NUMA),y)
@@ -436,7 +440,7 @@ LDLIBS_FILES := $(sort $(wildcard $(foreach dir,$(LDLIBS_PATH),\
 #
 # Compile executable file if needed
 #
-$(APP): $(OBJS-y) $(LDLIBS_FILES) $(DEP_$(APP)) $(LDSCRIPT) FORCE
+$(APP)$(EXECENV_PROGRAM_SUFFIX): $(OBJS-y) $(LDLIBS_FILES) $(DEP_$(APP)) $(LDSCRIPT) FORCE
 	@[ -d $(dir $@) ] || mkdir -p $(dir $@)
 	$(if $(D),\
 		@echo -n "$< -> $@ " ; \
@@ -454,18 +458,18 @@ $(APP): $(OBJS-y) $(LDLIBS_FILES) $(DEP_$(APP)) $(LDSCRIPT) FORCE
 #
 # install app in $(RTE_OUTPUT)/app
 #
-$(RTE_OUTPUT)/app/$(APP): $(APP)
+$(RTE_OUTPUT)/app/$(APP)$(EXECENV_PROGRAM_SUFFIX): $(APP)$(EXECENV_PROGRAM_SUFFIX)
 	@echo "  INSTALL-APP $(APP)"
 	@[ -d $(RTE_OUTPUT)/app ] || mkdir -p $(RTE_OUTPUT)/app
-	$(Q)cp -f $(APP) $(RTE_OUTPUT)/app
+	$(Q)cp -f $(APP)$(EXECENV_PROGRAM_SUFFIX) $(RTE_OUTPUT)/app
 
 #
 # install app map file in $(RTE_OUTPUT)/app
 #
-$(RTE_OUTPUT)/app/$(APP).map: $(APP)
-	@echo "  INSTALL-MAP $(APP).map"
+$(RTE_OUTPUT)/app/$(APP)$(EXECENV_PROGRAM_SUFFIX).map: $(APP)$(EXECENV_PROGRAM_SUFFIX).map
+	@echo "  INSTALL-MAP $(APP)$(EXECENV_PROGRAM_SUFFIX).map"
 	@[ -d $(RTE_OUTPUT)/app ] || mkdir -p $(RTE_OUTPUT)/app
-	$(Q)cp -f $(APP).map $(RTE_OUTPUT)/app
+	$(Q)cp -f $(APP)$(EXECENV_PROGRAM_SUFFIX).map $(RTE_OUTPUT)/app
 
 #
 # Clean all generated files
@@ -476,8 +480,8 @@ clean: _postclean
 
 .PHONY: doclean
 doclean:
-	$(Q)rm -rf $(APP) $(OBJS-all) $(DEPS-all) $(DEPSTMP-all) \
-	  $(CMDS-all) $(INSTALL-FILES-all) .$(APP).cmd $(APP).map
+	$(Q)rm -rf $(APP)$(EXECENV_PROGRAM_SUFFIX) $(OBJS-all) $(DEPS-all) \
+		$(DEPSTMP-all) $(CMDS-all) $(INSTALL-FILES-all) .$(APP).cmd $(APP).map
 
 
 include $(RTE_SDK)/mk/internal/rte.compile-post.mk
