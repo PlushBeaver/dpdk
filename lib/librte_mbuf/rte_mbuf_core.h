@@ -533,7 +533,7 @@ struct rte_mbuf {
 				 * RTE_PTYPE_TUNNEL_ESP tunnel type is set
 				 * on both Tx and Rx.
 				 */
-				__extension__
+				RTE_STD_C11
 				struct {
 					uint8_t inner_l2_type:4;
 					/**< Inner L2 type. */
@@ -542,7 +542,7 @@ struct rte_mbuf {
 				};
 			};
 			uint32_t inner_l4_type:4; /**< Inner L4 type. */
-		};
+		} __rte_layout_controlled;
 	};
 
 	uint32_t pkt_len;         /**< Total pkt len: sum of all segments. */
