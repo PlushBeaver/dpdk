@@ -8,6 +8,8 @@
 #include <rte_eal.h>
 #include <rte_log.h>
 
+#include "eal_windows.h"
+
  /* call abort(), it will generate a coredump if enabled */
 void
 __rte_panic(const char *funcname, const char *format, ...)
@@ -19,6 +21,18 @@ __rte_panic(const char *funcname, const char *format, ...)
 	rte_vlog(RTE_LOG_CRIT, RTE_LOGTYPE_EAL, format, ap);
 	va_end(ap);
 	abort();
+}
+
+void
+rte_dump_stack(void)
+{
+	EAL_NOT_IMPLEMENTED();
+}
+
+void
+rte_dump_registers(void)
+{
+	EAL_NOT_IMPLEMENTED();
 }
 
 /*

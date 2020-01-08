@@ -217,7 +217,7 @@ int rte_eal_check_module(const char *module_name);
  * @param flags
  *   EAL_VIRTUAL_AREA_* flags.
  * @param reserve_flags
- *   Reservation flags passed to @ref rte_mem_reserve_virtual().
+ *   Reservation flags passed to @ref rte_mem_reserve().
  *
  * @return
  *   Virtual area address if successful.

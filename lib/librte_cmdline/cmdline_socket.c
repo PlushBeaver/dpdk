@@ -11,13 +11,69 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <fcntl.h>
-#include <termios.h>
 
 #include "cmdline_parse.h"
 #include "cmdline_private.h"
 #include "cmdline_rdline.h"
 #include "cmdline_socket.h"
 #include "cmdline.h"
+
+/* Disables buffering and echoing on the terminal.
+ * Saves previous terminal settings to `oldterm`.
+ * On Windows, also switches console to emulate VT100.
+ */
+static void
+cmdline_adjust_terminal(struct cmdline_terminal* oldterm)
+{
+#ifndef RTE_EXEC_ENV_WINDOWS
+	struct termios oldterm, term;
+
+	tcgetattr(0, &oldterm);
+	memcpy(&term, &oldterm, sizeof(term));
+	term.c_lflag &= ~(ICANON | ECHO | ISIG);
+	tcsetattr(0, TCSANOW, &term);
+
+	setbuf(stdin, NULL);
+#else
+	HANDLE handle;
+	DWORD mode;
+
+	ZeroMemory(oldterm, sizeof(*oldterm));
+
+	/* Detect console input and adjust its mode. */
+	handle = GetStdHandle(STD_INPUT_HANDLE);
+	if (GetConsoleMode(handle, &mode)) {
+		oldterm->is_console = 1;
+		oldterm->input_mode = mode;
+
+		mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+		mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+		SetConsoleMode(handle, mode);
+	}
+
+	/* Set output to interpret ANSI escape sequences (emulate VT100). */
+	handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleMode(handle, &mode);
+	oldterm->output_mode = mode;
+
+	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	SetConsoleMode(handle, mode);
+#endif
+}
+
+/* Restores saved terminal settings. */
+static void
+cmdline_restore_terminal(const struct cmdline_terminal *oldterm) {
+#ifndef RTE_EXEC_ENV_WINDOWS
+	tcsetattr(fileno(stdin), TCSANOW, &cl->oldterm);
+#else
+	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+	SetConsoleMode(handle, oldterm->input_mode);
+	
+	handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleMode(handle, oldterm->output_mode);
+#endif
+}
 
 struct cmdline *
 cmdline_file_new(cmdline_parse_ctx_t *ctx, const char *prompt, const char *path)
@@ -40,18 +96,15 @@ struct cmdline *
 cmdline_stdin_new(cmdline_parse_ctx_t *ctx, const char *prompt)
 {
 	struct cmdline *cl;
-	struct termios oldterm, term;
+	struct cmdline_terminal oldterm;
 
-	tcgetattr(0, &oldterm);
-	memcpy(&term, &oldterm, sizeof(term));
-	term.c_lflag &= ~(ICANON | ECHO | ISIG);
-	tcsetattr(0, TCSANOW, &term);
-	setbuf(stdin, NULL);
+	cmdline_adjust_terminal(&oldterm);
 
 	cl = cmdline_new(ctx, prompt, 0, 1);
 
-	if (cl)
-		memcpy(&cl->oldterm, &oldterm, sizeof(term));
+	if (cl) {
+		memcpy(&cl->oldterm, &oldterm, sizeof(oldterm));
+	}
 
 	return cl;
 }
@@ -62,5 +115,5 @@ cmdline_stdin_exit(struct cmdline *cl)
 	if (!cl)
 		return;
 
-	tcsetattr(fileno(stdin), TCSANOW, &cl->oldterm);
+	cmdline_restore_terminal(&cl->oldterm);
 }

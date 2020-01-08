@@ -4,6 +4,20 @@
 
 #include "acl_run_sse.h"
 
+/* "Bug 54412 - minimal 32-byte stack alignment with -mavx on 64-bit Windows"
+ * (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412)
+ * 
+ * Win32 x64 ABI for AVX2 requires 32-byte alignment of vectored variables.
+ * In fact, GCC does align stack variables properly, alignment gets
+ * violated when passing vectored arguments to functions.
+ * A workaround is to force inlining of those functions.
+ */
+#if defined(__MINGW32__)
+#define INLINE __rte_always_inline
+#else
+#define INLINE inline
+#endif
+
 static const rte_ymm_t ymm_match_mask = {
 	.u32 = {
 		RTE_ACL_NODE_MATCH,
@@ -86,7 +100,7 @@ transition8(ymm_t next_input, const uint64_t *trans, ymm_t *tr_lo, ymm_t *tr_hi)
  * tr_lo contains low 32 bits for 8 transition.
  * tr_hi contains high 32 bits for 8 transition.
  */
-static inline void
+static INLINE void
 acl_process_matches_avx2x8(const struct rte_acl_ctx *ctx,
 	struct parms *parms, struct acl_flow_data *flows, uint32_t slot,
 	ymm_t matches, ymm_t *tr_lo, ymm_t *tr_hi)
@@ -130,7 +144,7 @@ acl_process_matches_avx2x8(const struct rte_acl_ctx *ctx,
 	*tr_hi = _mm256_blendv_epi8(*tr_hi, hi, matches);
 }
 
-static inline void
+static INLINE void
 acl_match_check_avx2x8(const struct rte_acl_ctx *ctx, struct parms *parms,
 	struct acl_flow_data *flows, uint32_t slot,
 	ymm_t *tr_lo, ymm_t *tr_hi, ymm_t match_mask)

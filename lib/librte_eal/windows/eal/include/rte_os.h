@@ -6,18 +6,30 @@
 #define _RTE_OS_H_
 
 #include <inttypes.h>
-#include <pthread.h>
+#include <limits.h>
+
 #include <sched.h>
+#include <pthread.h>
 
 /**
  * @file
- * This is header should contain any function/macro definition
- * which are not supported natively or named differently in the
- * Windows OS. Functions will be added in future releases.
+ * This header should contain any function/macro definitions
+ * which are not supported natively or named differently in the Windows OS.
+ * Note that <windows.h> is intentionally not included
+ * because its definitions may break otherwise portable code.
+ * Use <rte_windows.h> to access basic Windows facilities.
  */
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* These defines from Microsoft libc often conflict with portable code. */
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
 #endif
 
 /*
@@ -26,29 +38,42 @@ extern "C" {
 
 /* strdup is deprecated in Microsoft libc and _strdup is preferred */
 #define strdup(str) _strdup(str)
-
 #define strerror_r(a, b, c) strerror_s(b, c, a)
-
 #define strtok_r(str, delim, saveptr) strtok_s(str, delim, saveptr)
+
+/* No special versions of <setjmp.h> functions due to lack of signals. */
+#define sigjmp_buf jmp_buf
+#define sigsetjmp(env, savesigs) setjmp(env)
+#define siglongjmp(env, val) longjmp(env, val)
+
+#define ffs __builtin_ffs
+
+/* as defined in <windows.h> */
+#ifndef PATH_MAX
+#define PATH_MAX 260
+#endif
+
+/* as defined in Linux */
+#define LINE_MAX 2048
+
+/* as defined in <windows.h> */
+#ifdef RTE_ARCH_64
+typedef long long int ssize_t;
+#else
+typedef long int ssize_t;
+#endif
 
 long int random(void);
 
+long int lrand48(void);
+
+long int mrand48(void);
+
 unsigned int sleep(unsigned long sec);
 
-int usleep(useconds_t usec);
+int usleep(unsigned int usec);
 
 int vdprintf(int fd, const char* format, va_list op);
-
-int pthread_setaffinity_np(
-		pthread_t thread, size_t cpuset_size, const rte_cpuset_t *cpuset);
-
-
-/**
- * Maximum path length supported by target platform.
- * 
- * In Windows, this is equal to @code MAX_PATH @endcode.
- */
-#define RTE_PATH_MAX 260
 
 /**
  * The most precise floating-point type supported by target platform.
@@ -68,6 +93,17 @@ typedef double rte_long_double;
 #define RTE_PRILf "lf"
 
 /**
+ * Formatting specifier for uppercase decimal floating-point.
+ * 
+ * MinGW does not support "%F".
+ */
+#ifdef __MINGW32__
+#define RTE_PRIF "f"
+#else
+#define RTE_PRIF "F"
+#endif
+
+/**
  * Formatting specifiers for (s)size_t.
  *
  * MSVCRT does not support "%z" modifier.
@@ -75,6 +111,19 @@ typedef double rte_long_double;
 #define RTE_PRIzd PRId64
 #define RTE_PRIzu PRIu64
 #define RTE_PRIzx PRIx64
+
+/**
+ * Formatting specifier for "(unsigned) long long".
+ * 
+ * MinGW does not support "%lld" and "%llu".
+ */
+#ifdef __MINGW32__
+#define RTE_PRIllu PRIu64
+#define RTE_PRIlld PRId64
+#else
+#define RTE_PRIllu "llu"
+#define RTE_PRIlld "lld"
+#endif
 
 /**
  * Dynamically loaded module descriptor.
@@ -119,9 +168,67 @@ typedef void *rte_fd;
  * CPU set operations
  */
 
-#define RTE_CPU_AND CPU_AND
+#ifndef CPU_SET_SIZE
+#define CPU_SET_SIZE 128
+#endif
 
-#define RTE_CPU_OR CPU_OR
+#define _BITS_PER_SET (sizeof(long long) * 8)
+#define _BIT_SET_MASK (_BITS_PER_SET - 1)
+
+#define _NUM_SETS(b) (((b) + _BIT_SET_MASK) / _BITS_PER_SET)
+#define _WHICH_SET(b) ((b) / _BITS_PER_SET)
+#define _WHICH_BIT(b) ((b) & (_BITS_PER_SET - 1))
+
+typedef struct _rte_cpuset_s {
+	long long _bits[_NUM_SETS(CPU_SET_SIZE)];
+} rte_cpuset_t;
+
+#define CPU_SET(b, s) \
+	((s)->_bits[_WHICH_SET(b)] |= (1LL << _WHICH_BIT(b)))
+
+#define CPU_ZERO(s) \
+	do { \
+		unsigned int _i; \
+		for (_i = 0; _i < _NUM_SETS(CPU_SET_SIZE); _i++) \
+			(s)->_bits[_i] = 0LL; \
+	} while (0)
+
+#define CPU_ISSET(b, s) \
+	((s)->_bits[_WHICH_SET(b)] & (1LL << _WHICH_BIT(b)))
+
+#define DEFINE_CPUSET_OP(name, op) \
+	static inline rte_cpuset_t* \
+	name(rte_cpuset_t* dest, const rte_cpuset_t* lhs, \
+		const rte_cpuset_t* rhs) \
+        { \
+		size_t i; \
+		for (i = 0; i < _NUM_SETS(CPU_SET_SIZE); i++) \
+			dest->_bits[i] = lhs->_bits[i] op rhs->_bits[i]; \
+		return dest; \
+        }
+
+DEFINE_CPUSET_OP(RTE_CPU_AND, &)
+DEFINE_CPUSET_OP(RTE_CPU_OR, |)
+
+DEFINE_CPUSET_OP(CPU_XOR, ^)
+
+#undef DEFINE_CPUSET_OP
+
+static inline int
+CPU_COUNT(rte_cpuset_t *cpuset)
+{
+	size_t i, j;
+	int count = 0;
+
+	for (i = 0; i < _NUM_SETS(CPU_SET_SIZE); i++) {
+		for (j = 0; j < CHAR_BIT; j++) {
+			if (cpuset->_bits[i] & (1LL << j))
+				count++;
+		}
+	}
+
+	return count;
+}
 
 #define RTE_CPU_FILL(set) do \
 { \

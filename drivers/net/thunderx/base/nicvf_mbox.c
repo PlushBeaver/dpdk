@@ -125,7 +125,7 @@ nicvf_handle_mbx_intr(struct nicvf *nic)
 	/* Overwrite the message so we won't receive it again */
 	nicvf_reg_write(nic, NIC_VF_PF_MAILBOX_0_1, 0x0);
 
-	nicvf_mbox_log("msg received id=0x%hhx %s (VF%d)", mbx.msg.msg,
+	nicvf_mbox_log("msg received id=0x%x %s (VF%d)", mbx.msg.msg,
 			nicvf_mbox_msg_str(mbx.msg.msg), nic->vf_id);
 
 	switch (mbx.msg.msg) {
@@ -166,7 +166,7 @@ nicvf_handle_mbx_intr(struct nicvf *nic)
 		}
 		for (i = 0; i < mbx.sqs_alloc.qs_count; i++) {
 			if (mbx.sqs_alloc.svf[i] != nic->snicvf[i]->vf_id) {
-				nicvf_log_error("Received secondary qset[%zu] "
+				nicvf_log_error("Received secondary qset[%" RTE_PRIzu "] "
 				                "ID %" PRIu8 " expected %"
 				                PRIu8, i, mbx.sqs_alloc.svf[i],
 				                nic->snicvf[i]->vf_id);
@@ -176,7 +176,7 @@ nicvf_handle_mbx_intr(struct nicvf *nic)
 		nic->pf_acked = true;
 		break;
 	default:
-		nicvf_log_error("Invalid message from PF, msg_id=0x%hhx %s",
+		nicvf_log_error("Invalid message from PF, msg_id=0x%x %s",
 				mbx.msg.msg, nicvf_mbox_msg_str(mbx.msg.msg));
 		break;
 	}

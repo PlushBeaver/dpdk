@@ -531,7 +531,7 @@ int rte_pmd_bnxt_set_vf_vlan_filter(uint16_t port, uint16_t vlan,
 			}
 			if (j == cnt) {
 				/* Now check that there's space */
-				if (cnt == getpagesize() / sizeof(struct
+				if (cnt == rte_get_page_size() / sizeof(struct
 				    bnxt_vlan_antispoof_table_entry)) {
 					PMD_DRV_LOG(ERR,
 					     "VLAN anti-spoof table is full\n");
@@ -565,11 +565,11 @@ int rte_pmd_bnxt_set_vf_vlan_filter(uint16_t port, uint16_t vlan,
 					continue;
 				memmove(&bp->pf.vf_info[i].vlan_table[j],
 					&bp->pf.vf_info[i].vlan_table[j + 1],
-					getpagesize() - ((j + 1) *
+					rte_get_page_size() - ((j + 1) *
 					sizeof(struct bnxt_vlan_table_entry)));
 				memmove(&bp->pf.vf_info[i].vlan_as_table[j],
 					&bp->pf.vf_info[i].vlan_as_table[j + 1],
-					getpagesize() - ((j + 1) * sizeof(struct
+					rte_get_page_size() - ((j + 1) * sizeof(struct
 					bnxt_vlan_antispoof_table_entry)));
 				j--;
 				cnt = --bp->pf.vf_info[i].vlan_count;

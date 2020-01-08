@@ -501,7 +501,7 @@ print_result(const union rte_ipsec_sad_key *key, void *res)
 	spi = (config.ipv6 == 0) ? v4->spi : v6->spi;
 	dip = (config.ipv6 == 0) ? &v4->dip : (const void *)v6->dip;
 	sip = (config.ipv6 == 0) ? &v4->sip : (const void *)v6->sip;
-	printf("\n\tpoints to RULE ID %zu ",
+	printf("\n\tpoints to RULE ID %" RTE_PRIzu " ",
 		RTE_PTR_DIFF(res, rules_tbl)/sizeof(struct rule));
 	print_tuple(af, spi, dip, sip);
 	printf(" %s\n", rule_type);
@@ -537,9 +537,10 @@ lookup(void *arg)
 		}
 	}
 	acc = (acc == 0) ? UINT64_MAX : acc;
-	printf("Average lookup cycles %.2Lf, lookups/sec: %.2Lf\n",
-		(long double)acc / config.nb_tuples,
-		(long double)config.nb_tuples * rte_get_tsc_hz() / acc);
+	printf("Average lookup cycles %.2" RTE_PRILf ", "
+			"lookups/sec: %.2" RTE_PRILf "\n",
+			(rte_long_double)acc / config.nb_tuples,
+			(rte_long_double)config.nb_tuples * rte_get_tsc_hz() / acc);
 
 	return 0;
 }
@@ -573,9 +574,10 @@ add_rules(struct rte_ipsec_sad *sad, uint32_t fract)
 	}
 
 	for (i = 0; i != j; i++)
-		printf("ADD %u rules, %.2Lf cycles/rule, %.2Lf ADD/sec\n",
-			nm[i], (long double)tm[i] / nm[i],
-			(long double)nm[i] * rte_get_tsc_hz() / tm[i]);
+		printf("ADD %u rules, %.2" RTE_PRILf " cycles/rule, "
+			"%.2" RTE_PRILf " ADD/sec\n",
+			nm[i], (rte_long_double)tm[i] / nm[i],
+			(rte_long_double)nm[i] * rte_get_tsc_hz() / tm[i]);
 }
 
 static void
@@ -607,9 +609,10 @@ del_rules(struct rte_ipsec_sad *sad, uint32_t fract)
 	}
 
 	for (i = 0; i != j; i++)
-		printf("DEL %u rules, %.2Lf cycles/rule, %.2Lf DEL/sec\n",
-			nm[i], (long double)tm[i] / nm[i],
-			(long double)nm[i] * rte_get_tsc_hz() / tm[i]);
+		printf("DEL %u rules, %.2" RTE_PRILf " cycles/rule, "
+			"%.2" RTE_PRILf " DEL/sec\n",
+			nm[i], (rte_long_double)tm[i] / nm[i],
+			(rte_long_double)nm[i] * rte_get_tsc_hz() / tm[i]);
 }
 
 int

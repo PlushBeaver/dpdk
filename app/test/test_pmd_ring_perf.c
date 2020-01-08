@@ -48,9 +48,9 @@ test_empty_dequeue(void)
 				bulk_sizes[0]);
 	const uint64_t eth_end = rte_rdtsc();
 
-	printf("Ring empty dequeue  : %.1F\n",
+	printf("Ring empty dequeue  : %.1" RTE_PRIF "\n",
 			(double)(sc_end - sc_start) / iterations);
-	printf("Ethdev empty dequeue: %.1F\n",
+	printf("Ethdev empty dequeue: %.1" RTE_PRIF "\n",
 			(double)(eth_end - eth_start) / iterations);
 }
 
@@ -124,10 +124,10 @@ test_bulk_enqueue_dequeue(void)
 		double eth_avg = ((double)(eth_end-eth_start) /
 				(iterations * bulk_sizes[sz]));
 
-		printf("ring bulk enq/deq (size: %u) : %.1F\n", bulk_sizes[sz],
-				sc_avg);
-		printf("ethdev bulk enq/deq (size:%u): %.1F\n", bulk_sizes[sz],
-				eth_avg);
+		printf("ring bulk enq/deq (size: %u) : %.1" RTE_PRIF "\n",
+				bulk_sizes[sz], sc_avg);
+		printf("ethdev bulk enq/deq (size:%u): %.1" RTE_PRIF "\n",
+				bulk_sizes[sz], eth_avg);
 
 		printf("\n");
 	}

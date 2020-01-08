@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2017-2019 Intel Corporation
 
-if is_windows
-	subdir_done()
-endif
-
 apps = [
 	'pdump',
 	'proc-info',
@@ -55,6 +51,10 @@ foreach app:apps
 
 		if allow_experimental_apis
 			cflags += '-DALLOW_EXPERIMENTAL_API'
+		endif
+
+		if is_windows and (cc.get_id() == 'gcc')
+			cflags += '-D__USE_MINGW_ANSI_STDIO'
 		endif
 
 		executable('dpdk-' + name,

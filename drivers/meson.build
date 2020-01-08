@@ -1,21 +1,23 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2017-2019 Intel Corporation
 
-if is_windows
-	subdir_done()
-endif
-
 # Defines the order in which the drivers are buit.
 dpdk_driver_classes = ['common',
-	       'bus',
-	       'mempool', # depends on common and bus.
-	       'net',     # depends on common, bus, mempool
-	       'raw',     # depends on common, bus and net.
-	       'crypto',  # depends on common, bus and mempool (net in future).
-	       'compress', # depends on common, bus, mempool.
-	       'vdpa',    # depends on common, bus and mempool.
-	       'event',   # depends on common, bus, mempool and net.
-	       'baseband'] # depends on common and bus.
+	'bus',
+	'mempool', # depends on common and bus.
+	'raw',     # depends on common and bus.
+	'net',     # depends on common, bus, mempool and raw.
+	'crypto',  # depends on common, bus and mempool (net in future).
+]
+
+if not is_windows
+	dpdk_driver_classes += [
+		'compress', # depends on common, bus, mempool.
+		'vdpa',     # depends on common, bus and mempool.
+		'event',    # depends on common, bus, mempool and net.
+		'baseband', # depends on common and bus.
+	]
+endif
 
 disabled_drivers = get_option('disable_drivers').split(',')
 
@@ -159,7 +161,7 @@ foreach class:dpdk_driver_classes
 				input: version_map,
 				output: '@0@_exports.def'.format(lib_name))
 			lk_deps = [version_map, def_file]
-			if is_windows
+			if is_ms_linker
 				lk_args = ['-Wl,/def:' + def_file.full_path(),
 					'-Wl,/implib:lib\\' + implib]
 			else

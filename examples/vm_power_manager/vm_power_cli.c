@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-#include <termios.h>
 #include <errno.h>
 
 #include <cmdline_rdline.h>

@@ -1450,8 +1450,8 @@ static void *alloc_ring(size_t nelem, size_t elem_size,
 	const struct rte_memzone *tz;
 	void *s = NULL;
 
-	dev_debug(adapter, "%s: nelem = %zu; elem_size = %zu; sw_size = %zu; "
-		  "stat_size = %zu; queue_id = %u; socket_id = %d; z_name = %s;"
+	dev_debug(adapter, "%s: nelem = %" RTE_PRIzu "; elem_size = %" RTE_PRIzu "; sw_size = %" RTE_PRIzu "; "
+		  "stat_size = %" RTE_PRIzu "; queue_id = %u; socket_id = %d; z_name = %s;"
 		  " z_name_sw = %s\n", __func__, nelem, elem_size, sw_size,
 		  stat_size, queue_id, socket_id, z_name, z_name_sw);
 

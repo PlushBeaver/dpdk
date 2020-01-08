@@ -24,13 +24,21 @@ dpdk_libs_disabled = []
 dpdk_drvs_disabled = []
 abi_version_file = files('ABI_VERSION')
 
-# configure the build, and make sure configs here and in config folder are
-# able to be included in any file. We also store a global array of include dirs
+# Make sure configs here and in config folder are able to be included
+# in any file. We also store a global array of include dirs
 # for passing to pmdinfogen scripts
-global_inc = include_directories('.', 'config',
+global_inc_paths = [
+	'.', 'config',
 	'lib/librte_eal/common/include',
 	'lib/librte_eal/@0@/eal/include'.format(host_machine.system()),
-)
+]
+ # Add Windows driver interfaces, `is_windows` is not yet defined here.
+if host_machine.system() == 'windows'
+	global_inc_paths += 'kernel/windows/virt2phys'
+endif
+global_inc = include_directories(global_inc_paths)
+
+# configure the build
 subdir('config')
 
 # build libs and drivers

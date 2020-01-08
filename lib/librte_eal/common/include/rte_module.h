@@ -14,6 +14,8 @@ enum rte_module_binding {
 
 rte_module rte_module_load(const char* path, enum rte_module_binding binding);
 
+void* rte_module_symbol(rte_module module, const char* name);
+
 const char* rte_module_error(void);
 
 

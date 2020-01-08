@@ -32,9 +32,8 @@ bpf_load(const struct rte_bpf_prm *prm)
 	bsz = sizeof(bpf[0]);
 	sz = insz + xsz + bsz;
 
-	buf = mmap(NULL, sz, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (buf == MAP_FAILED)
+	buf = rte_mem_alloc(sz, 0);
+	if (buf == NULL)
 		return NULL;
 
 	bpf = (void *)buf;
@@ -118,7 +117,7 @@ rte_bpf_load(const struct rte_bpf_prm *prm)
 	rc = bpf_validate(bpf);
 	if (rc == 0) {
 		bpf_jit(bpf);
-		if (mprotect(bpf, bpf->sz, PROT_READ) != 0)
+		if (rte_mem_protect(bpf, bpf->sz, RTE_PROT_READ) != 0)
 			rc = -ENOMEM;
 	}
 

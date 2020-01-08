@@ -13,6 +13,8 @@
 
 #include <inttypes.h>
 
+#include <rte_common.h>
+
 #define AF_INET  2
 #define AF_INET6 23
 
@@ -55,15 +57,38 @@
 
 #define INET6_ADDRSTRLEN 40
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct in_addr {
     uint32_t s_addr;
 };
 
 struct in6_addr {
-    unsigned char s6_adddr[16];
+    union {
+        unsigned char _u6_addr8[16];
+        unsigned short _u6_addr16[8];
+    } _u6;
 };
 
+#define s6_addr _u6._u6_addr8
+#define s6_addr16 _u6._u6_addr16
+
+typedef size_t socklen_t;
+
 int inet_aton(const char *cp, struct in_addr *inp);
+
+/* defined in ws2_32.dll */
+__attribute__((stdcall))
 int inet_pton(int af, const char *src, void *dst);
+
+/* defined in ws2_32.dll */
+__attribute__((stdcall))
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* _SYS_SOCKET_H_ */

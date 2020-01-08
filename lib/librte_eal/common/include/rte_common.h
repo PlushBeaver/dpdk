@@ -77,6 +77,17 @@ typedef uint16_t unaligned_uint16_t;
 #define __rte_layout_controlled
 #endif
 
+/**
+ * Check format string and its arguments.
+ */
+#if defined(RTE_TOOLCHAIN_GCC) && defined(__USE_MINGW_ANSI_STDIO)
+#define __rte_format(archetype, format_index, first_arg) \
+	__attribute__((format(gnu_##archetype, format_index, first_arg)))
+#else
+#define __rte_format(archetype, format_index, first_arg) \
+	__attribute__((format(archetype, format_index, first_arg)))
+#endif
+
 /******* Macro to mark functions and fields scheduled for removal *****/
 #define __rte_deprecated	__attribute__((__deprecated__))
 
@@ -793,7 +804,7 @@ rte_str_to_size(const char *str)
 void
 rte_exit(int exit_code, const char *format, ...)
 	__attribute__((noreturn))
-	__attribute__((format(printf, 2, 3)));
+	__rte_format(printf, 2, 3);
 
 #ifdef __cplusplus
 }

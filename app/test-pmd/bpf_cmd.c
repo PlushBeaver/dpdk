@@ -15,15 +15,20 @@
 
 #include "testpmd.h"
 
+/* In Windows, `stdout` is a macro expanding to an rvalue.
+ * Create a proxy lvalue and initialize it on first access to bpf_xsym.
+ */
+static FILE* bpf_stdout;
+
 static const struct rte_bpf_xsym bpf_xsym[] = {
 	{
 		.name = RTE_STR(stdout),
 		.type = RTE_BPF_XTYPE_VAR,
 		.var = {
-			.val = &stdout,
+			.val = &bpf_stdout,
 			.desc = {
 				.type = RTE_BPF_ARG_PTR,
-				.size = sizeof(stdout),
+				.size = sizeof(bpf_stdout),
 			},
 		},
 	},
@@ -96,6 +101,8 @@ static void cmd_operate_bpf_ld_parsed(void *parsed_result,
 	struct rte_bpf_prm prm;
 	const char *fname, *sname;
 
+	bpf_stdout = stdout;
+
 	res = parsed_result;
 	memset(&prm, 0, sizeof(prm));
 	prm.xsym = bpf_xsym;
@@ -124,9 +131,9 @@ cmdline_parse_token_string_t cmd_load_bpf_dir =
 	TOKEN_STRING_INITIALIZER(struct cmd_bpf_ld_result,
 			dir, "rx#tx");
 cmdline_parse_token_num_t cmd_load_bpf_port =
-	TOKEN_NUM_INITIALIZER(struct cmd_bpf_ld_result, port, UINT8);
+	TOKEN_NUM_INITIALIZER(struct cmd_bpf_ld_result, port, NUMTYPE_UINT8);
 cmdline_parse_token_num_t cmd_load_bpf_queue =
-	TOKEN_NUM_INITIALIZER(struct cmd_bpf_ld_result, queue, UINT16);
+	TOKEN_NUM_INITIALIZER(struct cmd_bpf_ld_result, queue, NUMTYPE_UINT16);
 cmdline_parse_token_string_t cmd_load_bpf_flags =
 	TOKEN_STRING_INITIALIZER(struct cmd_bpf_ld_result,
 			flags, NULL);
@@ -180,9 +187,9 @@ cmdline_parse_token_string_t cmd_unload_bpf_dir =
 	TOKEN_STRING_INITIALIZER(struct cmd_bpf_unld_result,
 			dir, "rx#tx");
 cmdline_parse_token_num_t cmd_unload_bpf_port =
-	TOKEN_NUM_INITIALIZER(struct cmd_bpf_unld_result, port, UINT8);
+	TOKEN_NUM_INITIALIZER(struct cmd_bpf_unld_result, port, NUMTYPE_UINT8);
 cmdline_parse_token_num_t cmd_unload_bpf_queue =
-	TOKEN_NUM_INITIALIZER(struct cmd_bpf_unld_result, queue, UINT16);
+	TOKEN_NUM_INITIALIZER(struct cmd_bpf_unld_result, queue, NUMTYPE_UINT16);
 
 cmdline_parse_inst_t cmd_operate_bpf_unld_parse = {
 	.f = cmd_operate_bpf_unld_parsed,

@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright 2019 NXP
 
+if is_windows
+	build = false
+	reason = 'no epoll() on Windows'
+endif
+
 if host_machine.system() != 'linux'
 	build = false
 endif

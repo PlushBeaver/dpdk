@@ -15,7 +15,7 @@
 
 #include "sample_packet_forward.h"
 #include "test.h"
-#include "process.h"
+#include "subprocess.h"
 #include "test_pdump.h"
 
 #define launch_p(ARGV) process_dup(ARGV, \

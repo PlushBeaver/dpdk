@@ -11,10 +11,21 @@
  * in future releases.
  */
 
+#ifdef _WIN32 /* Compiling target binaries, emulate POSIX. */
+
 #include <stddef.h>
+
+#include <io.h>
 
 /* Defined in ws2_32.dll, `namelen` is `int` in Windows. */
 __attribute__((stdcall, dllimport))
 int gethostname(char *name, int namelen);
 
+#else /* Compiling a build tool, chain-include native header. */
+
+#ifdef __has_include_next
+#include_next <unistd.h>
+#endif
+
+#endif /* _WIN32 */
 #endif /* _UNISTD_H_ */

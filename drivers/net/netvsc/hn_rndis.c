@@ -365,7 +365,7 @@ static int hn_rndis_exec1(struct hn_data *hv,
 
 	if (comp_len > sizeof(hv->rndis_resp)) {
 		PMD_DRV_LOG(ERR,
-			    "Expected completion size %u exceeds buffer %zu",
+			    "Expected completion size %u exceeds buffer %" RTE_PRIzu "",
 			    comp_len, sizeof(hv->rndis_resp));
 		return -EIO;
 	}
@@ -1043,7 +1043,7 @@ static int hn_rndis_init(struct hn_data *hv)
 		 * too low.
 		 */
 		PMD_DRV_LOG(NOTICE,
-			    "fixup RNDIS aggpkt align: %u -> %zu",
+			    "fixup RNDIS aggpkt align: %u -> %" RTE_PRIzu "",
 			    hv->rndis_agg_align, sizeof(uint32_t));
 		hv->rndis_agg_align = sizeof(uint32_t);
 	}

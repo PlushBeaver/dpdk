@@ -10,7 +10,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
-#include <termios.h>
 
 #include <netinet/in.h>
 

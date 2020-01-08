@@ -15,19 +15,20 @@
 
 /* Cross headers may lack VirtualAlloc2() in some distributions.
  * Provide a copy of definitions and code to load it dynamically.
+ * Note: definitions are copied verbatim and don't follow code style.
  */ 
 #if (_WIN32_WINNT >= _WIN32_WINNT_WIN10) && \
-		!defined(MEM_PRESERVE_PLACEHOLDER)
+	!defined(MEM_PRESERVE_PLACEHOLDER)
 
 /* https://docs.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-mem_extended_parameter_type */
 typedef enum MEM_EXTENDED_PARAMETER_TYPE {
-  	MemExtendedParameterInvalidType,
-  	MemExtendedParameterAddressRequirements,
-  	MemExtendedParameterNumaNode,
-  	MemExtendedParameterPartitionHandle,
-  	MemExtendedParameterMax,
-  	MemExtendedParameterUserPhysicalHandle,
-  	MemExtendedParameterAttributeFlags
+	MemExtendedParameterInvalidType,
+	MemExtendedParameterAddressRequirements,
+	MemExtendedParameterNumaNode,
+	MemExtendedParameterPartitionHandle,
+	MemExtendedParameterMax,
+	MemExtendedParameterUserPhysicalHandle,
+	MemExtendedParameterAttributeFlags
 } *PMEM_EXTENDED_PARAMETER_TYPE;
 
 #define MEM_EXTENDED_PARAMETER_TYPE_BITS 4
@@ -59,26 +60,29 @@ typedef PVOID (*VirtualAlloc2_type)(
 );
 
 /* VirtualAlloc2() flags. */
-#define MEM_PRESERVE_PLACEHOLDER 0x00000002
-#define MEM_REPLACE_PLACEHOLDER  0x00004000
-#define MEM_RESERVE_PLACEHOLDER  0x00040000
+#define MEM_COALESCE_PLACEHOLDERS 0x00000001
+#define MEM_PRESERVE_PLACEHOLDER  0x00000002
+#define MEM_REPLACE_PLACEHOLDER   0x00004000
+#define MEM_RESERVE_PLACEHOLDER   0x00040000
 
+/* Named exactly as the function, so that user code does not depend
+ * on it being found at compile time or dynamically.
+ */
 static VirtualAlloc2_type VirtualAlloc2;
 
 static int
 mem_access_advanced_features(void)
 {
-	const char library[] = "kernelbase.dll";
+	const char library_name[] = "kernelbase.dll";
 	const char function[] = "VirtualAlloc2";
 
 	OSVERSIONINFO info;
-	HMODULE kernel32 = NULL;
+	HMODULE library = NULL;
 	int ret = 0;
 
 	/* Already done. */
-	if (VirtualAlloc2 != NULL) {
+	if (VirtualAlloc2 != NULL)
 		return 0;
-	}
 
 	/* IsWindows10OrGreater() may also be unavailable. */
 	memset(&info, 0, sizeof(info));
@@ -89,25 +93,25 @@ mem_access_advanced_features(void)
 	 * Do not abort, because Windows may report false version depending
 	 * on executable manifest, compatibility mode, etc.
 	 */
-	if (info.dwMajorVersion < 10) {
+	if (info.dwMajorVersion < 10)
 		RTE_LOG(DEBUG, EAL, "Windows 10+ or Windows Server 2016+ "
-				"is required for advanced memory features\n");
-	}
+			"is required for advanced memory features\n");
 
-	kernel32 = LoadLibraryA(library);
-	if (kernel32 == NULL) {
-		RTE_LOG(ERR, EAL, "Cannot load %s\n", library);
+	library = LoadLibraryA(library_name);
+	if (library == NULL) {
+		RTE_LOG_SYSTEM_ERROR("LoadLibraryA(\"%s\")", library_name);
 		return -1;
 	}
 
-	VirtualAlloc2 =
-			(VirtualAlloc2_type)((void*)GetProcAddress(kernel32, function));
+	VirtualAlloc2 = (VirtualAlloc2_type)(
+		(void*)GetProcAddress(library, function));
 	if (VirtualAlloc2 == NULL) {
-		RTE_LOG(ERR, EAL, "Cannot find %s() address\n", function);
+		RTE_LOG_SYSTEM_ERROR("GetProcAddress(\"%s\", \"%s\")\n",
+			library_name, function);
 		ret = -1;
 	}
 
-	FreeLibrary(kernel32);
+	FreeLibrary(library);
 
 	return ret;
 }
@@ -132,9 +136,9 @@ win32_alloc_error_to_errno(DWORD code)
 		return 0;
 
 	case ERROR_INVALID_ADDRESS:
-		/* If requested address is valid, this means it is not available. */
+		/* A valid requested address is not available. */
 	case ERROR_COMMITMENT_LIMIT:
-		/* Should not occur since we never commit here. */
+		/* May occcur when commiting regular memory. */
 	case ERROR_NO_SYSTEM_RESOURCES:
 		/* Occurs when the system runs out of hugepages. */
 		return ENOMEM;
@@ -145,8 +149,93 @@ win32_alloc_error_to_errno(DWORD code)
 	}
 }
 
+void*
+eal_mem_alloc(size_t size, int socket_id)
+{
+	DWORD flags = MEM_RESERVE | MEM_COMMIT;
+	void *addr;
+
+	flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+	addr = VirtualAllocExNuma(
+		GetCurrentProcess(), NULL, size, flags, PAGE_READWRITE,
+		eal_socket_numa_node(socket_id));
+	if (addr == NULL)
+		rte_errno = ENOMEM;
+	return addr;
+}
+
+void*
+eal_mem_commit(void *requested_addr, size_t size, int socket_id)
+{
+	MEM_EXTENDED_PARAMETER param;
+	DWORD param_count = 0;
+	DWORD flags;
+	void *addr;
+
+	if (mem_access_advanced_features() < 0) {
+		RTE_LOG(ERR, EAL, "Cannot access advanced memory features\n");
+		return NULL;
+	}
+
+	if (requested_addr != NULL) {
+		MEMORY_BASIC_INFORMATION info;
+		if (VirtualQuery(requested_addr, &info, sizeof(info)) == 0) {
+			RTE_LOG_SYSTEM_ERROR("VirtualQuery()");
+			return NULL;
+		}
+
+		/* Split reserved region if only a part is committed. */
+		flags = MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER;
+		if ((info.RegionSize > size) &&
+			!VirtualFree(requested_addr, size, flags)) {
+			RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %" RTE_PRIzu ", "
+				"<split placeholder>)", requested_addr, size);
+			return NULL;	
+		}
+	}
+
+	if (socket_id != SOCKET_ID_ANY) {
+		param_count = 1;
+		memset(&param, 0, sizeof(param));
+		param.Type = MemExtendedParameterNumaNode;
+		param.ULong = eal_socket_numa_node(socket_id);
+	}
+
+	flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+	if (requested_addr != NULL) {
+		flags |= MEM_REPLACE_PLACEHOLDER;
+	}
+	addr = VirtualAlloc2(GetCurrentProcess(), requested_addr, size,
+		flags, PAGE_READWRITE, &param, param_count);
+	if (addr == NULL) {
+		RTE_LOG_SYSTEM_ERROR("VirtualAlloc2(%p, %" RTE_PRIzu ", "
+			"<replace placeholder>)", addr, size);
+		rte_errno = win32_alloc_error_to_errno(GetLastError());
+		return NULL;
+	}
+
+	return addr;
+}
+
 int
-eal_mem_free_virtual(void *addr, size_t size)
+eal_mem_decommit(void *addr, size_t size)
+{
+	if (mem_access_advanced_features() < 0) {
+		RTE_LOG(ERR, EAL, "Cannot access advanced memory features\n");
+		return -1;
+	}
+
+	if (!VirtualFree(addr, size, MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)) {
+		RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %" RTE_PRIzu ", ...)",
+			addr, size);
+		return -1;
+	}
+
+	return 0;
+}
+
+int
+eal_mem_free(void *addr, size_t size, bool reserved)
 {
 	MEMORY_BASIC_INFORMATION info;
 	if (VirtualQuery(addr, &info, sizeof(info)) == 0) {
@@ -154,7 +243,7 @@ eal_mem_free_virtual(void *addr, size_t size)
 		return -1;
 	}
 
-	if (info.State != MEM_RESERVE) {
+	if (reserved && (info.State != MEM_RESERVE)) {
 		return 1;
 	}
 	
@@ -174,7 +263,7 @@ eal_mem_free_virtual(void *addr, size_t size)
 	/* Split the part to be freed and the remaining reservation. */
 	if (!VirtualFree(addr, size, MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)) {
 		RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %" RTE_PRIzu ", "
-				"MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)", addr, size);
+			"MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)", addr, size);
 		return -1;
 	}
 
@@ -188,8 +277,8 @@ eal_mem_free_virtual(void *addr, size_t size)
 }
 
 void*
-rte_mem_reserve_virtual(void *requested_addr, size_t size,
-		enum rte_mem_reserve_flags flags)
+rte_mem_reserve(void *requested_addr, size_t size,
+	enum rte_mem_reserve_flags flags)
 {
 	void *virt;
 
@@ -206,16 +295,13 @@ rte_mem_reserve_virtual(void *requested_addr, size_t size,
 		return NULL;
 	}
 
-    virt = VirtualAlloc2(
-			GetCurrentProcess(),
-            requested_addr, size,
-			MEM_RESERVE | MEM_RESERVE_PLACEHOLDER,
-			PAGE_NOACCESS,
-			NULL, 0);
-    if (virt == NULL) {
-        RTE_LOG_SYSTEM_ERROR("VirtualAlloc2()");
+	virt = VirtualAlloc2(GetCurrentProcess(), requested_addr, size,
+		MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS,
+		NULL, 0);
+	if (virt == NULL) {
+		RTE_LOG_SYSTEM_ERROR("VirtualAlloc2()");
 		rte_errno = win32_alloc_error_to_errno(GetLastError());
-    }
+	}
 
 	if ((flags & RTE_RESERVE_EXACT_ADDRESS) && (virt != requested_addr)) {
 		if (!VirtualFree(virt, 0, MEM_RELEASE)) {
@@ -232,23 +318,34 @@ void*
 rte_mem_alloc(size_t size, enum rte_page_sizes hugepage_size)
 {
 	DWORD flags = MEM_RESERVE | MEM_COMMIT;
-	void *addr;
+	void *base;
+	size_t page_size, offset;
 
-	if (hugepage_size != 0) {
+	/* No control over page size on Windows. */
+	if (hugepage_size != 0)
 		flags |= MEM_LARGE_PAGES;
+
+	base = VirtualAlloc(NULL, size, flags, PAGE_READWRITE);
+	if (base == NULL) {
+		rte_errno = ENOMEM;
+		return NULL;
 	}
 
-	addr = VirtualAlloc(NULL, size, flags, PAGE_READWRITE);
-	if (addr == NULL) {
-		rte_errno = ENOMEM;
+	/* Trigger physical page allocation. */
+	page_size = hugepage_size ? hugepage_size :
+		(size_t)rte_get_page_size();
+	for (offset = 0; offset < size; offset += page_size) {
+		void *addr = (uint8_t *)base + offset;
+		*(volatile int *)addr = *(volatile int *)addr;
 	}
-	return addr;
+
+	return base;
 }
 
 void
-rte_mem_free_virtual(void *virt, size_t size)
+rte_mem_free(void *virt, size_t size)
 {
-	eal_mem_free_virtual(virt, size);
+	eal_mem_free(virt, size, false);
 }
 
 int
@@ -272,91 +369,126 @@ rte_mem_lockall(enum rte_mem_lockall_flags flags)
 
 	/* Indicate lack of platform support per mlockall() specification. */
 	rte_errno = ENOTSUP;
-    return -1;
+	return -1;
+}
+
+int
+rte_mem_protect(void *addr, size_t size, enum rte_mem_prot prot)
+{
+	DWORD sys_prot = 0, old_sys_prot;
+
+	if (prot & RTE_PROT_EXECUTE) {
+		if (prot & RTE_PROT_READ)
+			sys_prot = PAGE_EXECUTE_READ;
+		if (prot & RTE_PROT_WRITE)
+			sys_prot = PAGE_EXECUTE_READWRITE;
+	} else {
+		if (prot & RTE_PROT_READ)
+			sys_prot = PAGE_READONLY;
+		if (prot & RTE_PROT_WRITE)
+			sys_prot = PAGE_READWRITE;
+	}
+	
+	if (!VirtualProtect(addr, size, sys_prot, &old_sys_prot)) {
+		RTE_LOG_SYSTEM_ERROR("VirtualProtect()");
+		rte_errno = EINVAL;
+		return -1;
+	}
+	return 0;
 }
 
 void*
 rte_mem_map(void* requested_addr, size_t size, enum rte_mem_prot prot,
 		enum rte_map_flags flags, int fd, size_t offset)
 {
-    HANDLE file_handle = INVALID_HANDLE_VALUE;
-    HANDLE mapping_handle = INVALID_HANDLE_VALUE;
-    DWORD sys_prot = 0;
-    DWORD sys_access = 0;
-    DWORD size_high = (DWORD)(size >> 32);
-    DWORD size_low = (DWORD)size;
-    DWORD offset_high = (DWORD)(offset >> 32);
-    DWORD offset_low = (DWORD)offset;
-    LPVOID virt = NULL;
+	HANDLE file_handle = INVALID_HANDLE_VALUE;
+	HANDLE mapping_handle = INVALID_HANDLE_VALUE;
+	DWORD sys_prot = 0;
+	DWORD sys_access = 0;
+	DWORD size_high = (DWORD)(size >> 32);
+	DWORD size_low = (DWORD)size;
+	DWORD offset_high = (DWORD)(offset >> 32);
+	DWORD offset_low = (DWORD)offset;
+	LPVOID virt = NULL;
 
-    if (prot & RTE_PROT_READ) {
-        sys_prot = PAGE_READONLY;
-        sys_access = FILE_MAP_READ;
-    }
-    if (prot & RTE_PROT_WRITE) {
-        sys_prot = PAGE_READWRITE;
-        sys_access = FILE_MAP_WRITE;
-    }
+	if (prot & RTE_PROT_EXECUTE) {
+		if (prot & RTE_PROT_READ) {
+			sys_prot = PAGE_EXECUTE_READ;
+			sys_access = FILE_MAP_READ | FILE_MAP_EXECUTE;
+		}
+		if (prot & RTE_PROT_WRITE) {
+			sys_prot = PAGE_EXECUTE_READWRITE;
+			sys_access = FILE_MAP_WRITE | FILE_MAP_EXECUTE;
+		}
+	} else {
+		if (prot & RTE_PROT_READ) {
+			sys_prot = PAGE_READONLY;
+			sys_access = FILE_MAP_READ;
+		}
+		if (prot & RTE_PROT_WRITE) {
+			sys_prot = PAGE_READWRITE;
+			sys_access = FILE_MAP_WRITE;
+		}
+	}
 
-    if (flags & RTE_MAP_PRIVATE) {
-        sys_access |= FILE_MAP_COPY;
-    }
+	if (flags & RTE_MAP_PRIVATE)
+		sys_access |= FILE_MAP_COPY;
 
-    if ((flags & RTE_MAP_ANONYMOUS) == 0) {
-        file_handle = (HANDLE)_get_osfhandle(fd);
-    }
+	if ((flags & RTE_MAP_ANONYMOUS) == 0)
+		file_handle = (HANDLE)_get_osfhandle(fd);
 
-    mapping_handle = CreateFileMapping(
-            file_handle, NULL, sys_prot, size_high, size_low, NULL);
-    if (mapping_handle == INVALID_HANDLE_VALUE) {
-        RTE_LOG_SYSTEM_ERROR("CreateFileMapping()");
-        return NULL;
-    }
+	mapping_handle = CreateFileMapping(
+		file_handle, NULL, sys_prot, size_high, size_low, NULL);
+	if (mapping_handle == INVALID_HANDLE_VALUE) {
+		RTE_LOG_SYSTEM_ERROR("CreateFileMapping()");
+		return NULL;
+	}
 
-    if (requested_addr != NULL) {
-        int ret = eal_mem_free_virtual(requested_addr, size);
+	if (requested_addr != NULL) {
+		int ret = eal_mem_free(requested_addr, size, true);
 		if (ret) {
 			if (ret > 0) {
-				RTE_LOG(ERR, EAL,
-						"Cannot map memory to a region not reserved\n");
+				RTE_LOG(ERR, EAL, "Cannot map memory "
+					"to a region not reserved\n");
 				rte_errno = EADDRNOTAVAIL;
 			}
 			return NULL;
 		}
-    }
+	}
 
-    virt = MapViewOfFileEx(mapping_handle, sys_access,
-            offset_high, offset_low, size, requested_addr);
-    if (!virt) {
-        RTE_LOG_SYSTEM_ERROR("MapViewOfFileEx()");
-        return NULL;
-    }
+	virt = MapViewOfFileEx(mapping_handle, sys_access,
+		offset_high, offset_low, size, requested_addr);
+	if (!virt) {
+		RTE_LOG_SYSTEM_ERROR("MapViewOfFileEx()");
+		return NULL;
+	}
 
-    if ((flags & RTE_MAP_FIXED) && (virt != requested_addr)) {
-        BOOL ret = UnmapViewOfFile(virt);
-        virt = NULL;
-        if (!ret) {
-            RTE_LOG_SYSTEM_ERROR("UnmapViewOfFile()");
-        }
-    }
+	if ((flags & RTE_MAP_FIXED) && (virt != requested_addr)) {
+		BOOL ret = UnmapViewOfFile(virt);
+		virt = NULL;
+		if (!ret) {
+			RTE_LOG_SYSTEM_ERROR("UnmapViewOfFile()");
+		}
+	}
 
-    if (!CloseHandle(mapping_handle)) {
-        RTE_LOG_SYSTEM_ERROR("CloseHandle()");
-    }
+	if (!CloseHandle(mapping_handle)) {
+		RTE_LOG_SYSTEM_ERROR("CloseHandle()");
+	}
 
-    return virt;
+	return virt;
 }
 
 int
-rte_mem_unmap(void* virt, __rte_unused size_t size)
+rte_mem_unmap(void *virt, size_t size)
 {
-    BOOL ret = UnmapViewOfFile(virt);
-    if (!ret) {
-        rte_errno = GetLastError();
-        RTE_LOG_SYSTEM_ERROR("UnmapViewOfFile()");
-        return -1;
-    }
-    return 0;
+	RTE_SET_USED(size);
+
+	if (!UnmapViewOfFile(virt)) {
+		rte_errno = GetLastError();
+		RTE_LOG_SYSTEM_ERROR("UnmapViewOfFile()");
+		return -1;
+	}
+	return 0;
 }
 
 /* Always using physical addresses under Windows. */
@@ -422,9 +554,9 @@ memseg_alloc_va_space(struct rte_memseg_list *msl)
 	addr = eal_get_virtual_area(msl->base_va, &mem_sz, page_sz, 0, 0);
 	if (addr == NULL) {
 		if (rte_errno == EADDRNOTAVAIL)
-			RTE_LOG(ERR, EAL, "Could not mmap %" RTE_PRIzu " bytes at [%p] - "
-				    "please use '--" OPT_BASE_VIRTADDR "' option\n",
-				    mem_sz, msl->base_va);
+			RTE_LOG(ERR, EAL, "Could not mmap %" RTE_PRIzu
+				" bytes at [%p] - use '--" OPT_BASE_VIRTADDR "'"
+				" option\n", mem_sz, msl->base_va);
 		else
 			RTE_LOG(ERR, EAL, "Cannot reserve memory\n");
 		return -1;
@@ -438,8 +570,8 @@ memseg_alloc_va_space(struct rte_memseg_list *msl)
 static int __rte_unused
 memseg_primary_init_32(void)
 {
-    RTE_LOG(ERR, EAL, "%s() not implemented\n", __func__);
-    return -ENOTSUP;
+	EAL_NOT_IMPLEMENTED();
+	return -1;
 }
 
 static int __rte_unused
@@ -983,15 +1115,97 @@ eal_hugepage_init(void)
 	return 0;
 }
 
+static int
+eal_nohuge_init(void)
+{
+	struct rte_mem_config *mcfg;
+	struct rte_memseg_list *msl;
+	int n_segs, cur_seg;
+	uint64_t page_sz;
+	void *addr;
+	struct rte_fbarray *arr;
+	struct rte_memseg *ms;
+
+	mcfg = rte_eal_get_configuration()->mem_config;
+
+	/* nohuge mode is legacy mode */
+	internal_config.legacy_mem = 1;
+
+	/* nohuge mode is single-file segments mode */
+	internal_config.single_file_segments = 1;
+
+	/* create a memseg list */
+	msl = &mcfg->memsegs[0];
+
+	page_sz = RTE_PGSIZE_4K;
+	n_segs = internal_config.memory / page_sz;
+
+	if (rte_fbarray_init(&msl->memseg_arr, "nohugemem", n_segs,
+			sizeof(struct rte_memseg))) {
+		RTE_LOG(ERR, EAL, "Cannot allocate memseg list\n");
+		return -1;
+	}
+
+	addr = rte_mem_alloc(internal_config.memory, 0);
+	if (addr == NULL) {
+		RTE_LOG(ERR, EAL, "Cannot allocate %" RTE_PRIzu " bytes",
+			internal_config.memory);
+		return -1;
+	}
+
+	msl->base_va = addr;
+	msl->page_sz = page_sz;
+	msl->socket_id = 0;
+	msl->len = internal_config.memory;
+	msl->heap = 1;
+
+	/* populate memsegs. each memseg is one page long */
+	for (cur_seg = 0; cur_seg < n_segs; cur_seg++) {
+		arr = &msl->memseg_arr;
+
+		ms = rte_fbarray_get(arr, cur_seg);
+		if (rte_eal_iova_mode() == RTE_IOVA_VA)
+			ms->iova = (uintptr_t)addr;
+		else
+			ms->iova = RTE_BAD_IOVA;
+		ms->addr = addr;
+		ms->hugepage_sz = page_sz;
+		ms->socket_id = 0;
+		ms->len = page_sz;
+
+		rte_fbarray_set_used(arr, cur_seg);
+
+		addr = RTE_PTR_ADD(addr, (size_t)page_sz);
+	}
+
+	if (mcfg->dma_maskbits &&
+		rte_mem_check_dma_mask_thread_unsafe(mcfg->dma_maskbits)) {
+		RTE_LOG(ERR, EAL,
+			"%s(): couldn't allocate memory due to IOVA "
+			"exceeding limits of current DMA mask.\n",
+			__func__);
+		if (rte_eal_iova_mode() == RTE_IOVA_VA &&
+			rte_eal_using_phys_addrs())
+			RTE_LOG(ERR, EAL,
+				"%s(): Please try initializing EAL with "
+				"--iova-mode=pa parameter.\n",
+				__func__);
+		return -1;
+	}
+
+	return 0;
+}
+
 int
 rte_eal_hugepage_init(void)
 {
-    return eal_hugepage_init();
+	return internal_config.no_hugetlbfs ?
+		eal_nohuge_init() : eal_hugepage_init();
 }
 
 int
 rte_eal_hugepage_attach(void)
 {
-    RTE_LOG(ERR, EAL, "%s() not implemented\n", __func__);
-    return -ENOTSUP;
+	EAL_NOT_IMPLEMENTED();
+	return -1;
 }

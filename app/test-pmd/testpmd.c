@@ -729,7 +729,7 @@ fail:
 	if (iovas)
 		free(iovas);
 	if (addr)
-		rte_mem_free_virtual(addr, mem_sz);
+		rte_mem_free(addr, mem_sz);
 
 	return -1;
 }
@@ -771,7 +771,7 @@ setup_extmem(uint32_t nb_mbufs, uint32_t mbuf_sz, bool huge)
 
 	if (ret < 0) {
 		TESTPMD_LOG(ERR, "Cannot add memory to heap\n");
-		rte_mem_free_virtual(param.addr, param.len);
+		rte_mem_free(param.addr, param.len);
 		return -1;
 	}
 

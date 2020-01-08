@@ -439,7 +439,7 @@ static int
 install_to_dp(struct rte_trie_tbl *dp, const uint8_t *ledge, const uint8_t *r,
 	uint64_t next_hop)
 {
-	void *common_root_tbl;
+	void *common_root_tbl = NULL;
 	void *ent;
 	int ret;
 	int i;

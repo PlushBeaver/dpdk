@@ -301,6 +301,11 @@ reset_count(void)
 	idle = 0;
 }
 
+/* Windows does not support USR1 and USR2.
+ * TODO: implement some Windows-specific way to force stop and query stats.
+ */
+#ifndef RTE_EXEC_ENV_WINDOWS
+
 static void
 stats_display(uint16_t port_id)
 {
@@ -330,6 +335,8 @@ signal_handler(int signum)
 	if (signum == SIGUSR2)
 		stats_display(0);
 }
+
+#endif /* Windows */
 
 struct rte_mbuf **tx_burst;
 
@@ -674,8 +681,10 @@ test_pmd_perf(void)
 
 	printf("Start PMD RXTX cycles cost test.\n");
 
+#ifndef RTE_EXEC_ENV_WINDOWS
 	signal(SIGUSR1, signal_handler);
 	signal(SIGUSR2, signal_handler);
+#endif
 
 	nb_ports = rte_eth_dev_count_avail();
 	if (nb_ports < NB_ETHPORTS_USED) {

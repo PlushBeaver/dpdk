@@ -11,6 +11,7 @@
 
 #include <rte_common.h>
 #include <rte_eal.h>
+#include <rte_memory.h>
 
 #include "bpf_impl.h"
 
@@ -21,8 +22,8 @@ rte_bpf_destroy(struct rte_bpf *bpf)
 {
 	if (bpf != NULL) {
 		if (bpf->jit.func != NULL)
-			munmap(bpf->jit.func, bpf->jit.sz);
-		munmap(bpf, bpf->sz);
+			rte_mem_unmap(bpf->jit.func, bpf->jit.sz);
+		rte_mem_unmap(bpf, bpf->sz);
 	}
 }
 

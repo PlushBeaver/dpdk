@@ -5,7 +5,8 @@ if not get_option('tests')
 	subdir_done()
 endif
 
-test_sources = files('commands.c',
+test_sources = [
+	'commands.c',
 	'packet_burst_generator.c',
 	'sample_packet_forward.c',
 	'test.c',
@@ -32,20 +33,12 @@ test_sources = files('commands.c',
 	'test_cryptodev_blockcipher.c',
 	'test_cryptodev_security_pdcp.c',
 	'test_cycles.c',
-	'test_debug.c',
 	'test_distributor.c',
 	'test_distributor_perf.c',
 	'test_eal_flags.c',
-	'test_eal_fs.c',
 	'test_efd.c',
 	'test_efd_perf.c',
 	'test_errno.c',
-	'test_event_crypto_adapter.c',
-	'test_event_eth_rx_adapter.c',
-	'test_event_ring.c',
-	'test_event_eth_tx_adapter.c',
-	'test_event_timer_adapter.c',
-	'test_eventdev.c',
 	'test_external_mem.c',
 	'test_fbarray.c',
 	'test_fib.c',
@@ -53,7 +46,6 @@ test_sources = files('commands.c',
 	'test_fib6.c',
 	'test_fib6_perf.c',
 	'test_func_reentrancy.c',
-	'test_flow_classify.c',
 	'test_hash.c',
 	'test_hash_functions.c',
 	'test_hash_multiwriter.c',
@@ -63,7 +55,6 @@ test_sources = files('commands.c',
 	'test_interrupts.c',
 	'test_ipsec.c',
 	'test_ipsec_sad.c',
-	'test_kni.c',
 	'test_kvargs.c',
 	'test_latencystats.c',
 	'test_link_bonding.c',
@@ -87,7 +78,6 @@ test_sources = files('commands.c',
 	'test_meter.c',
 	'test_metrics.c',
 	'test_mcslock.c',
-	'test_mp_secondary.c',
 	'test_pdump.c',
 	'test_per_lcore.c',
 	'test_pmd_perf.c',
@@ -116,22 +106,12 @@ test_sources = files('commands.c',
 	'test_stack.c',
 	'test_stack_perf.c',
 	'test_string_fns.c',
-	'test_table.c',
-	'test_table_acl.c',
-	'test_table_combined.c',
-	'test_table_pipeline.c',
-	'test_table_ports.c',
-	'test_table_tables.c',
 	'test_tailq.c',
 	'test_thash.c',
-	'test_timer.c',
-	'test_timer_perf.c',
-	'test_timer_racecond.c',
-	'test_timer_secondary.c',
 	'test_ticketlock.c',
 	'test_version.c',
 	'virtual_pmd.c'
-)
+]
 
 test_deps = ['acl',
 	'bitratestats',
@@ -142,25 +122,76 @@ test_deps = ['acl',
 	'distributor',
 	'efd',
 	'ethdev',
-	'eventdev',
 	'fib',
-	'flow_classify',
 	'hash',
 	'ipsec',
 	'latencystats',
 	'lpm',
 	'member',
 	'metrics',
-	'pipeline',
-	'port',
 	'rawdev',
 	'rcu',
 	'reorder',
 	'rib',
 	'ring',
 	'stack',
-	'timer'
 ]
+
+if not is_windows
+	test_sources += [
+		# Death tests not implemented for Windows.
+		'test_debug.c',
+		# Multiprocess support not implemented in Windows.
+		'test_mp_secondary.c',
+		# Tests access to sysfs, which doesn't exist in Windows.
+		'test_eal_fs.c',
+	]
+endif
+
+if dpdk_conf.has('RTE_LIBRTE_TABLE')
+	test_deps += [
+		'port',
+		'table',
+		'timer',
+	]
+	test_sources += [
+		'test_table.c',
+		'test_table_combined.c',
+		'test_table_ports.c',
+		'test_table_tables.c',
+	]
+	if dpdk_conf.has('RTE_LIBRTE_PIPELINE')
+		test_deps += 'pipeline'
+		test_sources += 'test_table_pipeline.c'
+	endif
+endif
+
+if dpdk_conf.has('RTE_LIBRTE_EVENTDEV')
+	test_deps += 'eventdev'
+	test_sources += [
+		'test_event_crypto_adapter.c',
+		'test_event_eth_rx_adapter.c',
+		'test_event_ring.c',
+		'test_event_eth_tx_adapter.c',
+		'test_event_timer_adapter.c',
+		'test_eventdev.c',
+	]
+
+	if dpdk_conf.has('RTE_LIBRTE_FLOW_TIMER')
+		test_deps += 'timer'
+		test_sources += [
+			'test_timer.c',
+			'test_timer_perf.c',
+			'test_timer_racecond.c',
+			'test_timer_secondary.c',
+		]
+	endif
+endif
+
+if dpdk_conf.has('RTE_LIBRTE_FLOW_CLASSIFY')
+	test_deps += 'flow_classify'
+	test_sources += 'test_flow_classify.c'
+endif
 
 fast_test_names = [
         'acl_autotest',
@@ -345,6 +376,7 @@ if dpdk_conf.has('RTE_LIBRTE_POWER')
 	test_deps += 'power'
 endif
 if dpdk_conf.has('RTE_LIBRTE_KNI')
+	test_sources += 'test_kni.c'
 	test_deps += 'kni'
 endif
 if dpdk_conf.has('RTE_LIBRTE_PDUMP')

@@ -805,7 +805,7 @@ rte_fpga_do_pr(struct rte_rawdev *rawdev, int port_id,
 		goto close_fd;
 	}
 
-	IFPGA_RAWDEV_PMD_INFO("bitstream file size: %zu\n", buffer_size);
+	IFPGA_RAWDEV_PMD_INFO("bitstream file size: %" RTE_PRIzu "\n", buffer_size);
 	buffer = rte_malloc(NULL, buffer_size, 0);
 	if (!buffer) {
 		ret = -ENOMEM;

@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <termios.h>
 #include <ctype.h>
 #include <sys/queue.h>
 
@@ -19,6 +18,12 @@
 #include <cmdline.h>
 
 #include "test_cmdline.h"
+
+#ifndef RTE_EXEC_ENV_WINDOWS
+#define DEVNULL "/dev/null"
+#else
+#define DEVNULL "NUL"
+#endif
 
 /****************************************************************/
 /* static functions required for some tests */
@@ -44,28 +49,39 @@ complete_buffer(__attribute__((unused)) struct rdline *rdl,
 static int
 test_cmdline_parse_fns(void)
 {
-	struct cmdline cl;
+	cmdline_parse_ctx_t ctx;
+	struct cmdline *cl = NULL;
 	int i = 0;
 	char dst[CMDLINE_TEST_BUFSIZE];
 
+	memset(&ctx, 0, sizeof(ctx));
+	cl = cmdline_stdin_new(&ctx, "prompt");
+	if (cl == NULL) {
+		printf("Error: cannot create cmdline object\n");
+		return -1;
+	}
+
 	if (cmdline_parse(NULL, "buffer") >= 0)
 		goto error;
-	if (cmdline_parse(&cl, NULL) >= 0)
+	if (cmdline_parse(cl, NULL) >= 0)
 		goto error;
 
 	if (cmdline_complete(NULL, "buffer", &i, dst, sizeof(dst)) >= 0)
 		goto error;
-	if (cmdline_complete(&cl, NULL, &i, dst, sizeof(dst)) >= 0)
+	if (cmdline_complete(cl, NULL, &i, dst, sizeof(dst)) >= 0)
 		goto error;
-	if (cmdline_complete(&cl, "buffer", NULL, dst, sizeof(dst)) >= 0)
+	if (cmdline_complete(cl, "buffer", NULL, dst, sizeof(dst)) >= 0)
 		goto error;
-	if (cmdline_complete(&cl, "buffer", &i, NULL, sizeof(dst)) >= 0)
+	if (cmdline_complete(cl, "buffer", &i, NULL, sizeof(dst)) >= 0)
 		goto error;
 
 	return 0;
 
 error:
 	printf("Error: function accepted null parameter!\n");
+	if (cl != NULL) {
+		cmdline_free(cl);
+	}
 	return -1;
 }
 
@@ -136,9 +152,9 @@ test_cmdline_socket_fns(void)
 		goto error;
 	if (cmdline_stdin_new(&ctx, NULL) != NULL)
 		goto error;
-	if (cmdline_file_new(NULL, "prompt", "/dev/null") != NULL)
+	if (cmdline_file_new(NULL, "prompt", DEVNULL) != NULL)
 		goto error;
-	if (cmdline_file_new(&ctx, NULL, "/dev/null") != NULL)
+	if (cmdline_file_new(&ctx, NULL, DEVNULL) != NULL)
 		goto error;
 	if (cmdline_file_new(&ctx, "prompt", NULL) != NULL)
 		goto error;
@@ -146,8 +162,8 @@ test_cmdline_socket_fns(void)
 		printf("Error: succeeded in opening invalid file for reading!");
 		return -1;
 	}
-	if (cmdline_file_new(&ctx, "prompt", "/dev/null") == NULL) {
-		printf("Error: failed to open /dev/null for reading!");
+	if (cmdline_file_new(&ctx, "prompt", DEVNULL) == NULL) {
+		printf("Error: failed to open %s for reading!", DEVNULL);
 		return -1;
 	}
 
@@ -164,11 +180,11 @@ static int
 test_cmdline_fns(void)
 {
 	cmdline_parse_ctx_t ctx;
-	struct cmdline cl, *tmp;
+	struct cmdline *cl;
 
 	memset(&ctx, 0, sizeof(ctx));
-	tmp = cmdline_new(&ctx, "test", -1, -1);
-	if (tmp == NULL)
+	cl = cmdline_new(&ctx, "test", -1, -1);
+	if (cl == NULL)
 		goto error;
 
 	if (cmdline_new(NULL, "prompt", 0, 0) != NULL)
@@ -176,8 +192,6 @@ test_cmdline_fns(void)
 	if (cmdline_new(&ctx, NULL, 0, 0) != NULL)
 		goto error;
 	if (cmdline_in(NULL, "buffer", CMDLINE_TEST_BUFSIZE) >= 0)
-		goto error;
-	if (cmdline_in(&cl, NULL, CMDLINE_TEST_BUFSIZE) >= 0)
 		goto error;
 	if (cmdline_write_char(NULL, 0) >= 0)
 		goto error;
@@ -187,29 +201,16 @@ test_cmdline_fns(void)
 	cmdline_free(NULL);
 	cmdline_printf(NULL, "format");
 	/* this should fail as stream handles are invalid */
-	cmdline_printf(tmp, "format");
+	cmdline_printf(cl, "format");
 	cmdline_interact(NULL);
 	cmdline_quit(NULL);
 
-	/* check if void calls change anything when they should fail */
-	cl = *tmp;
-
-	cmdline_printf(&cl, NULL);
-	if (memcmp(&cl, tmp, sizeof(cl))) goto mismatch;
-	cmdline_set_prompt(&cl, NULL);
-	if (memcmp(&cl, tmp, sizeof(cl))) goto mismatch;
-	cmdline_in(&cl, NULL, CMDLINE_TEST_BUFSIZE);
-	if (memcmp(&cl, tmp, sizeof(cl))) goto mismatch;
-
-	cmdline_free(tmp);
+	cmdline_free(cl);
 
 	return 0;
 
 error:
 	printf("Error: function accepted null parameter!\n");
-	return -1;
-mismatch:
-	printf("Error: data changed!\n");
 	return -1;
 }
 

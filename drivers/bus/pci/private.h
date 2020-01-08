@@ -81,6 +81,40 @@ void rte_pci_insert_device(struct rte_pci_device *exist_pci_dev,
 int pci_update_device(const struct rte_pci_addr *addr);
 
 /**
+ * Map a particular resource from a file.
+ *
+ * This function is private to EAL.
+ *
+ * @param requested_addr
+ *      The starting address for the new mapping range.
+ * @param fd
+ *      The file descriptor.
+ * @param offset
+ *      The offset for the mapping range.
+ * @param size
+ *      The size for the mapping range.
+ * @param additional_flags
+ *      The additional flags for the mapping range.
+ * @return
+ *   - On success, the function returns a pointer to the mapped area.
+ *   - On error, the value MAP_FAILED is returned.
+ */
+void *pci_map_resource(void *requested_addr, int fd, off_t offset,
+		size_t size, int additional_flags);
+
+/**
+ * Unmap a particular resource.
+ *
+ * This function is private to EAL.
+ *
+ * @param requested_addr
+ *      The address for the unmapping range.
+ * @param size
+ *      The size for the unmapping range.
+ */
+void pci_unmap_resource(void *requested_addr, size_t size);
+
+/**
  * Map the PCI resource of a PCI device in virtual memory
  *
  * This function is private to EAL.

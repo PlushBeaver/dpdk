@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
 #include <inttypes.h>
 #include <sys/socket.h>

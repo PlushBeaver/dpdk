@@ -726,7 +726,7 @@ ecore_mcp_cmd_and_union(struct ecore_hwfn *p_hwfn,
 	if (p_mb_params->data_src_size > union_data_size ||
 	    p_mb_params->data_dst_size > union_data_size) {
 		DP_ERR(p_hwfn,
-		       "The provided size is larger than the union data size [src_size %u, dst_size %u, union_data_size %zu]\n",
+		       "The provided size is larger than the union data size [src_size %u, dst_size %u, union_data_size %" RTE_PRIzu "]\n",
 		       p_mb_params->data_src_size, p_mb_params->data_dst_size,
 		       union_data_size);
 		return ECORE_INVAL;

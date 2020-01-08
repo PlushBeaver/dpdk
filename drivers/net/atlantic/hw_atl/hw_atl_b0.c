@@ -124,7 +124,7 @@ int hw_atl_b0_hw_rss_hash_set(struct aq_hw_s *self,
 
 	for (i = 10, addr = 0U; i--; ++addr) {
 		u32 key_data = cfg->is_rss ?
-			htonl(rss_params->hash_secret_key[i]) : 0U;
+			rte_cpu_to_be_32(rss_params->hash_secret_key[i]) : 0U;
 		hw_atl_rpf_rss_key_wr_data_set(self, key_data);
 		hw_atl_rpf_rss_key_addr_set(self, addr);
 		hw_atl_rpf_rss_key_wr_en_set(self, 1U);

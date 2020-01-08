@@ -1272,7 +1272,7 @@ ipsec_satbl_init(struct sa_ctx *ctx, const struct ipsec_sa *ent,
 	ctx->satbl = rte_zmalloc_socket(NULL, tsz, RTE_CACHE_LINE_SIZE, socket);
 	if (ctx->satbl == NULL) {
 		RTE_LOG(ERR, IPSEC,
-			"%s(%p, %u, %d): failed to allocate %zu bytes\n",
+			"%s(%p, %u, %d): failed to allocate %" RTE_PRIzu " bytes\n",
 			__func__,  ctx, nb_ent, socket, tsz);
 		return -ENOMEM;
 	}

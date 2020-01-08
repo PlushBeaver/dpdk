@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
-// #include <termios.h>
 #include <ctype.h>
 
 #ifdef RTE_LIBRTE_CMDLINE
@@ -51,7 +50,9 @@ do_recursive_call(void)
 		const char *env_var;
 		int (*action_fn)(void);
 	} actions[] =  {
+#ifndef RTE_EXEC_ENV_WINDOWS
 			{ "run_secondary_instances", test_mp_secondary },
+#endif
 #ifdef RTE_LIBRTE_PDUMP
 			{ "run_pdump_server_tests", test_pdump },
 #endif

@@ -120,7 +120,7 @@ static int test_lru_update(void)
 	}
 	uint64_t sc_end = rte_rdtsc();
 
-	printf("%s: output checksum of results =%llu\n",
+	printf("%s: output checksum of results =%" RTE_PRIllu "\n",
 		__func__, (long long unsigned int)pos);
 	printf("%s: start=%016"PRIx64", end=%016"PRIx64"\n",
 		__func__, sc_start, sc_end);

@@ -196,8 +196,8 @@ hinic_dma_mem_free(struct hinic_hwdev *hwdev, size_t size,
 
 	if (virt != mz->addr || size > mz->len) {
 		PMD_DRV_LOG(ERR, "Match mz_info failed: "
-			"mz.name: %s, mz.phys: %p, mz.virt: %p, mz.len: %zu, "
-			"phys: %p, virt: %p, size: %zu",
+			"mz.name: %s, mz.phys: %p, mz.virt: %p, mz.len: %" RTE_PRIzu ", "
+			"phys: %p, virt: %p, size: %" RTE_PRIzu "",
 			mz->name, (void *)mz->iova, mz->addr, mz->len,
 			(void *)phys, virt, size);
 	}
@@ -259,8 +259,8 @@ void dma_free_coherent_volatile(void *hwdev, size_t size,
 
 	if (virt != mz->addr || size > mz->len) {
 		PMD_DRV_LOG(ERR, "Match mz_info failed: "
-			"mz.name:%s, mz.phys:%p, mz.virt:%p, mz.len:%zu, "
-			"phys:%p, virt:%p, size:%zu",
+			"mz.name:%s, mz.phys:%p, mz.virt:%p, mz.len:%" RTE_PRIzu ", "
+			"phys:%p, virt:%p, size:%" RTE_PRIzu "",
 			mz->name, (void *)mz->iova, mz->addr, mz->len,
 			(void *)phys, virt, size);
 	}
@@ -1052,7 +1052,7 @@ hinic_show_sw_watchdog_timeout_info(void *buf_in, u16 in_size,
 	u32 *dump_addr, *reg, stack_len, i, j;
 
 	if (in_size != sizeof(*watchdog_info)) {
-		PMD_DRV_LOG(ERR, "Invalid mgmt watchdog report, length: %d, should be %zu",
+		PMD_DRV_LOG(ERR, "Invalid mgmt watchdog report, length: %d, should be %" RTE_PRIzu "",
 			in_size, sizeof(*watchdog_info));
 		return;
 	}
@@ -1122,7 +1122,7 @@ static void hinic_show_pcie_dfx_info(struct hinic_hwdev *hwdev,
 	u32 *reg;
 
 	if (in_size != sizeof(*notice_info)) {
-		PMD_DRV_LOG(ERR, "Invalid pcie dfx notice info, length: %d, should be %zu.",
+		PMD_DRV_LOG(ERR, "Invalid pcie dfx notice info, length: %d, should be %" RTE_PRIzu ".",
 			in_size, sizeof(*notice_info));
 		return;
 	}
@@ -1169,7 +1169,7 @@ hinic_show_ffm_info(struct hinic_hwdev *hwdev, void *buf_in, u16 in_size)
 	struct ffm_intr_info *intr;
 
 	if (in_size != sizeof(struct ffm_intr_info)) {
-		PMD_DRV_LOG(ERR, "Invalid input buffer len, length: %d, should be %zu.",
+		PMD_DRV_LOG(ERR, "Invalid input buffer len, length: %d, should be %" RTE_PRIzu ".",
 			in_size, sizeof(struct ffm_intr_info));
 		return;
 	}
@@ -1200,7 +1200,7 @@ void hinic_comm_async_event_handle(struct hinic_hwdev *hwdev, u8 cmd,
 	switch (cmd) {
 	case HINIC_MGMT_CMD_FAULT_REPORT:
 		if (in_size != sizeof(*fault_event)) {
-			PMD_DRV_LOG(ERR, "Invalid fault event report, length: %d, should be %zu",
+			PMD_DRV_LOG(ERR, "Invalid fault event report, length: %d, should be %" RTE_PRIzu "",
 				in_size, sizeof(*fault_event));
 			return;
 		}
@@ -1462,7 +1462,7 @@ static void hinic_print_hilink_info(void *buf_in, u16 in_size,
 	enum hilink_info_print_event type;
 
 	if (in_size != sizeof(*hilink_info)) {
-		PMD_DRV_LOG(ERR, "Invalid hilink info message size %d, should be %zu",
+		PMD_DRV_LOG(ERR, "Invalid hilink info message size %d, should be %" RTE_PRIzu "",
 			in_size, sizeof(*hilink_info));
 		return;
 	}

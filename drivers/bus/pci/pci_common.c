@@ -77,6 +77,35 @@ pci_name_set(struct rte_pci_device *dev)
 		dev->device.name = dev->name;
 }
 
+void *
+pci_map_resource(void *requested_addr, int fd, off_t offset, size_t size,
+		 int additional_flags)
+{
+	void *mapaddr = NULL;
+
+	/* Map the PCI memory resource of device */
+	mapaddr = rte_mem_map(requested_addr, size, RTE_PROT_READ | RTE_PROT_WRITE,
+			RTE_MAP_SHARED | additional_flags, fd, offset);
+	if (mapaddr) {
+		RTE_LOG(DEBUG, EAL, "  PCI memory mapped at %p\n", mapaddr);
+	}
+
+	return mapaddr;
+}
+
+void
+pci_unmap_resource(void *requested_addr, size_t size)
+{
+	if (requested_addr == NULL)
+		return;
+
+	/* Unmap the PCI memory resource of device */
+	if (!rte_mem_unmap(requested_addr, size)) {
+		RTE_LOG(DEBUG, EAL, "  PCI memory unmapped at %p\n",
+				requested_addr);
+	}
+}
+
 /*
  * Match the PCI Driver and Device using the ID Table
  */

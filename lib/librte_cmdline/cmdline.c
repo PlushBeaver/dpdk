@@ -12,11 +12,13 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <termios.h>
 #include <netinet/in.h>
 
 #ifndef RTE_EXEC_ENV_WINDOWS
 #include <poll.h>
+#include <termios.h>
+#else
+#include <rte_windows.h>
 #endif
 
 #include <rte_string_fns.h>
@@ -187,7 +189,11 @@ cmdline_quit(struct cmdline *cl)
 	rdline_quit(&cl->rdl);
 }
 
-#ifdef RTE_EXEC_ENV_WINDOWS
+/* Checks if a single character can be read from input. */
+static int cmdline_poll_char(struct cmdline *cl);
+
+/* Reads one character from input. */
+static ssize_t cmdline_read_char(struct cmdline *cl, char *c);
 
 int
 cmdline_poll(struct cmdline *cl)
@@ -201,42 +207,12 @@ cmdline_poll(struct cmdline *cl)
 	else if (cl->rdl.status == RDLINE_EXITED)
 		return RDLINE_EXITED;
 
-	read_status = read(cl->s_in, &c, 1);
-	if (read_status < 0)
-		return read_status;
-
-	status = cmdline_in(cl, &c, 1);
-	if (status < 0 && cl->rdl.status != RDLINE_EXITED)
-		return status;
-
-	return cl->rdl.status;
-}
-
-#else
-
-int
-cmdline_poll(struct cmdline *cl)
-{
-	struct pollfd pfd;
-	int status;
-	ssize_t read_status;
-	char c;
-
-	if (!cl)
-		return -EINVAL;
-	else if (cl->rdl.status == RDLINE_EXITED)
-		return RDLINE_EXITED;
-
-	pfd.fd = cl->s_in;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-
-	status = poll(&pfd, 1, 0);
+	status = cmdline_poll_char(cl);
 	if (status < 0)
 		return status;
 	else if (status > 0) {
 		c = -1;
-		read_status = read(cl->s_in, &c, 1);
+		read_status = cmdline_read_char(cl, &c);
 		if (read_status < 0)
 			return read_status;
 
@@ -248,8 +224,6 @@ cmdline_poll(struct cmdline *cl)
 	return cl->rdl.status;
 }
 
-#endif /* !RTE_EXEC_ENV_WINDOWS */
-
 void
 cmdline_interact(struct cmdline *cl)
 {
@@ -260,9 +234,148 @@ cmdline_interact(struct cmdline *cl)
 
 	c = -1;
 	while (1) {
-		if (read(cl->s_in, &c, 1) <= 0)
+		if (cmdline_read_char(cl, &c) <= 0)
 			break;
 		if (cmdline_in(cl, &c, 1) < 0)
 			break;
 	}
 }
+
+#ifndef RTE_EXEC_ENV_WINDOWS
+
+static int
+cmdline_poll_char(struct cmdline *cl)
+{
+	struct pollfd pfd;
+
+	pfd.fd = cl->s_in;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	return poll(&pfd, 1, 0);
+}
+
+static ssize_t
+cmdline_read_char(struct cmdline *cl, char *c)
+{
+	return read(cl->s_in, c, 1);
+}
+
+#else /* POSIX */
+
+static int
+cmdline_is_key_down(const INPUT_RECORD* record) {
+	return (record->EventType == KEY_EVENT) &&
+		record->Event.KeyEvent.bKeyDown;
+}
+
+static int
+cmdline_poll_char_console(HANDLE handle)
+{
+	INPUT_RECORD record;
+	DWORD events;
+
+	if (!PeekConsoleInput(handle, &record, 1, &events)) {
+		/* Simulate poll(3) behavior on EOF. */
+		if (GetLastError() == ERROR_HANDLE_EOF)
+			return 0;
+
+		errno = EIO;
+		return -1;
+	}
+	
+	if ((events == 0) || !cmdline_is_key_down(&record)) {
+		errno = EAGAIN;
+		return 0;
+	}
+	return 1;
+}
+
+static int
+cmdline_poll_char_file(HANDLE handle)
+{
+	char dummy;
+	DWORD bytes_read;
+	OVERLAPPED overlapped;
+
+	ZeroMemory(&overlapped, sizeof(overlapped));
+	if (!ReadFile(handle, &dummy, 0, NULL, &overlapped)) {
+		switch (GetLastError()) {
+		case ERROR_INSUFFICIENT_BUFFER:
+			/* Operation completed immediately. */
+			return 1;
+		case ERROR_IO_PENDING:
+			/* Asynchronous operation started. */
+			break;
+		default:
+			/* Failed to start an asynchronous operation. */
+			errno = EIO;
+			return -1;
+		}
+	}
+
+	if (GetOverlappedResult(
+		/* Operation completed, result does not matter. */
+		handle, &overlapped, &bytes_read, FALSE)) {
+		return 1;
+	}
+
+	CancelIo(handle);
+
+	/* Simulate poll(3) behavior with zero timeout. */
+	errno = EAGAIN;
+	return 0;
+}
+
+static int
+cmdline_poll_char(struct cmdline *cl)
+{
+	HANDLE handle = (HANDLE)_get_osfhandle(cl->s_in);
+	return cl->oldterm.is_console ?
+		cmdline_poll_char_console(handle) :
+		cmdline_poll_char_file(handle);
+}
+
+static ssize_t
+cmdline_read_char(struct cmdline *cl, char *c)
+{
+	HANDLE handle;
+	INPUT_RECORD record;
+	KEY_EVENT_RECORD *key;
+    	DWORD events;
+
+	if (!cl->oldterm.is_console)
+		return read(cl->s_in, c, 1);
+
+	/* Return repeated strokes from previous event. */
+	if (cl->repeat_count > 0) {
+		*c = cl->repeated_char;
+		cl->repeat_count--;
+		return 1;
+	}
+
+	handle = (HANDLE)_get_osfhandle(cl->s_in);
+	key = &record.Event.KeyEvent;
+	do {
+		if (!ReadConsoleInput(handle, &record, 1, &events)) {
+			if (GetLastError() == ERROR_HANDLE_EOF)
+				return 0;
+
+			errno = EIO;
+			return -1;
+		}
+		// printf("down=%u count=%u\n", key->bKeyDown, key->wRepeatCount);
+	} while (!cmdline_is_key_down(&record));
+
+	*c = key->uChar.AsciiChar;
+
+	/* Save repeated strokes from a single event. */
+	if (key->wRepeatCount > 1) {
+		cl->repeated_char = *c;
+		cl->repeat_count = key->wRepeatCount - 1;
+	}
+
+	return 1;
+}
+
+#endif /* Windows */

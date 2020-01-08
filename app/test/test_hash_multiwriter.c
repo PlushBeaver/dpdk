@@ -237,11 +237,11 @@ test_hash_multiwriter(void)
 
 	printf("No key corrupted during multiwriter insertion.\n");
 
-	unsigned long long int cycles_per_insertion =
+    unsigned long long int cycles_per_insertion =
 		rte_atomic64_read(&gcycles)/
 		rte_atomic64_read(&ginsertions);
 
-	printf(" cycles per insertion: %llu\n", cycles_per_insertion);
+	printf(" cycles per insertion: %" RTE_PRIllu "\n", cycles_per_insertion);
 
 	rte_free(tbl_multiwriter_test_params.found);
 	rte_free(tbl_multiwriter_test_params.keys);

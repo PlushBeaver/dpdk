@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2017 Intel Corporation
 
+if is_windows
+	build = false
+	reason = 'not supported on Windows'
+endif
+
 allow_experimental_apis = true
 sources = files('rte_bbdev.c')
 headers = files('rte_bbdev.h',

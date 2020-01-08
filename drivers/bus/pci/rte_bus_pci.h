@@ -21,6 +21,7 @@ extern "C" {
 #include <limits.h>
 #include <errno.h>
 #include <sys/queue.h>
+#include <sys/types.h>
 #include <stdint.h>
 #include <inttypes.h>
 

@@ -22,7 +22,7 @@ module_set_last_error(void)
 
 rte_module
 rte_module_load(const char* path, enum rte_module_binding binding) {
-    wchar_t sys_path[RTE_PATH_MAX];
+    wchar_t sys_path[PATH_MAX];
     HANDLE module;
 
     RTE_SET_USED(binding);
@@ -40,6 +40,16 @@ rte_module_load(const char* path, enum rte_module_binding binding) {
         module_set_last_error();
     }
     return module;
+}
+
+void*
+rte_module_symbol(rte_module module, const char* name)
+{
+    void *symbol = GetProcAddress(module, name);
+    if (symbol == NULL) {
+        module_set_last_error();
+    }
+    return symbol;
 }
 
 const char*

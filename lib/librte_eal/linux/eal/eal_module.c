@@ -25,6 +25,12 @@ rte_module_load(const char* path, enum rte_module_binding binding)
     return dlopen(path, sys_flags);
 }
 
+void*
+rte_module_symbol(rte_module module, const char* name)
+{
+    return dlsym(module, name);
+}
+
 const char*
 rte_module_error(void)
 {

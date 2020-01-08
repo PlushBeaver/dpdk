@@ -1008,7 +1008,7 @@ xstats_tests(struct test *t)
 	};
 	if (ret != RTE_DIM(port_expected)) {
 		printf(
-			"%s %d: wrong number of port stats (%d), expected %zu\n",
+			"%s %d: wrong number of port stats (%d), expected %" RTE_PRIzu "\n",
 			__func__, __LINE__, ret, RTE_DIM(port_expected));
 	}
 

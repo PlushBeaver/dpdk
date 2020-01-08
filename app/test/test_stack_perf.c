@@ -121,7 +121,7 @@ test_empty_pop(struct rte_stack *s)
 
 	uint64_t end = rte_rdtsc();
 
-	printf("Stack empty pop: %.2F\n",
+	printf("Stack empty pop: %.2" RTE_PRIF "\n",
 	       (double)(end - start) / iterations);
 }
 
@@ -191,8 +191,9 @@ run_on_core_pair(struct lcore_pair *cores, struct rte_stack *s,
 			rte_eal_wait_lcore(cores->c2);
 		}
 
-		printf("Average cycles per object push/pop (bulk size: %u): %.2F\n",
-		       bulk_sizes[i], (args[0].avg + args[1].avg) / 2);
+		printf("Average cycles per object push/pop (bulk size: %u): "
+				"%.2" RTE_PRIF "\n",
+				bulk_sizes[i], (args[0].avg + args[1].avg) / 2);
 	}
 }
 
@@ -241,8 +242,8 @@ run_on_n_cores(struct rte_stack *s, lcore_function_t fn, int n)
 			avg += args[lcore_id].avg;
 		}
 
-		printf("Average cycles per object push/pop (bulk size: %u): %.2F\n",
-		       bulk_sizes[i], avg / n);
+		printf("Average cycles per object push/pop (bulk size: %u): "
+				"%.2" RTE_PRIF "\n", bulk_sizes[i], avg / n);
 	}
 }
 
@@ -266,7 +267,7 @@ test_single_push_pop(struct rte_stack *s)
 
 	uint64_t end = rte_rdtsc();
 
-	printf("Average cycles per single object push/pop: %.2F\n",
+	printf("Average cycles per single object push/pop: %.2" RTE_PRIF "\n",
 	       ((double)(end - start)) / iterations);
 }
 
@@ -291,8 +292,8 @@ test_bulk_push_pop(struct rte_stack *s)
 		double avg = ((double)(end - start) /
 			      (iterations * bulk_sizes[sz]));
 
-		printf("Average cycles per object push/pop (bulk size: %u): %.2F\n",
-		       bulk_sizes[sz], avg);
+		printf("Average cycles per object push/pop (bulk size: %u): "
+				"%.2" RTE_PRIF "\n", bulk_sizes[sz], avg);
 	}
 }
 

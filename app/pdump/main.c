@@ -201,14 +201,18 @@ parse_rxtxdev(const char *key, const char *value, void *extra_args)
 
 	if (!strcmp(key, PDUMP_RX_DEV_ARG)) {
 		strlcpy(pt->rx_dev, value, sizeof(pt->rx_dev));
+#ifndef RTE_EXEC_ENV_WINDOWS
 		/* identify the tx stream type for pcap vdev */
 		if (if_nametoindex(pt->rx_dev))
 			pt->rx_vdev_stream_type = IFACE;
+#endif
 	} else if (!strcmp(key, PDUMP_TX_DEV_ARG)) {
 		strlcpy(pt->tx_dev, value, sizeof(pt->tx_dev));
+#ifndef RTE_EXEC_ENV_WINDOWS
 		/* identify the tx stream type for pcap vdev */
 		if (if_nametoindex(pt->tx_dev))
 			pt->tx_vdev_stream_type = IFACE;
+#endif
 	}
 
 	return 0;

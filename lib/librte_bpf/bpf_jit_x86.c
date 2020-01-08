@@ -1344,20 +1344,20 @@ bpf_jit_x86(struct rte_bpf *bpf)
 	if (rc == 0) {
 
 		/* allocate memory needed */
-		st.ins = mmap(NULL, st.sz, PROT_READ | PROT_WRITE,
-			MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-		if (st.ins == MAP_FAILED)
+		st.ins = rte_mem_alloc(st.sz, 0);
+		if (st.ins == NULL)
 			rc = -ENOMEM;
 		else
 			/* generate code */
 			rc = emit(&st, bpf);
 	}
 
-	if (rc == 0 && mprotect(st.ins, st.sz, PROT_READ | PROT_EXEC) != 0)
+	if (rc == 0 && rte_mem_protect(
+			st.ins, st.sz, RTE_PROT_READ | RTE_PROT_EXECUTE) != 0)
 		rc = -ENOMEM;
 
 	if (rc != 0)
-		munmap(st.ins, st.sz);
+		rte_mem_unmap(st.ins, st.sz);
 	else {
 		bpf->jit.func = (void *)st.ins;
 		bpf->jit.sz = st.sz;

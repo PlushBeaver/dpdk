@@ -2,6 +2,10 @@
 # Copyright(C) 2019 Marvell International Ltd.
 #
 
+if is_windows
+	subdir_done()
+endif
+
 deps += ['bus_pci', 'common_octeontx2', 'rawdev']
 sources = files('otx2_dpi_rawdev.c', 'otx2_dpi_msg.c', 'otx2_dpi_test.c')
 

@@ -34,20 +34,20 @@ file_map(int fd, size_t size)
     mapping_handle = CreateFileMapping(
             file_handle, NULL, PAGE_READWRITE, 0, 0, NULL);
     if (mapping_handle == INVALID_HANDLE_VALUE) {
-        LOG(ERROR, "CreateFileMapping() failed, GetLastError() is %d",
+        LOG("ERROR: CreateFileMapping() failed, GetLastError() is %lu",
                 GetLastError());
         return NULL;
     }
 
     virt = MapViewOfFileEx(mapping_handle, FILE_MAP_COPY, 0, 0, size, NULL);
     if (!virt) {
-        LOG(ERROR, "MapViewOfFileEx() failed, GetLastError() is %d",
+        LOG("ERROR: MapViewOfFileEx() failed, GetLastError() is %lu",
                 GetLastError());
         return NULL;
     }
 
     if (!CloseHandle(mapping_handle)) {
-        LOG(ERROR, "CloseHandle() failed, GetLastError() is %d",
+        LOG("ERROR: CloseHandle() failed, GetLastError() is %lu",
                 GetLastError());
     }
 
@@ -55,8 +55,9 @@ file_map(int fd, size_t size)
 }
 
 void
-file_unmap(void* virt, __attribute__((unused)) size_t size)
+file_unmap(void* virt, size_t size)
 {
+    (void)size;
     UnmapViewOfFile(virt);
 }
 

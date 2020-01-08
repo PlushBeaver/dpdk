@@ -17,6 +17,7 @@
 #include <rte_windows.h>
 
 #include "eal_private.h"
+#include "eal_windows.h"
 
 RTE_DEFINE_PER_LCORE(unsigned, _lcore_id) = LCORE_ID_ANY;
 RTE_DEFINE_PER_LCORE(unsigned, _socket_id) = (unsigned)SOCKET_ID_ANY;
@@ -183,6 +184,48 @@ eal_thread_create(pthread_t *thread)
 
 	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 	SetThreadPriority(th, THREAD_PRIORITY_TIME_CRITICAL);
+
+	return 0;
+}
+
+int
+eal_set_affinity(pthread_t tid, const rte_cpuset_t *cpuset)
+{
+	HANDLE sys_thread;
+	KAFFINITY mask;
+	int i;
+
+	if (cpuset == NULL)
+		return EFAULT;
+
+	sys_thread = pthread_gethandle(tid);
+	if (sys_thread == INVALID_HANDLE_VALUE)
+		return ESRCH;
+
+	mask = 0;
+	for (i = 0; i < CPU_SET_SIZE; i++) {
+		if (CPU_ISSET(i, cpuset))
+			mask |= (KAFFINITY)1 << i;
+
+		if ((mask == 0) || ((i + 1 != CPU_SET_SIZE) &&
+			((i + 1) % EAL_PROCESSOR_GROUP_SIZE != 0)))
+			continue;
+
+		/* End of CPU set or a processor group, configure the group. */
+		GROUP_AFFINITY affinity;
+		memset(&affinity, 0, sizeof(affinity));
+		affinity.Group = i / EAL_PROCESSOR_GROUP_SIZE;
+		affinity.Mask = mask;
+		if (!SetThreadGroupAffinity(sys_thread, &affinity, NULL)) {
+			RTE_LOG_SYSTEM_ERROR(
+				"SetThreadGroupAffinity(group=%u, mask=%#" PRIx64 ")",
+				affinity.Group, affinity.Mask);
+			return EINVAL;
+		}
+
+		/* Reset mask for next processor group. */
+		mask = 0;
+	}
 
 	return 0;
 }

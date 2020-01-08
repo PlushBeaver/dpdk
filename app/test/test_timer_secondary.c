@@ -16,7 +16,7 @@
 #include <rte_random.h>
 
 #include "test.h"
-#include "process.h"
+#include "subprocess.h"
 
 #define NUM_TIMERS		(1 << 20) /* ~1M timers */
 #define NUM_LCORES_NEEDED	3

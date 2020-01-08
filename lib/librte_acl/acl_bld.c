@@ -948,7 +948,7 @@ build_trie(struct acl_build_context *context, struct rte_acl_build_rule *head,
 
 			default:
 				RTE_LOG(ERR, ACL,
-					"Error in rule[%u] type - %hhu\n",
+					"Error in rule[%u] type - %u\n",
 					rule->f->data.userdata,
 					rule->config->defs[n].type);
 				return NULL;
@@ -1354,7 +1354,7 @@ acl_build_log(const struct acl_build_context *ctx)
 	RTE_LOG(DEBUG, ACL, "Build phase for ACL \"%s\":\n"
 		"node limit for tree split: %u\n"
 		"nodes created: %u\n"
-		"memory consumed: %zu\n",
+		"memory consumed: %" RTE_PRIzu "\n",
 		ctx->acx->name,
 		ctx->node_max,
 		ctx->num_nodes,
@@ -1496,7 +1496,7 @@ acl_check_bld_param(struct rte_acl_ctx *ctx, const struct rte_acl_config *cfg)
 	for (i = 0; i != cfg->num_fields; i++) {
 		if (cfg->defs[i].type > RTE_ACL_FIELD_TYPE_BITMASK) {
 			RTE_LOG(ERR, ACL,
-			"ACL context: %s, invalid type: %hhu for %u-th field\n",
+			"ACL context: %s, invalid type: %u for %u-th field\n",
 			ctx->name, cfg->defs[i].type, i);
 			return -EINVAL;
 		}
@@ -1508,7 +1508,7 @@ acl_check_bld_param(struct rte_acl_ctx *ctx, const struct rte_acl_config *cfg)
 
 		if (j == RTE_DIM(field_sizes)) {
 			RTE_LOG(ERR, ACL,
-			"ACL context: %s, invalid size: %hhu for %u-th field\n",
+			"ACL context: %s, invalid size: %u for %u-th field\n",
 			ctx->name, cfg->defs[i].size, i);
 			return -EINVAL;
 		}

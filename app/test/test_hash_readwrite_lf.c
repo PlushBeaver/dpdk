@@ -656,7 +656,7 @@ write_keys(uint8_t write_type)
 	uint32_t i;
 	int ret;
 	uint32_t key_cnt = 0;
-	uint32_t *keys;
+	uint32_t *keys = NULL;
 	if (write_type == WRITE_KEY_SHIFT) {
 		key_cnt = tbl_rwc_test_param.count_keys_ks;
 		keys = tbl_rwc_test_param.keys_ks;
@@ -743,7 +743,7 @@ test_hash_add_no_ks_lookup_hit(struct rwc_perf *rwc_perf_results, int rwc_lf,
 				rte_atomic64_read(&greads);
 			rwc_perf_results->w_no_ks_r_hit[m][n]
 						= cycles_per_lookup;
-			printf("Cycles per lookup: %llu\n", cycles_per_lookup);
+			printf("Cycles per lookup: %" RTE_PRIllu "\n", cycles_per_lookup);
 		}
 	}
 
@@ -815,7 +815,7 @@ test_hash_add_no_ks_lookup_miss(struct rwc_perf *rwc_perf_results, int rwc_lf,
 				rte_atomic64_read(&greads);
 			rwc_perf_results->w_no_ks_r_miss[m][n]
 						= cycles_per_lookup;
-			printf("Cycles per lookup: %llu\n", cycles_per_lookup);
+			printf("Cycles per lookup: %" RTE_PRIllu "\n", cycles_per_lookup);
 		}
 	}
 
@@ -891,7 +891,7 @@ test_hash_add_ks_lookup_hit_non_sp(struct rwc_perf *rwc_perf_results,
 				rte_atomic64_read(&greads);
 			rwc_perf_results->w_ks_r_hit_nsp[m][n]
 						= cycles_per_lookup;
-			printf("Cycles per lookup: %llu\n", cycles_per_lookup);
+			printf("Cycles per lookup: %" RTE_PRIllu "\n", cycles_per_lookup);
 		}
 	}
 
@@ -967,7 +967,7 @@ test_hash_add_ks_lookup_hit_sp(struct rwc_perf *rwc_perf_results, int rwc_lf,
 				rte_atomic64_read(&greads);
 			rwc_perf_results->w_ks_r_hit_sp[m][n]
 						= cycles_per_lookup;
-			printf("Cycles per lookup: %llu\n", cycles_per_lookup);
+			printf("Cycles per lookup: %" RTE_PRIllu "\n", cycles_per_lookup);
 		}
 	}
 
@@ -1041,7 +1041,7 @@ test_hash_add_ks_lookup_miss(struct rwc_perf *rwc_perf_results, int rwc_lf, int
 				rte_atomic64_read(&gread_cycles) /
 				rte_atomic64_read(&greads);
 			rwc_perf_results->w_ks_r_miss[m][n] = cycles_per_lookup;
-			printf("Cycles per lookup: %llu\n", cycles_per_lookup);
+			printf("Cycles per lookup: %" RTE_PRIllu "\n", cycles_per_lookup);
 		}
 	}
 
@@ -1142,7 +1142,7 @@ test_hash_multi_add_lookup(struct rwc_perf *rwc_perf_results, int rwc_lf,
 					/ rte_atomic64_read(&greads);
 				rwc_perf_results->multi_rw[m][k][n]
 					= cycles_per_lookup;
-				printf("Cycles per lookup: %llu\n",
+				printf("Cycles per lookup: %" RTE_PRIllu "\n",
 				       cycles_per_lookup);
 			}
 		}
@@ -1226,7 +1226,7 @@ test_hash_add_ks_lookup_hit_extbkt(struct rwc_perf *rwc_perf_results,
 				rte_atomic64_read(&greads);
 			rwc_perf_results->w_ks_r_hit_extbkt[m][n]
 						= cycles_per_lookup;
-			printf("Cycles per lookup: %llu\n", cycles_per_lookup);
+			printf("Cycles per lookup: %" RTE_PRIllu "\n", cycles_per_lookup);
 		}
 	}
 

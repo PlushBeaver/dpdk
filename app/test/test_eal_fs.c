@@ -22,8 +22,8 @@ test_parse_sysfs_value(void)
 	unsigned valid_number;
 	unsigned long retval = 0;
 
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD doesn't have /proc/pid/fd */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* BSD doesn't have /proc/pid/fd, Windows doesn't have sysfs. */
 	return 0;
 #endif
 

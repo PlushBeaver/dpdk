@@ -126,7 +126,7 @@ mem_unmap(void* virt, size_t size)
 }
 
 void*
-rte_mem_reserve_virtual(void *requested_addr, size_t size,
+rte_mem_reserve(void *requested_addr, size_t size,
 		enum rte_mem_reserve_flags flags)
 {
 	int sys_flags = MAP_PRIVATE | MAP_ANONYMOUS;
@@ -139,10 +139,41 @@ rte_mem_reserve_virtual(void *requested_addr, size_t size,
 	return mem_map(requested_addr, size, PROT_READ, sys_flags, -1, 0);
 }
 
+void*
+rte_mem_alloc(size_t size, enum rte_page_sizes page_size)
+{
+	int flags = MAP_ANONYMOUS | MAP_PRIVATE;
+
+	if (page_size != 0) {
+		/* as per mmap() manpage, all page sizes are log2 of page size
+		 * shifted by MAP_HUGE_SHIFT
+ 		 */
+		int page_flag = rte_log2_u64(page_size) << MAP_HUGE_SHIFT;
+		flags |= MAP_HUGETLB | page_flag;
+	}
+
+	return mem_map(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+}
+
 void
-rte_mem_free_virtual(void *virt, size_t size)
+rte_mem_free(void *virt, size_t size)
 {
 	mem_unmap(virt, size);
+}
+
+static int
+mem_rte_to_sys_prot(enum rte_mem_prot prot)
+{
+	int sys_prot = 0;
+
+	if (prot & RTE_PROT_READ)
+		sys_prot |= PROT_READ;
+	if (prot & RTE_PROT_WRITE)
+		sys_prot |= PROT_WRITE;
+	if (prot & RTE_PROT_EXECUTE)
+		sys_prot |= PROT_EXEC;
+
+	return sys_prot;
 }
 
 void*
@@ -152,10 +183,7 @@ rte_mem_map(void* requested_addr, size_t size, enum rte_mem_prot prot,
 	int sys_prot = 0;
 	int sys_flags = 0;
 
-	if (prot & RTE_PROT_READ)
-		sys_prot |= PROT_READ;
-	if (prot & RTE_PROT_WRITE)
-		sys_prot |= PROT_WRITE;
+	sys_prot = mem_rte_to_sys_prot(prot);
 
 	if (flags & RTE_MAP_SHARED)
 		sys_flags |= MAP_SHARED;
@@ -184,18 +212,29 @@ rte_mem_lock(const void* virt, size_t size)
 int
 rte_mem_lockall(enum rte_mem_lockall_flags flags)
 {
-	int sys_flags = 0, ret;
+	int sys_flags = 0;
 
 	if (flags & RTE_LOCKALL_CURRENT)
 		flags |= MCL_CURRENT;
 	if (flags & RTE_LOCKALL_FUTURE)
 		flags |= MCL_FUTURE;
 
-	ret = mlockall(sys_flags);
-	if (ret) {
+	if (mlockall(sys_flags) < 0) {
 		rte_errno = errno;
+		return -1;
 	}
-	return ret;
+	return 0;
+}
+
+int
+rte_mem_protect(void *addr, size_t size, enum rte_mem_prot prot)
+{
+	int sys_prot = mem_rte_to_sys_prot(prot);
+	if (mprotect(addr, size, sys_prot) < 0) {
+		rte_errno = errno;
+		return -1;
+	}
+	return 0;
 }
 
 /*
@@ -961,7 +1000,7 @@ alloc_va_space(struct rte_memseg_list *msl)
 	addr = eal_get_virtual_area(msl->base_va, &mem_sz, page_sz, 0, 0);
 	if (addr == NULL) {
 		if (rte_errno == EADDRNOTAVAIL)
-			RTE_LOG(ERR, EAL, "Could not mmap %llu bytes at [%p] - "
+			RTE_LOG(ERR, EAL, "Could not mmap %" RTE_PRIllu " bytes at [%p] - "
 				"please use '--" OPT_BASE_VIRTADDR "' option\n",
 				(unsigned long long)mem_sz, msl->base_va);
 		else

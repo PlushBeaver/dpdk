@@ -2,6 +2,10 @@
 # Copyright(C) 2019 Marvell International Ltd.
 #
 
+if is_windows
+    subdir_done()
+endif
+
 allow_experimental_apis = true
 
 sources = files('otx2_mempool_ops.c',
