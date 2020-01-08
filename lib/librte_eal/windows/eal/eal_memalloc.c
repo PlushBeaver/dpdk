@@ -12,65 +12,78 @@
 #include "eal_windows.h"
 
 int
-eal_memalloc_get_seg_fd(
-		int list_idx __rte_unused,
-		int seg_idx __rte_unused)
+eal_memalloc_get_seg_fd(int list_idx, int seg_idx)
 {
-	RTE_LOG(ERR, EAL, "%s() is not supported\n", __func__);
-	return -ENOTSUP;
+	RTE_SET_USED(list_idx);
+	RTE_SET_USED(seg_idx);
+	EAL_NOT_IMPLEMENTED();
+	return -1;
 }
 
 int
-eal_memalloc_get_seg_fd_offset(
-		int list_idx __rte_unused,
-		int seg_idx __rte_unused,
-		size_t *offset __rte_unused)
+eal_memalloc_get_seg_fd_offset(int list_idx, int seg_idx, size_t *offset)
 {
-	RTE_LOG(ERR, EAL, "%s() is not supported\n", __func__);
-	return -ENOTSUP;
+	RTE_SET_USED(list_idx);
+	RTE_SET_USED(seg_idx);
+	RTE_SET_USED(offset);
+	EAL_NOT_IMPLEMENTED();
+	return -1;
 }
 
 static int
 alloc_seg(struct rte_memseg *ms, void *requested_addr, int socket_id,
-		struct hugepage_info *hi)
+	struct hugepage_info *hi)
 {
 	HANDLE current_process;
 	unsigned int numa_node;
 	size_t alloc_sz;
 	void *addr;
 	rte_iova_t iova;
-	PSAPI_WORKING_SET_EX_INFORMATION page_info;
-	PSAPI_WORKING_SET_EX_BLOCK *page_block;
+	PSAPI_WORKING_SET_EX_INFORMATION info;
+	PSAPI_WORKING_SET_EX_BLOCK *page;
+
+	if (ms->len > 0) {
+		/* If a segment is already allocated as needed, return it. */
+		if ((ms->addr == requested_addr) &&
+			(ms->socket_id == socket_id) &&
+			(ms->hugepage_sz == hi->hugepage_sz)) {
+			return 0;
+		}
+
+		/* Bugcheck, should not happen. */
+		RTE_LOG(DEBUG, EAL, "Attempted to reallocate segment %p "
+			"(size %" RTE_PRIzu ") on socket %d", ms->addr,
+			ms->len, ms->socket_id);
+		return -1;
+	}
 
 	current_process = GetCurrentProcess();
 	numa_node = eal_socket_numa_node(socket_id);
 	alloc_sz = hi->hugepage_sz;
 
-	if (requested_addr != NULL) {
-		int ret = eal_mem_free_virtual(requested_addr, alloc_sz);
-		if (ret) {
-			if (ret > 1) {
-				RTE_LOG(ERR, EAL, "cannot allocate a hugepage "
-							"in a region not reserved\n");
-				rte_errno = EADDRNOTAVAIL;
-			}
+	if (requested_addr == NULL) {
+		/* Request a new chunk of memory and enforce address hint. */
+		addr = eal_mem_alloc(alloc_sz, socket_id);
+		if (addr == NULL) {
+			RTE_LOG(ERR, EAL, "Cannot allocate %" RTE_PRIzu
+				" on socket %d\n", alloc_sz, socket_id);
 			return -1;
 		}
-	}
 
-	addr = VirtualAllocExNuma(
-			current_process, requested_addr, hi->hugepage_sz,
-  			MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES,
-  			PAGE_READWRITE, numa_node);
-	if (addr == NULL) {
-		RTE_LOG_SYSTEM_ERROR("VirtualAllocExNuma()");
-		return -1;
-	}
-
-	if (addr != requested_addr) {
-		RTE_LOG(ERR, EAL, "Address hint %p not respected, got %p\n",
-				addr, addr);
-		goto error;
+		if (addr != requested_addr) {
+			RTE_LOG(ERR, EAL, "Address hint %p not respected, "
+				"got %p\n", requested_addr, addr);
+			goto error;
+		}
+	} else {
+		/* Requested address is already reserved, commit memory. */
+		addr = eal_mem_commit(requested_addr, alloc_sz, socket_id);
+		if (addr == NULL) {
+			RTE_LOG(ERR, EAL, "Cannot commit reserved memory %p "
+				"(size %" RTE_PRIzu "\n", requested_addr,
+				alloc_sz);
+			goto error;
+		}
 	}
 
 	/* Force OS to allocate a physical page and select a NUMA node. */
@@ -78,23 +91,22 @@ alloc_seg(struct rte_memseg *ms, void *requested_addr, int socket_id,
 
 	iova = rte_mem_virt2iova(addr);
 	if (iova == RTE_BAD_IOVA) {
-		RTE_LOG(ERR, EAL, "Cannot get IOVA address\n");
+		RTE_LOG(ERR, EAL, "Cannot get IOVA of allocated segment\n");
 		goto error;
 	}
 
-	page_info.VirtualAddress = addr;
-	if (!QueryWorkingSetEx(current_process, &page_info, sizeof(page_info))) {
-        RTE_LOG_SYSTEM_ERROR("QueryWorkingSetEx()");
-        goto error;
-    }
+	info.VirtualAddress = addr;
+	if (!QueryWorkingSetEx(
+		current_process, &info, sizeof(info))) {
+		RTE_LOG_SYSTEM_ERROR("QueryWorkingSetEx()");
+		goto error;
+    	}
 
-	page_block = &page_info.VirtualAttributes;
-	numa_node = eal_socket_numa_node(socket_id);
-	if (!page_block->Valid || !page_block->LargePage ||
-			(page_block->Node != numa_node)) {
+	page = &info.VirtualAttributes;
+	if (!page->Valid || !page->LargePage || (page->Node != numa_node)) {
 		RTE_LOG(ERR, EAL,
-				"NUMA node hint %u (socket %d) not respected, got %u\n",
-				numa_node, socket_id, page_block->Node);
+			"NUMA node hint %u (socket %d) not respected, got %u\n",
+			numa_node, socket_id, page->Node);
 		goto error;
 	}
 
@@ -109,18 +121,19 @@ alloc_seg(struct rte_memseg *ms, void *requested_addr, int socket_id,
 	return 0;
 
 error:
-	asm("int3\n");
-	VirtualFree(addr, 0, MEM_RELEASE);
+	/* Only jump here when `addr` and `alloc_sz` are valid. */
+	eal_mem_decommit(addr, alloc_sz);
 	return -1;
 }
 
 static int
 free_seg(struct rte_memseg *ms)
 {
-	if (!VirtualFree(ms->addr, 0, MEM_RELEASE)) {
-		RTE_LOG_SYSTEM_ERROR("VirtualFree()");
+	if (eal_mem_decommit(ms->addr, ms->len))
 		return -1;
-	}
+
+	/* Must clear the segment, because alloc_seg() inspects it. */
+	memset(ms, 0, sizeof(*ms));
 	return 0;
 }
 
@@ -160,8 +173,8 @@ alloc_seg_walk(const struct rte_memseg_list *msl, void *arg)
 	/* try finding space in memseg list */
 	if (wa->exact) {
 		/* if we require exact number of pages in a list, find them */
-		cur_idx = rte_fbarray_find_next_n_free(&cur_msl->memseg_arr, 0,
-				need);
+		cur_idx = rte_fbarray_find_next_n_free(
+			&cur_msl->memseg_arr, 0, need);
 		if (cur_idx < 0)
 			return 0;
 		start_idx = cur_idx;
@@ -172,16 +185,16 @@ alloc_seg_walk(const struct rte_memseg_list *msl, void *arg)
 		 * for best-effort allocation. that means finding the biggest
 		 * unused block, and going with that.
 		 */
-		cur_idx = rte_fbarray_find_biggest_free(&cur_msl->memseg_arr,
-				0);
+		cur_idx = rte_fbarray_find_biggest_free(
+			&cur_msl->memseg_arr, 0);
 		if (cur_idx < 0)
 			return 0;
 		start_idx = cur_idx;
 		/* adjust the size to possibly be smaller than original
 		 * request, but do not allow it to be bigger.
 		 */
-		cur_len = rte_fbarray_find_contig_free(&cur_msl->memseg_arr,
-				cur_idx);
+		cur_len = rte_fbarray_find_contig_free(
+			&cur_msl->memseg_arr, cur_idx);
 		need = RTE_MIN(need, (unsigned int)cur_len);
 	}
 
@@ -207,12 +220,11 @@ alloc_seg_walk(const struct rte_memseg_list *msl, void *arg)
 		void *map_addr;
 
 		cur = rte_fbarray_get(&cur_msl->memseg_arr, cur_idx);
-		map_addr = RTE_PTR_ADD(cur_msl->base_va,
-				cur_idx * page_sz);
+		map_addr = RTE_PTR_ADD(cur_msl->base_va, cur_idx * page_sz);
 
 		if (alloc_seg(cur, map_addr, wa->socket, wa->hi)) {
 			RTE_LOG(DEBUG, EAL, "attempted to allocate %i segments, "
-					"but only %i were allocated\n", need, i);
+				"but only %i were allocated\n", need, i);
 
 			/* if exact number wasn't requested, stop */
 			if (!wa->exact)
@@ -226,9 +238,6 @@ alloc_seg_walk(const struct rte_memseg_list *msl, void *arg)
 				tmp = rte_fbarray_get(arr, j);
 				rte_fbarray_set_free(arr, j);
 
-				/* free_seg may attempt to create a file, which
-				 * may fail.
-				 */
 				if (free_seg(tmp))
 					RTE_LOG(DEBUG, EAL, "Cannot free page\n");
 			}
@@ -279,7 +288,7 @@ free_seg_walk(const struct rte_memseg_list *msl, void *arg)
 	end_addr = start_addr + msl->len;
 
 	if ((uintptr_t)wa->ms->addr < start_addr ||
-			(uintptr_t)wa->ms->addr >= end_addr)
+		(uintptr_t)wa->ms->addr >= end_addr)
 		return 0;
 
 	msl_idx = msl - mcfg->memsegs;
@@ -431,6 +440,13 @@ int
 eal_memalloc_free_seg(struct rte_memseg *ms)
 {
 	return eal_memalloc_free_seg_bulk(&ms, 1);
+}
+
+int
+eal_memalloc_sync_with_primary(void)
+{
+	EAL_NOT_IMPLEMENTED();
+	return -1;
 }
 
 int

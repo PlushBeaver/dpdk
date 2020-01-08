@@ -397,7 +397,7 @@ cperf_benchmark_test_runner(void *test_ctx)
 			"Comp [Gbps]", "Decomp [Gbps]");
 	}
 
-	printf("%12u%6u%12zu%17.2f%15.2f%16.2f\n",
+	printf("%12u%6u%12" RTE_PRIzu "%17.2f%15.2f%16.2f\n",
 		ctx->ver.mem.lcore_id,
 		test_data->level, ctx->ver.comp_data_sz, ctx->ver.ratio,
 		ctx->comp_gbps,

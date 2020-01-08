@@ -426,17 +426,23 @@ int t4_wr_mbox_meat_timeout(struct adapter *adap, int mbox,
 	 * to issue our own command ... which may well fail if the error
 	 * presaged the firmware crashing ...
 	 */
+
+#define PAIR(x) "%" x " %" x
+#define QUAD(x) PAIR(x) " " PAIR(x)
+#define QUADx64  QUAD(PRIx64)
+#define QUADx064 QUAD("016" PRIx64)
+
 	if (ctl & F_MBMSGVALID) {
 		dev_err(adap, "found VALID command in mbox %u: "
-			"%llx %llx %llx %llx %llx %llx %llx %llx\n", mbox,
-			(unsigned long long)t4_read_reg64(adap, data_reg),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 8),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 16),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 24),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 32),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 40),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 48),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 56));
+			QUADx64 " " QUADx64 "\n", mbox,
+			t4_read_reg64(adap, data_reg),
+			t4_read_reg64(adap, data_reg + 8),
+			t4_read_reg64(adap, data_reg + 16),
+			t4_read_reg64(adap, data_reg + 24),
+			t4_read_reg64(adap, data_reg + 32),
+			t4_read_reg64(adap, data_reg + 40),
+			t4_read_reg64(adap, data_reg + 48),
+			t4_read_reg64(adap, data_reg + 56));
 	}
 
 	/*
@@ -445,16 +451,16 @@ int t4_wr_mbox_meat_timeout(struct adapter *adap, int mbox,
 	for (i = 0; i < size; i += 8, p++)
 		t4_write_reg64(adap, data_reg + i, be64_to_cpu(*p));
 
-	CXGBE_DEBUG_MBOX(adap, "%s: mbox %u: %016llx %016llx %016llx %016llx "
-			"%016llx %016llx %016llx %016llx\n", __func__,  (mbox),
-			(unsigned long long)t4_read_reg64(adap, data_reg),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 8),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 16),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 24),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 32),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 40),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 48),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 56));
+	CXGBE_DEBUG_MBOX(adap,
+			"%s: mbox %u: " QUADx064 " " QUADx064 "\n", __func__,  (mbox),
+			t4_read_reg64(adap, data_reg),
+			t4_read_reg64(adap, data_reg + 8),
+			t4_read_reg64(adap, data_reg + 16),
+			t4_read_reg64(adap, data_reg + 24),
+			t4_read_reg64(adap, data_reg + 32),
+			t4_read_reg64(adap, data_reg + 40),
+			t4_read_reg64(adap, data_reg + 48),
+			t4_read_reg64(adap, data_reg + 56));
 
 	t4_write_reg(adap, ctl_reg, F_MBMSGVALID | V_MBOWNER(X_MBOWNER_FW));
 	t4_read_reg(adap, ctl_reg);          /* flush write */
@@ -489,16 +495,15 @@ int t4_wr_mbox_meat_timeout(struct adapter *adap, int mbox,
 			}
 
 			CXGBE_DEBUG_MBOX(adap,
-			"%s: mbox %u: %016llx %016llx %016llx %016llx "
-			"%016llx %016llx %016llx %016llx\n", __func__,  (mbox),
-			(unsigned long long)t4_read_reg64(adap, data_reg),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 8),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 16),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 24),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 32),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 40),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 48),
-			(unsigned long long)t4_read_reg64(adap, data_reg + 56));
+			"%s: mbox %u: " QUADx064 " " QUADx064 "\n", __func__,  (mbox),
+			t4_read_reg64(adap, data_reg),
+			t4_read_reg64(adap, data_reg + 8),
+			t4_read_reg64(adap, data_reg + 16),
+			t4_read_reg64(adap, data_reg + 24),
+			t4_read_reg64(adap, data_reg + 32),
+			t4_read_reg64(adap, data_reg + 40),
+			t4_read_reg64(adap, data_reg + 48),
+			t4_read_reg64(adap, data_reg + 56));
 
 			CXGBE_DEBUG_MBOX(adap,
 				"command %#x completed in %d ms (%ssleeping)\n",
@@ -4609,7 +4614,8 @@ static void t4_handle_get_port_info(struct port_info *pi, const __be64 *rpl)
 		t4_os_portmod_changed(adapter, pi->pidx);
 	}
 	if (link_ok != lc->link_ok || speed != lc->speed ||
-	    fc != lc->fc || fec != lc->fec) { /* something changed */
+		fc != (unsigned int)lc->fc || fec != (unsigned int)lc->fec) {
+		/* something changed */
 		if (!link_ok && lc->link_ok) {
 			lc->link_down_rc = linkdnrc;
 			dev_warn(adap, "Port %d link down, reason: %s\n",

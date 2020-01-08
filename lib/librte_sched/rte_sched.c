@@ -522,8 +522,8 @@ rte_sched_port_log_pipe_profile(struct rte_sched_subport *subport, uint32_t i)
 		"	credits per period = [%"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64
 		", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64", %"PRIu64
 		", %"PRIu64", %"PRIu64", %"PRIu64"]\n"
-		"	Best-effort traffic class oversubscription: weight = %hhu\n"
-		"	WRR cost: [%hhu, %hhu, %hhu, %hhu]\n",
+		"	Best-effort traffic class oversubscription: weight = %u\n"
+		"	WRR cost: [%u, %u, %u, %u]\n",
 		i,
 
 		/* Token bucket */

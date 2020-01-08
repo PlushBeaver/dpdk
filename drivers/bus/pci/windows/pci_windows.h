@@ -9,7 +9,7 @@
  */
 struct windows_pci_device {
 	struct rte_pci_device device;   /* inherit public structure */
-	wchar_t path[RTE_PATH_MAX];     /* path to device object to open */
+	wchar_t path[PATH_MAX];     /* path to device object to open */
 };
 
 #endif

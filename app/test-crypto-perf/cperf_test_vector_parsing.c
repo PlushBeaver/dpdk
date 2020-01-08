@@ -458,12 +458,10 @@ parse_file(struct cperf_test_vector *vector, struct cperf_options *opts)
 {
 	uint8_t tc_found = 0;
 	uint8_t tc_data_start = 0;
-	ssize_t read;
-	size_t len = 0;
 	int status = 0;
 
 	FILE *fp;
-	char *line = NULL;
+	char line[LINE_MAX];
 	char *entry = NULL;
 
 	fp = fopen(opts->test_file, "r");
@@ -472,7 +470,7 @@ parse_file(struct cperf_test_vector *vector, struct cperf_options *opts)
 		return -1;
 	}
 
-	while ((read = getline(&line, &len, fp)) != -1) {
+	while (fgets(line, sizeof(line), fp) != NULL) {
 
 		/* ignore comments and new lines */
 		if (line[0] == '#' || line[0] == '/' || line[0] == '\n'
@@ -511,7 +509,7 @@ parse_file(struct cperf_test_vector *vector, struct cperf_options *opts)
 		/* check if entry ends with , or = */
 		if (entry[strlen(entry) - 1] == ','
 			|| entry[strlen(entry) - 1] == '=') {
-			while ((read = getline(&line, &len, fp)) != -1) {
+			while (fgets(line, sizeof(line), fp) != NULL) {
 				trim_space(line);
 
 				/* extend entry about length of new line */
@@ -543,7 +541,6 @@ parse_file(struct cperf_test_vector *vector, struct cperf_options *opts)
 	}
 
 	fclose(fp);
-	free(line);
 	rte_free(entry);
 
 	return 0;
@@ -551,8 +548,6 @@ parse_file(struct cperf_test_vector *vector, struct cperf_options *opts)
 err:
 	if (fp)
 		fclose(fp);
-	if (line)
-		free(line);
 	if (entry)
 		rte_free(entry);
 

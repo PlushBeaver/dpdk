@@ -7,7 +7,6 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <stdio.h>
-#include <termios.h>
 #include <errno.h>
 #include <sys/queue.h>
 

@@ -33,7 +33,22 @@ libraries = [
 	'flow_classify', 'bpf', 'telemetry']
 
 if is_windows
-	libraries = ['kvargs','eal'] # only supported libraries for windows
+	posix_only_libraries = [
+		'bbdev',
+		'eventdev',
+		'port',
+		'timer',
+		'pipeline',
+		'table',
+		'flow_classify'
+	]
+	windows_libraries = []
+	foreach lib:libraries
+		if not posix_only_libraries.contains(lib)
+			windows_libraries += lib
+		endif 
+	endforeach
+	libraries = windows_libraries
 endif
 
 default_cflags = machine_args
@@ -149,11 +164,21 @@ foreach l:libraries
 				input: version_map,
 				output: 'rte_@0@_exports.def'.format(name))
 			lk_deps = [version_map, def_file]
-			if is_windows
+			if is_ms_linker
 				lk_args = ['-Wl,/def:' + def_file.full_path(),
 					'-Wl,/implib:lib\\' + implib]
 			else
 				lk_args = ['-Wl,--version-script=' + version_map]
+				windows_map = '@0@/@1@/rte_@2@_windows.map'.format(
+					meson.current_source_dir(), dir_name, name)
+				mingw_map = '@0@/@1@/rte_@2@_mingw.map'.format(
+					meson.current_source_dir(), dir_name, name)
+				if name == 'eal' and is_windows
+					lk_args += ['-Wl,--version-script=' + windows_map]
+					if cc.get_id() == 'gcc'
+						lk_args += ['-Wl,--version-script=' + mingw_map]
+					endif
+				endif
 				# on unix systems check the output of the
 				# experimental syms script, using it as a
 				# dependency of the .so build

@@ -1,0 +1,9 @@
+COMPAT {
+	inet_aton;
+	random;
+	lrand48;
+	mrand48;
+	sleep;
+	usleep;
+	vdprintf;
+};

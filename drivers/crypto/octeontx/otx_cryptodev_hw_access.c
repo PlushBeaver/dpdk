@@ -514,7 +514,7 @@ otx_cpt_get_resource(const struct rte_cryptodev *dev, uint8_t group,
 	const struct rte_memzone *rz;
 	uint64_t dma_addr = 0, alloc_len, used_len;
 	uint64_t *next_ptr;
-	uint64_t pg_sz = sysconf(_SC_PAGESIZE);
+	uint64_t pg_sz = rte_get_page_size();
 
 	CPT_LOG_DP_DEBUG("Initializing cpt resource %s", cptvf->dev_name);
 

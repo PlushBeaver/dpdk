@@ -459,17 +459,18 @@ pci_get_device_driver(
 		const wchar_t* instance_id,
 		struct windows_pci_device *dev)
 {
-    struct pci_driver_guid {
-        GUID guid;
-        enum rte_kernel_driver driver;
-    };
+	/* GUID is not a compile-time constant, but its address is. */
+	struct pci_driver_guid {
+		const GUID *guid;
+		enum rte_kernel_driver driver;
+	};
 
-    static struct pci_driver_guid table[] = {
+	static struct pci_driver_guid table[] = {
 		{
-			.guid = GUID_DEVINTERFACE_WINDIO,
+			.guid = &GUID_DEVINTERFACE_WINDIO,
 			.driver = RTE_KDRV_WINDIO
 		}
-    };
+	};
 
 	HDEVINFO list = INVALID_HANDLE_VALUE;
 	int ret = 1;
@@ -478,10 +479,10 @@ pci_get_device_driver(
 	dev->device.kdrv = RTE_KDRV_UNKNOWN;
     for (i = 0; (i < RTE_DIM(table)) && (ret > 0); i++) {
         list = SetupDiGetClassDevs(
-                &table[i].guid,
-				instance_id,
-				NULL,
-				DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
+                table[i].guid,
+		instance_id,
+		NULL,
+		DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
         if (list == INVALID_HANDLE_VALUE) {
             RTE_LOG_SYSTEM_ERROR("SetupDiGetClassDevs()");
             return -EINVAL;
@@ -490,7 +491,7 @@ pci_get_device_driver(
         SP_DEVICE_INTERFACE_DATA ifdata;
         ifdata.cbSize = sizeof(ifdata);
         if (!SetupDiEnumDeviceInterfaces(
-				list, NULL, &table[i].guid, 0, &ifdata)) {
+				list, NULL, table[i].guid, 0, &ifdata)) {
         	if (GetLastError() != ERROR_NO_MORE_ITEMS) {
             	RTE_LOG_SYSTEM_ERROR("SetupDiEnumDeviceInterfaces()");
         	}

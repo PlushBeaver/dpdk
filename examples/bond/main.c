@@ -14,7 +14,6 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <getopt.h>
-#include <termios.h>
 #include <unistd.h>
 #include <pthread.h>
 

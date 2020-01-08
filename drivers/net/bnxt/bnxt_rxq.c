@@ -104,7 +104,7 @@ int bnxt_mq_rx_configure(struct bnxt *bp)
 		pools = bp->rx_cosq_cnt ? bp->rx_cosq_cnt : pools;
 	}
 
-	pools = RTE_MIN(pools, bp->rx_cp_nr_rings);
+	pools = RTE_MIN((unsigned int)pools, bp->rx_cp_nr_rings);
 	nb_q_per_grp = bp->rx_cp_nr_rings / pools;
 	bp->rx_num_qs_per_vnic = nb_q_per_grp;
 	PMD_DRV_LOG(DEBUG, "pools = %u nb_q_per_grp = %u\n",

@@ -136,14 +136,21 @@ SRCS-$(CONFIG_RTE_LIBRTE_LPM) += test_lpm_perf.c
 SRCS-$(CONFIG_RTE_LIBRTE_LPM) += test_lpm6.c
 SRCS-$(CONFIG_RTE_LIBRTE_LPM) += test_lpm6_perf.c
 
+ifneq ($(CONFIG_RTE_EXEC_ENV_WINDOWS),y)
+# Death tests not implemented for Windows.
 SRCS-y += test_debug.c
+# Multiprocess support not implemented in Windows.
+SRCS-y += test_mp_secondary.c
+# Tests access to sysfs, which doesn't exist in Windows.
+SRCS-y += test_eal_fs.c
+endif
+
 SRCS-y += test_errno.c
 SRCS-y += test_tailq.c
 SRCS-y += test_string_fns.c
 SRCS-y += test_cpuflags.c
-SRCS-y += test_mp_secondary.c
+
 SRCS-y += test_eal_flags.c
-SRCS-y += test_eal_fs.c
 SRCS-y += test_alarm.c
 SRCS-y += test_interrupts.c
 SRCS-y += test_version.c

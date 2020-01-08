@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/in.h>
-#include <termios.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <sys/queue.h>

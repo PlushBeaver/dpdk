@@ -4230,7 +4230,7 @@ static int bnxt_alloc_ctx_mem_blk(struct bnxt *bp,
 
 		memset(mz->addr, 0, mz->len);
 		mz_phys_addr = mz->iova;
-		if ((unsigned long)mz->addr == mz_phys_addr) {
+		if ((rte_iova_t)mz->addr == mz_phys_addr) {
 			PMD_DRV_LOG(DEBUG,
 				    "physical address same as virtual\n");
 			PMD_DRV_LOG(DEBUG, "Using rte_mem_virt2iova()\n");
@@ -4265,7 +4265,7 @@ static int bnxt_alloc_ctx_mem_blk(struct bnxt *bp,
 
 	memset(mz->addr, 0, mz->len);
 	mz_phys_addr = mz->iova;
-	if ((unsigned long)mz->addr == mz_phys_addr) {
+	if ((rte_iova_t)mz->addr == mz_phys_addr) {
 		PMD_DRV_LOG(DEBUG,
 			    "Memzone physical address same as virtual.\n");
 		PMD_DRV_LOG(DEBUG, "Using rte_mem_virt2iova()\n");
@@ -4457,7 +4457,7 @@ static int bnxt_alloc_stats_mem(struct bnxt *bp)
 	}
 	memset(mz->addr, 0, mz->len);
 	mz_phys_addr = mz->iova;
-	if ((unsigned long)mz->addr == mz_phys_addr) {
+	if ((rte_iova_t)mz->addr == mz_phys_addr) {
 		PMD_DRV_LOG(DEBUG,
 			    "Memzone physical address same as virtual.\n");
 		PMD_DRV_LOG(DEBUG,
@@ -4495,7 +4495,7 @@ static int bnxt_alloc_stats_mem(struct bnxt *bp)
 	}
 	memset(mz->addr, 0, mz->len);
 	mz_phys_addr = mz->iova;
-	if ((unsigned long)mz->addr == mz_phys_addr) {
+	if ((rte_iova_t)mz->addr == mz_phys_addr) {
 		PMD_DRV_LOG(DEBUG,
 			    "Memzone physical address same as virtual\n");
 		PMD_DRV_LOG(DEBUG, "Using rte_mem_virt2iova()\n");

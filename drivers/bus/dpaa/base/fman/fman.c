@@ -180,7 +180,7 @@ fman_if_init(const struct device_node *dpa_node)
 	/* Allocate an object for this network interface */
 	__if = rte_malloc(NULL, sizeof(*__if), RTE_CACHE_LINE_SIZE);
 	if (!__if) {
-		FMAN_ERR(-ENOMEM, "malloc(%zu)\n", sizeof(*__if));
+		FMAN_ERR(-ENOMEM, "malloc(%" RTE_PRIzu ")\n", sizeof(*__if));
 		goto err;
 	}
 	memset(__if, 0, sizeof(*__if));
@@ -436,7 +436,7 @@ fman_if_init(const struct device_node *dpa_node)
 		/* Allocate an object for the pool */
 		bpool = rte_malloc(NULL, sizeof(*bpool), RTE_CACHE_LINE_SIZE);
 		if (!bpool) {
-			FMAN_ERR(-ENOMEM, "malloc(%zu)\n", sizeof(*bpool));
+			FMAN_ERR(-ENOMEM, "malloc(%" RTE_PRIzu ")\n", sizeof(*bpool));
 			goto err;
 		}
 		/* Find the pool node */

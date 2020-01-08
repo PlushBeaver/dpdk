@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <termios.h>
 #include <inttypes.h>
 #include <string.h>
 

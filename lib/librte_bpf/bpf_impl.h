@@ -6,7 +6,6 @@
 #define _BPF_H_
 
 #include <rte_bpf.h>
-#include <sys/mman.h>
 
 #ifdef __cplusplus
 extern "C" {

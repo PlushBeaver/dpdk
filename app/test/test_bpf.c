@@ -1032,7 +1032,7 @@ test_jump2_check(uint64_t rc, const void *arg)
 	uint16_t eth_type;
 	uint64_t v = -1;
 
-	if (eth_hdr->ether_type == htons(0x8100)) {
+	if (eth_hdr->ether_type == rte_cpu_to_be_16(0x8100)) {
 		const struct rte_vlan_hdr *vlan_hdr =
 			(const void *)(eth_hdr + 1);
 		eth_type = vlan_hdr->eth_proto;
@@ -1042,7 +1042,7 @@ test_jump2_check(uint64_t rc, const void *arg)
 		next = eth_hdr + 1;
 	}
 
-	if (eth_type == htons(0x0800)) {
+	if (eth_type == rte_cpu_to_be_16(0x0800)) {
 		ipv4_hdr = next;
 		if ((ipv4_hdr->dst_addr & rte_cpu_to_be_32(TEST_NETMASK)) ==
 		    rte_cpu_to_be_32(TEST_SUBNET)) {

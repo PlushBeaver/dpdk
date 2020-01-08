@@ -510,7 +510,7 @@ cxgbe_get_flow_item_index(const struct rte_flow_item items[], u32 type)
 	int j, index = -ENOENT;
 
 	for (i = items, j = 0; i->type != RTE_FLOW_ITEM_TYPE_END; i++, j++) {
-		if (i->type == type) {
+		if ((u32)i->type == type) {
 			index = j;
 			break;
 		}

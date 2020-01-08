@@ -57,4 +57,22 @@ unsigned eal_cpu_socket_id(unsigned cpu_id);
 int
 eal_thread_dump_affinity(char *str, unsigned size);
 
+/**
+ * Set thread affinity.
+ * This function is private to EAL.
+ *
+ * This function abstracts @code pthread_setaffinity_np() @endcode,
+ * so that any pthread implementation may be used, not just the GNU one.
+ * 
+ * @param tid
+ *   ID of the thread to adjust afinity for.
+ * @param cpuset
+ *   The set of CPUs on which the thread should be run.
+ * @return
+ *   0 on success, -1 on failure and @code rte_errno @endcode is set
+ *   to the value specified by pthread_setaffinity_np(2).
+ */
+int
+eal_set_affinity(pthread_t tid, const rte_cpuset_t *cpuset);
+
 #endif /* EAL_THREAD_H */

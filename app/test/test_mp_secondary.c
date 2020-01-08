@@ -45,7 +45,7 @@
 
 #include <rte_string_fns.h>
 
-#include "process.h"
+#include "subprocess.h"
 
 #define launch_proc(ARGV) process_dup(ARGV, \
 		sizeof(ARGV)/(sizeof(ARGV[0])), __func__)

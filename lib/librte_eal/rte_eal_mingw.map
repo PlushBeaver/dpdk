@@ -1,0 +1,6 @@
+MINGW {
+	global:
+
+	__emutls_v.per_lcore__rte_errno;
+	__emutls_v.per_lcore__lcore_id;
+};

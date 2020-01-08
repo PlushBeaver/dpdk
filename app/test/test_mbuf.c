@@ -1161,6 +1161,12 @@ err:
 #endif
 }
 
+/* TODO: Windows implementation
+ *
+ * Win32 has no fork() semantics, mbuf can be shared via a mapped file.
+ */
+#ifndef RTE_EXEC_ENV_WINDOWS
+
 #include <unistd.h>
 #include <sys/wait.h>
 
@@ -1247,6 +1253,8 @@ test_failing_mbuf_sanity_check(struct rte_mempool *pktmbuf_pool)
 
 	return 0;
 }
+
+#endif /* POSIX */
 
 static int
 test_mbuf_linearize(struct rte_mempool *pktmbuf_pool, int pkt_len,
@@ -1433,8 +1441,8 @@ test_tx_offload(void)
 
 	tm = rte_rdtsc_precise() - tm;
 	printf("%s set tx_offload by bit-fields: %u iterations, %"
-		PRIu64 " cycles, " RTE_PRILf " cycles/iter\n",
-		__func__, num, tm, (long double)tm / num);
+		PRIu64 " cycles, %" RTE_PRILf " cycles/iter\n",
+		__func__, num, tm, (rte_long_double)tm / num);
 
 	v1 = mb[rte_rand() % num].tx_offload;
 
@@ -1447,8 +1455,8 @@ test_tx_offload(void)
 
 	tm = rte_rdtsc_precise() - tm;
 	printf("%s set raw tx_offload: %u iterations, %"
-		PRIu64 " cycles, " RTE_PRILf " cycles/iter\n",
-		__func__, num, tm, (long double)tm / num);
+		PRIu64 " cycles, %" RTE_PRILf " cycles/iter\n",
+		__func__, num, tm, (rte_long_double)tm / num);
 
 	v2 = mb[rte_rand() % num].tx_offload;
 
@@ -2655,10 +2663,14 @@ test_mbuf(void)
 		goto err;
 	}
 
+#ifndef RTE_EXEC_ENV_WINDOWS
 	if (test_failing_mbuf_sanity_check(pktmbuf_pool) < 0) {
 		printf("test_failing_mbuf_sanity_check() failed\n");
 		goto err;
 	}
+#else
+	printf("Windows: test_failing_mbuf_sanity_check() not implemented\n");
+#endif
 
 	if (test_mbuf_linearize_check(pktmbuf_pool) < 0) {
 		printf("test_mbuf_linearize_check() failed\n");

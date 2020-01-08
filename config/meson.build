@@ -121,20 +121,20 @@ if cc.find_library('m', required : false).found()
 	dpdk_extra_ldflags += '-lm'
 endif
 
-# for linux link against dl, for bsd execinfo
+link_libs = []
 if is_linux
-	link_lib = 'dl'
+	link_libs = ['dl']
 elif is_freebsd
-	link_lib = 'execinfo'
-else
-	link_lib = ''
+	link_libs = ['execinfo']
+elif is_windows
+	link_libs = ['setupapi', 'shlwapi', 'ws2_32']
 endif
 
 # if link_lib is empty, do not add it to project properties
-if link_lib != ''
-	add_project_link_arguments('-l' + link_lib, language: 'c')
-	dpdk_extra_ldflags += '-l' + link_lib
-endif
+foreach lib:link_libs
+	add_project_link_arguments('-l' + lib, language: 'c', native: false)
+	dpdk_extra_ldflags += '-l' + lib
+endforeach
 
 # check for libraries used in multiple places in DPDK
 has_libnuma = 0
@@ -142,7 +142,7 @@ numa_dep = cc.find_library('numa', required: false)
 if numa_dep.found() and cc.has_header('numaif.h')
 	dpdk_conf.set10('RTE_HAS_LIBNUMA', true)
 	has_libnuma = 1
-	add_project_link_arguments('-lnuma', language: 'c')
+	add_project_link_arguments('-lnuma', language: 'c', native: false)
 	dpdk_extra_ldflags += '-lnuma'
 endif
 
@@ -236,6 +236,11 @@ dpdk_conf.set('RTE_EAL_VFIO', is_linux)
 # specify -D_GNU_SOURCE unconditionally
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
+# FIXME: MinGW-w64 until v7 does not use standard-complying Microsoft UCRT.
+if is_windows and (cc.get_id() == 'gcc')
+	add_project_arguments('-D__USE_MINGW_ANSI_STDIO', language: 'c')
+endif
+
 # specify -D__BSD_VISIBLE for FreeBSD
 if is_freebsd
 	add_project_arguments('-D__BSD_VISIBLE', language: 'c')
@@ -253,3 +258,6 @@ if get_option('b_lto')
 		add_project_link_arguments('-Wno-lto-type-mismatch', language: 'c')
 	endif
 endif
+
+# FIXME: cc.get_linker_id() since Meson 0.53
+is_ms_linker = cc.has_link_argument('/OPT:REF')

@@ -8,9 +8,12 @@ include $(RTE_SDK)/mk/rte.vars.mk
 HOSTAPP = dpdk-pmdinfogen
 
 # target-specific object file image parsing library
-IMAGELIB-linux += elf.c
-IMAGELIB-freebsd += elf.c
-IMAGELIB-windows += coff.c
+IMAGELIB-linux    := elf.c
+IMAGELIB-linuxapp := $(IMAGELIB-linux)
+IMAGELIB-freebsd := elf.c
+IMAGELIB-bsdapp  := $(IMAGELIB-freebsd)
+IMAGELIB-windows    := coff.c
+IMAGELIB-windowsapp := $(IMAGELIB-windows)
 
 SRCS-y += pmdinfogen.c
 SRCS-y += mmap.c

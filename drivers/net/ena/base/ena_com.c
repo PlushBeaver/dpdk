@@ -2406,7 +2406,7 @@ int ena_com_fill_hash_function(struct ena_com_dev *ena_dev,
 	switch (func) {
 	case ENA_ADMIN_TOEPLITZ:
 		if (key_len > sizeof(hash_key->key)) {
-			ena_trc_err("key len (%hu) is bigger than the max supported (%zu)\n",
+			ena_trc_err("key len (%hu) is bigger than the max supported (%" RTE_PRIzu ")\n",
 				    key_len, sizeof(hash_key->key));
 			return ENA_COM_INVAL;
 		}

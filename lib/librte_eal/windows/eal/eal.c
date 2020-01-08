@@ -7,7 +7,6 @@
 
 #include <io.h>
 #include <fcntl.h>
-#include <termios.h>
 #include <ntsecapi.h>
 
 #include <rte_debug.h>
@@ -357,7 +356,7 @@ int
 rte_eal_primary_proc_alive(const char *config_file_path)
 {
 	RTE_SET_USED(config_file_path);
-	RTE_LOG(WARNING, EAL, "Windows: %s() stub called\n", __func__);
+	EAL_STUB();
 	return 1;
 }
 
@@ -640,6 +639,24 @@ random(void)
 	return value;
 }
 
+long int
+lrand48(void)
+{
+	/* TODO: implement thread-safe RNG to get rid of advapi32.dll. */
+	uint32_t value;
+	RtlGenRandom(&value, sizeof(value));
+	return value & 0x7fffffff;
+}
+
+long int
+mrand48(void)
+{
+	/* TODO: implement thread-safe RNG to get rid of advapi32.dll. */
+	int32_t value;
+	RtlGenRandom(&value, sizeof(value));
+	return value;
+}
+
 unsigned int
 sleep(unsigned long int seconds)
 {
@@ -648,7 +665,7 @@ sleep(unsigned long int seconds)
 }
 
 int
-usleep(useconds_t usec) 
+usleep(unsigned int usec) 
 { 
     HANDLE timer;
     LARGE_INTEGER ft;
@@ -674,89 +691,4 @@ vdprintf(int fd, const char* format, va_list op)
 	int ret = vfprintf(file, format, op);
 	fclose(file);
 	return ret;
-}
-
-int
-pthread_setaffinity_np(
-		pthread_t thread,
-		size_t cpuset_size __rte_unused,
-		const rte_cpuset_t *cpuset)
-{
-	HANDLE sys_thread;
-	KAFFINITY mask;
-	int i;
-
-	if (cpuset == NULL) {
-		return EFAULT;
-	}
-
-	sys_thread = pthread_gethandle(thread);
-	if (sys_thread == INVALID_HANDLE_VALUE) {
-		return ESRCH;
-	}
-
-	mask = 0;
-	for (i = 0; i < CPU_SET_SIZE; i++) {
-		if (CPU_ISSET(i, cpuset)) {
-			mask |= (KAFFINITY)1 << i;
-		}
-
-		if ((((i + 1) % EAL_PROCESSOR_GROUP_SIZE == 0) ||
-				(i + 1 == CPU_SET_SIZE)) && (mask != 0)) {
-			/* End of CPU set or a processor group, configure the group. */
-			GROUP_AFFINITY affinity;
-			memset(&affinity, 0, sizeof(affinity));
-			affinity.Group = i / EAL_PROCESSOR_GROUP_SIZE;
-			affinity.Mask = mask;
-			if (!SetThreadGroupAffinity(sys_thread, &affinity, NULL)) {
-				RTE_LOG_SYSTEM_ERROR(
-						"SetThreadGroupAffinity(group=%u, mask=%#" PRIx64 ")",
-						affinity.Group, affinity.Mask);
-				return EINVAL;
-			}
-
-			/* Reset mask for next processor group. */
-			mask = 0;
-		}
-	}
-
-	return 0;
-}
-
-int
-tcgetattr(int fd, struct termios *termios)
-{
-	HANDLE handle;
-
-	if (fd != STDIN_FILENO) {
-		errno = ENOTSUP;
-		return -1;
-	}
-
-	handle = (HANDLE)_get_osfhandle(fd);
-	if (!GetConsoleMode(handle, &termios->c_lflag)) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	return 0;
-}
-
-int
-tcsetattr(int fd, int actions, const struct termios *termios)
-{
-	HANDLE handle;
-
-	if ((fd != STDIN_FILENO) || (actions != TCSANOW)) {
-		errno = ENOTSUP;
-		return -1;
-	}
-
-	handle = (HANDLE)_get_osfhandle(fd);
-	if (!SetConsoleMode(handle, termios->c_lflag)) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	return 0;
 }

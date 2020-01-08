@@ -85,8 +85,7 @@ image_load(void* addr, size_t size)
     struct image *image = NULL;
     
     if (size < sizeof(*image->header)) {
-        LOG("ERROR: image size %" PRIzu " less than "
-                "COFF file header size %" PRIzu,
+        LOG("ERROR: image size %zu less than COFF file header size %zu",
                 size, sizeof(*image->header));
         return NULL;
     }
@@ -103,7 +102,7 @@ image_load(void* addr, size_t size)
             (uint8_t*)addr + (sizeof(*header) + header->optional_header_size));
 
     if ((char*)sections >= (char*)addr + size) {
-        LOG("ERROR: optional header size %d exceeds image size %" PRIzu,
+        LOG("ERROR: optional header size %d exceeds image size %zu",
                 header->optional_header_size, size);
         return NULL;
     }

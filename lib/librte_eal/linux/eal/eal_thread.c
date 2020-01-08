@@ -168,6 +168,12 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 	/* return NULL; */
 }
 
+int
+eal_set_affinity(pthread_t tid, const rte_cpuset_t *cpuset)
+{
+	return pthread_setaffinity_np(tid, sizeof(*cpuset), cpuset);
+}
+
 /* require calling thread tid by gettid() */
 int rte_sys_gettid(void)
 {

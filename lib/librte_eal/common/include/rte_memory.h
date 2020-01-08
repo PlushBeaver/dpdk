@@ -89,27 +89,44 @@ struct rte_memseg_list {
  * Memory protection flags.
  */
 enum rte_mem_prot {
-	RTE_PROT_READ = 1 << 0,	/**< Read access. */
-	RTE_PROT_WRITE = 1<< 1	/**< Write access. */
+	RTE_PROT_READ = 1 << 0,   /**< Read access. */
+	RTE_PROT_WRITE = 1<< 1,   /**< Write access. */
+	RTE_PROT_EXECUTE = 1 << 2 /**< Code execution. */
 };
+
+/**
+ * Adjust memory protection mode.
+ * 
+ * Memory area must come either from @ref rte_mem_reserve()
+ * or @ref rte_mem_alloc().
+ * 
+ * @param addr
+ * 	Starting address of the memory area.
+ * @param size
+ * 	Size of the memory area.
+ * @param prot
+ * 	Combination of protection mode flags.
+ * @return
+ * 	0 on success, negative on error and set @code rte_errno @endcode.
+ */
+int rte_mem_protect(void *addr, size_t size, enum rte_mem_prot prot);
 
 /**
  * Memory mapping additional flags.
  * 
  * In Linux and FreeBSD, each flag is semantically equivalent
  * to OS-specific flag with the same or similar name.
- * In Windows, POSIX semantics are followed, except MAP_ANONYMOUS,
- * which is a common extension to POSIX.
+ * In Windows, POSIX and MAP_ANONYMOUS semantics are followed.
  */
 enum rte_map_flags {
+	/** Changes of mapped memory are visible to other processes. */
 	RTE_MAP_SHARED = 1 << 0,
-	/**< Changes of mapped memory are visible to other processes. */
+	/** Mapping is not backed by a regular file. */
 	RTE_MAP_ANONYMOUS = 1 << 1,
-	/**< Mapping is not backed by a regular file. */
+	/** Copy-on-write mapping, changes are not visible to other processes. */
 	RTE_MAP_PRIVATE = 1 << 2,
-	/**< Copy-on-write mapping, changes are not visible to other processes. */
+	/** Fail if requested address cannot be taken. */
 	RTE_MAP_FIXED = 1 << 3
-	/**< Fail if requested address cannot be taken. */
 };
 
 /**
@@ -128,19 +145,20 @@ int rte_mem_unmap(void* virt, size_t size);
  * Memory reservation flags.
  */
 enum rte_mem_reserve_flags {
-	RTE_RESERVE_HUGEPAGES = 1 << 0,
 	/**< Reserve hugepages. */
-	RTE_RESERVE_EXACT_ADDRESS = 1 << 1
+	RTE_RESERVE_HUGEPAGES = 1 << 0,
 	/**< Fail if requested address is not available. */
+	RTE_RESERVE_EXACT_ADDRESS = 1 << 1
 };
 
 /**
  * Reserve a region of virtual memory.
- * 
+ *
+ * Use rte_mem_free() to free reserved memory.
+ *
  * @param requested_addr
  *  A desired reservation address. The system may not respect it.
  *  NULL means the address will be chosen by the system.
- * 
  * @param size
  *  Reservation size. Must be a multiple of system page size.
  * @param flags
@@ -149,38 +167,41 @@ enum rte_mem_reserve_flags {
  *  Starting address of the reserved area on success, NULL on failure.
  * 	Callers must not this memory until remapping it.
  */
-void* rte_mem_reserve_virtual(void *requested_addr, size_t size,
+void* rte_mem_reserve(void *requested_addr, size_t size,
 		enum rte_mem_reserve_flags flags);
 
 /**
- * Allocate virtual memory.
+ * Allocate a contiguous chunk of virtual memory.
  * 
- * Use @ref rte_mem_free_virtual() to free allocated memory.
+ * Use rte_mem_free() to free allocated memory.
  * 
  * @param size
  * 	Number of bytes to allocate.
- * @param hugepage_size
- * 	If non-zero, means memory must be allocated in hugepages.
- * 	The @code size @endcode parameter must then be a multiple of page size.
+ * @param page_size
+ * 	If non-zero, means memory must be allocated in hugepages
+ *	of the specified size. The @code size @endcode parameter
+ *	must then be a multiple of the largest hugepage size requested.
  * @return
  * 	Address of allocated memory or NULL on failure (rte_errno is set).
  */
-void* rte_mem_alloc(size_t size, enum rte_page_sizes hugepage_size);
+void* rte_mem_alloc(size_t size, enum rte_page_sizes page_size);
 
 /**
- * Cancel virtual memory reservation.
+ * Free memory obtained by rte_mem_reserve() or rte_mem_alloc().
  * 
  * If @code virt @endcode and @code size @endcode describe a part of the
  * reserved region, only this part of the region is freed (accurately
  * up to the system page size). If @code virt @endcode points to allocated
  * memory, @code size @endcode must match the one specified on allocation.
+ * The behavior is undefined if the memory pointed by @code virt @endcode
+ * is obtained from another source than listed above.
  * 
  * @param virt
  * 	A virtual address in a region previously reserved.
  * @param size
  *  Number of bytes to unreserve.
  */
-void rte_mem_free_virtual(void *virt, size_t size);
+void rte_mem_free(void *virt, size_t size);
 
 /**
  * Get system page size. This function never failes.

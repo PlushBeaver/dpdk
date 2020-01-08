@@ -94,7 +94,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 			return NULL;
 		}
 
-		mapped_addr = rte_mem_reserve_virtual(
+		mapped_addr = rte_mem_reserve(
 				requested_addr, (size_t)map_sz, reserve_flags);
 		if ((mapped_addr == NULL) && allow_shrink)
 			size -= page_sz;
@@ -105,7 +105,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 			next_baseaddr = RTE_PTR_ADD(next_baseaddr, page_sz);
 			if (try <= MAX_MMAP_WITH_DEFINED_ADDR_TRIES) {
 				/* hint was not used. Try with another offset */
-				rte_mem_free_virtual(mapped_addr, *size);
+				rte_mem_free(mapped_addr, *size);
 				mapped_addr = NULL;
 				requested_addr = next_baseaddr;
 			}
@@ -130,7 +130,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 			aligned_addr != requested_addr) {
 		RTE_LOG(ERR, EAL, "Cannot get a virtual area at requested address: %p (got %p)\n",
 			requested_addr, aligned_addr);
-		rte_mem_free_virtual(mapped_addr, map_sz);
+		rte_mem_free(mapped_addr, map_sz);
 		rte_errno = EADDRNOTAVAIL;
 		return NULL;
 	} else if (requested_addr != NULL && addr_is_hint &&
@@ -146,7 +146,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 		aligned_addr, *size);
 
 	if (unmap) {
-		rte_mem_free_virtual(mapped_addr, map_sz);
+		rte_mem_free(mapped_addr, map_sz);
 	} else if (!no_align) {
 		void *map_end, *aligned_end;
 		size_t before_len, after_len;
@@ -168,12 +168,12 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 		/* unmap space before aligned mmap address */
 		before_len = RTE_PTR_DIFF(aligned_addr, mapped_addr);
 		if (before_len > 0)
-			rte_mem_free_virtual(mapped_addr, before_len);
+			rte_mem_free(mapped_addr, before_len);
 
 		/* unmap space after aligned end mmap address */
 		after_len = RTE_PTR_DIFF(map_end, aligned_end);
 		if (after_len > 0)
-			rte_mem_free_virtual(aligned_end, after_len);
+			rte_mem_free(aligned_end, after_len);
 	}
 
 	return aligned_addr;

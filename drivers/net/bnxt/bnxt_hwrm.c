@@ -51,7 +51,7 @@ static int page_getenum(size_t size)
 		return 22;
 	if (size <= 1 << 30)
 		return 30;
-	PMD_DRV_LOG(ERR, "Page size %zu out of range\n", size);
+	PMD_DRV_LOG(ERR, "Page size %" RTE_PRIzu " out of range\n", size);
 	return sizeof(void *) * 8 - 1;
 }
 
@@ -614,8 +614,8 @@ static int __bnxt_hwrm_func_qcaps(struct bnxt *bp)
 				bp->pf.vf_info[i].fid = bp->pf.first_vf_id + i;
 				bp->pf.vf_info[i].vlan_table =
 					rte_zmalloc("VF VLAN table",
-						    getpagesize(),
-						    getpagesize());
+						    rte_get_page_size(),
+						    rte_get_page_size());
 				if (bp->pf.vf_info[i].vlan_table == NULL)
 					PMD_DRV_LOG(ERR,
 					"Fail to alloc VLAN table for VF %d\n",
@@ -625,8 +625,8 @@ static int __bnxt_hwrm_func_qcaps(struct bnxt *bp)
 						bp->pf.vf_info[i].vlan_table);
 				bp->pf.vf_info[i].vlan_as_table =
 					rte_zmalloc("VF VLAN AS table",
-						    getpagesize(),
-						    getpagesize());
+						    rte_get_page_size(),
+						    rte_get_page_size());
 				if (bp->pf.vf_info[i].vlan_as_table == NULL)
 					PMD_DRV_LOG(ERR,
 					"Alloc VLAN AS table for VF %d fail\n",
@@ -3242,7 +3242,7 @@ int bnxt_hwrm_allocate_vfs(struct bnxt *bp, int num_vfs)
 		rc = -ENOMEM;
 		goto error_free;
 	}
-	for (sz = 0; sz < req_buf_sz; sz += getpagesize())
+	for (sz = 0; sz < req_buf_sz; sz += rte_get_page_size())
 		rte_mem_lock_page(((char *)bp->pf.vf_req_buf) + sz);
 	for (i = 0; i < num_vfs; i++)
 		bp->pf.vf_info[i].req_buf = ((char *)bp->pf.vf_req_buf) +
@@ -4046,7 +4046,7 @@ int bnxt_hwrm_func_vf_vnic_query_and_config(struct bnxt *bp, uint16_t vf,
 	if (vnic_ids == NULL)
 		return -ENOMEM;
 
-	for (sz = 0; sz < vnic_id_sz; sz += getpagesize())
+	for (sz = 0; sz < vnic_id_sz; sz += rte_get_page_size())
 		rte_mem_lock_page(((char *)vnic_ids) + sz);
 
 	num_vnic_ids = bnxt_hwrm_func_vf_vnic_query(bp, vf, vnic_ids);
@@ -4115,7 +4115,7 @@ int bnxt_hwrm_func_qcfg_vf_dflt_vnic_id(struct bnxt *bp, int vf)
 	if (vnic_ids == NULL)
 		return -ENOMEM;
 
-	for (sz = 0; sz < vnic_id_sz; sz += getpagesize())
+	for (sz = 0; sz < vnic_id_sz; sz += rte_get_page_size())
 		rte_mem_lock_page(((char *)vnic_ids) + sz);
 
 	rc = bnxt_hwrm_func_vf_vnic_query(bp, vf, vnic_ids);

@@ -76,12 +76,7 @@ hugepage_claim_privilege(void) {
     tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
     if (!AdjustTokenPrivileges(
-           token,
-           FALSE,
-           &tp,
-           sizeof(TOKEN_PRIVILEGES),
-           NULL,
-           NULL)) {
+           token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
         RTE_LOG_SYSTEM_ERROR("AdjustTokenPrivileges()");
         goto exit;
     }
@@ -240,12 +235,12 @@ eal_hugepage_info_init(void)
     struct hugepage_info *hpi, *shared;
 
     if (hugepage_claim_privilege() < 0) {
-        RTE_LOG(ERR, EAL, "Failed to claim hugepage privilege!\n");
+        RTE_LOG(ERR, EAL, "Cannot claim hugepage privilege\n");
         return -1;
     }
 
 	if (hugepage_info_init() < 0) {
-        RTE_LOG(ERR, EAL, "Failed to get hugepage information!\n");
+        RTE_LOG(ERR, EAL, "Cannot get hugepage information\n");
 		return -1;
     }
 
@@ -255,18 +250,16 @@ eal_hugepage_info_init(void)
 
 	hpi = &internal_config.hugepage_info[0];
 
-	shared = create_shared_memory(
-            eal_hugepage_info_path(),
-			sizeof(*shared));
+	shared = create_shared_memory(eal_hugepage_info_path(), sizeof(*shared));
 	if (shared == NULL) {
-		RTE_LOG(ERR, EAL, "Failed to create shared memory!\n");
+		RTE_LOG(ERR, EAL, "Cannot create hugepage info shared memory\n");
 		return -1;
 	}
 
 	memcpy(shared, hpi, sizeof(*shared));
 
 	if (rte_mem_unmap(shared, sizeof(*shared)) < 0) {
-		RTE_LOG(ERR, EAL, "Failed to unmap shared memory!\n");
+		RTE_LOG(ERR, EAL, "Cannot unmap hugepage info shared memory\n");
 		return -1;
 	}
 
@@ -280,18 +273,16 @@ eal_hugepage_info_read(void)
 
     hpi = &internal_config.hugepage_info[0];
 
-	shared = open_shared_memory(
-            eal_hugepage_info_path(),
-			sizeof(*shared));
+	shared = open_shared_memory(eal_hugepage_info_path(), sizeof(*shared));
 	if (shared == NULL) {
-		RTE_LOG(ERR, EAL, "Failed to open shared memory!\n");
+		RTE_LOG(ERR, EAL, "Cannot open hugepage info shared memory\n");
 		return -1;
 	}
 
 	memcpy(hpi, shared, sizeof(*hpi));
 
 	if (rte_mem_unmap(shared, sizeof(*shared)) < 0) {
-		RTE_LOG(ERR, EAL, "Failed to unmap shared memory!\n");
+		RTE_LOG(ERR, EAL, "Cannot unmap hugepage info shared memory\n");
 		return -1;
 	}
 	return 0;

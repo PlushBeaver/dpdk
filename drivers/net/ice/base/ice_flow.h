@@ -313,8 +313,8 @@ struct ice_flow_entry {
 	u8 acts_cnt;
 };
 
-#define ICE_FLOW_ENTRY_HNDL(e)	((unsigned long)e)
-#define ICE_FLOW_ENTRY_PTR(h)	((struct ice_flow_entry *)(h))
+#define ICE_FLOW_ENTRY_HNDL(e)	((uintptr_t)e)
+#define ICE_FLOW_ENTRY_PTR(h)	((struct ice_flow_entry *)((uintptr_t)(h)))
 
 struct ice_flow_prof {
 	struct LIST_ENTRY_TYPE l_entry;

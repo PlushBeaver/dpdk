@@ -111,7 +111,7 @@ int resource_untar(const struct resource *res)
 
 	p = malloc(resource_size(res));
 	if (p == NULL)
-		rte_panic("Failed to malloc %zu B\n", resource_size(res));
+		rte_panic("Failed to malloc %" RTE_PRIzu " B\n", resource_size(res));
 
 	memcpy(p, res->begin, resource_size(res));
 
@@ -189,7 +189,7 @@ int resource_rm_by_tar(const struct resource *res)
 
 	p = malloc(resource_size(res));
 	if (p == NULL)
-		rte_panic("Failed to malloc %zu B\n", resource_size(res));
+		rte_panic("Failed to malloc %" RTE_PRIzu " B\n", resource_size(res));
 
 	memcpy(p, res->begin, resource_size(res));
 

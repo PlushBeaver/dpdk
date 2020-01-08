@@ -1384,7 +1384,7 @@ test_bbdev_vector_read(const char *filename,
 		/* buffer for multiline */
 		entry = realloc(entry, strlen(line) + 1);
 		if (entry == NULL) {
-			printf("Fail to realloc %zu bytes\n", strlen(line) + 1);
+			printf("Fail to realloc %" RTE_PRIzu " bytes\n", strlen(line) + 1);
 			ret = -ENOMEM;
 			goto exit;
 		}
@@ -1403,7 +1403,7 @@ test_bbdev_vector_read(const char *filename,
 						strlen(entry) + 1);
 
 				if (entry_extended == NULL) {
-					printf("Fail to allocate %zu bytes\n",
+					printf("Fail to allocate %" RTE_PRIzu " bytes\n",
 							strlen(line) +
 							strlen(entry) + 1);
 					ret = -ENOMEM;

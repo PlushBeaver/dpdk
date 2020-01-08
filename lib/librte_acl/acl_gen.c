@@ -38,12 +38,12 @@ acl_gen_log_stats(const struct rte_acl_ctx *ctx,
 {
 	RTE_LOG(DEBUG, ACL, "Gen phase for ACL \"%s\":\n"
 		"runtime memory footprint on socket %d:\n"
-		"single nodes/bytes used: %d/%zu\n"
-		"quad nodes/vectors/bytes used: %d/%d/%zu\n"
-		"DFA nodes/group64/bytes used: %d/%d/%zu\n"
-		"match nodes/bytes used: %d/%zu\n"
-		"total: %zu bytes\n"
-		"max limit: %zu bytes\n",
+		"single nodes/bytes used: %d/%" RTE_PRIzu "\n"
+		"quad nodes/vectors/bytes used: %d/%d/%" RTE_PRIzu "\n"
+		"DFA nodes/group64/bytes used: %d/%d/%" RTE_PRIzu "\n"
+		"match nodes/bytes used: %d/%" RTE_PRIzu "\n"
+		"total: %" RTE_PRIzu " bytes\n"
+		"max limit: %" RTE_PRIzu " bytes\n",
 		ctx->name, ctx->socket_id,
 		counts->single, counts->single * sizeof(uint64_t),
 		counts->quad, counts->quad_vectors,
@@ -472,7 +472,7 @@ rte_acl_gen(struct rte_acl_ctx *ctx, struct rte_acl_trie *trie,
 	if (total_size > max_size) {
 		RTE_LOG(DEBUG, ACL,
 			"Gen phase for ACL ctx \"%s\" exceeds max_size limit, "
-			"bytes required: %zu, allowed: %zu\n",
+			"bytes required: %" RTE_PRIzu ", allowed: %" RTE_PRIzu "\n",
 			ctx->name, total_size, max_size);
 		return -ERANGE;
 	}
@@ -481,7 +481,7 @@ rte_acl_gen(struct rte_acl_ctx *ctx, struct rte_acl_trie *trie,
 			ctx->socket_id);
 	if (mem == NULL) {
 		RTE_LOG(ERR, ACL,
-			"allocation of %zu bytes on socket %d for %s failed\n",
+			"allocation of %" RTE_PRIzu " bytes on socket %d for %s failed\n",
 			total_size, ctx->socket_id, ctx->name);
 		return -ENOMEM;
 	}

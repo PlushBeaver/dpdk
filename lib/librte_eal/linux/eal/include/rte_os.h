@@ -31,8 +31,6 @@ typedef cpu_set_t rte_cpuset_t;
 	CPU_XOR(dst, &tmp, src); \
 } while (0)
 
-#define RTE_PATH_MAX PATH_MAX
-
 /**
  * The most precise floating-point type supported by target platform.
  * 
@@ -41,12 +39,14 @@ typedef cpu_set_t rte_cpuset_t;
 typedef long double rte_long_double;
 
 /**
- * Formatting specifiers for (s)size_t and @code rte_long_double @endcode.
+ * Formatting specifiers portable across compilers and environments.
  */
-#define RTE_PRILf "#Lf"
-#define RTE_PRIzd "zd"
-#define RTE_PRIzu "zu"
-#define RTE_PRIzx "zx"
+#define RTE_PRILf  "Lf"
+#define RTE_PRIF   "F"
+#define RTE_PRIllu "llu"
+#define RTE_PRIzd  "zd"
+#define RTE_PRIzu  "zu"
+#define RTE_PRIzx  "zx"
 
 /**
  * Dynamically loded module descriptor.

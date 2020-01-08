@@ -478,7 +478,7 @@ otx_cpt_enq_single_sym(struct cpt_instance *instance,
 {
 	struct cpt_sess_misc *sess;
 	struct rte_crypto_sym_op *sym_op = op->sym;
-	void *prep_req, *mdata = NULL;
+	void *prep_req = NULL, *mdata = NULL;
 	int ret = 0;
 	uint64_t cpt_op;
 

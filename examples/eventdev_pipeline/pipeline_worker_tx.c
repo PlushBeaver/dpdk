@@ -77,7 +77,7 @@ worker_do_tx_single(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 	return 0;
 }
@@ -112,7 +112,7 @@ worker_do_tx_single_atq(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 	return 0;
 }
@@ -158,7 +158,7 @@ worker_do_tx_single_burst(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 	return 0;
 }
@@ -202,7 +202,7 @@ worker_do_tx_single_burst_atq(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 	return 0;
 }
@@ -252,7 +252,7 @@ worker_do_tx(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 
 	return 0;
@@ -298,7 +298,7 @@ worker_do_tx_atq(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 
 	return 0;
@@ -353,7 +353,7 @@ worker_do_tx_burst(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 
 	return 0;
@@ -407,7 +407,7 @@ worker_do_tx_burst_atq(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%zu FWD=%zu TX=%zu\n",
+		printf("  worker %u thread done. RX=%" RTE_PRIzu " FWD=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
 				rte_lcore_id(), received, fwd, tx);
 
 	return 0;

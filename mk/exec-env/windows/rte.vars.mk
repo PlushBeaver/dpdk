@@ -17,6 +17,11 @@ else
 EXECENV_CFLAGS  = -pthread
 endif
 
+# FIXME: MinGW-w64 until v7 does not use standard-complying Microsoft UCRT.
+ifeq ($(CONFIG_RTE_TOOLCHAIN_GCC),y)
+EXECENV_CFLAGS += -D__USE_MINGW_ANSI_STDIO
+endif
+
 # include in every library to build
 EXECENV_CFLAGS += -I$(RTE_SDK)/lib/librte_eal/windows/eal/include
 

@@ -478,7 +478,7 @@ tracef_init(void)
 	config.traces = rte_zmalloc_socket(name, sz, RTE_CACHE_LINE_SIZE,
 			SOCKET_ID_ANY);
 	if (config.traces == NULL)
-		rte_exit(EXIT_FAILURE, "Cannot allocate %zu bytes for "
+		rte_exit(EXIT_FAILURE, "Cannot allocate %" RTE_PRIzu " bytes for "
 			"requested %u number of trace records\n",
 			sz, config.nb_traces);
 
@@ -945,7 +945,7 @@ print_usage(const char *prgname)
 			"=<number of categories to build with>]\n"
 		"[--" OPT_RUN_CATEGORIES
 			"=<number of categories to run with> "
-			"should be either 1 or multiple of %zu, "
+			"should be either 1 or multiple of %" RTE_PRIzu ", "
 			"but not greater then %u]\n"
 		"[--" OPT_MAX_SIZE
 			"=<size limit (in bytes) for runtime ACL strucutures> "
@@ -970,7 +970,7 @@ dump_config(FILE *f)
 	fprintf(f, "%s:%u\n", OPT_TRACE_STEP, config.trace_step);
 	fprintf(f, "%s:%u\n", OPT_BLD_CATEGORIES, config.bld_categories);
 	fprintf(f, "%s:%u\n", OPT_RUN_CATEGORIES, config.run_categories);
-	fprintf(f, "%s:%zu\n", OPT_MAX_SIZE, config.max_size);
+	fprintf(f, "%s:%" RTE_PRIzu "\n", OPT_MAX_SIZE, config.max_size);
 	fprintf(f, "%s:%u\n", OPT_ITER_NUM, config.iter_num);
 	fprintf(f, "%s:%u\n", OPT_VERBOSE, config.verbose);
 	fprintf(f, "%s:%u(%s)\n", OPT_SEARCH_ALG, config.alg.alg,

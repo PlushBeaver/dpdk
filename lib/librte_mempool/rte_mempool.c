@@ -680,16 +680,14 @@ rte_mempool_populate_anon(struct rte_mempool *mp)
 	}
 
 	/* get chunk of virtually continuous memory */
-	addr = rte_mem_map(NULL, size, RTE_PROT_READ | RTE_PROT_WRITE,
-		RTE_MAP_SHARED | RTE_MAP_ANONYMOUS, -1, 0);
+	addr = rte_mem_alloc(size, 0);
 	if (addr == NULL) {
 		return 0;
 	}
-	/* can't use MMAP_LOCKED, it does not exist on BSD */
 	if (rte_mem_lock(addr, size) < 0) {
-		/* save error root cause in case unmapping raises its own error */
+		/* save error root cause in case releasing raises its own error */
 		int lock_errno = errno;
-		rte_mem_unmap(addr, size);
+		rte_mem_free(addr, size);
 		rte_errno = lock_errno;
 		return 0;
 	}

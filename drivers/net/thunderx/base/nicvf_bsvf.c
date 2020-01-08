@@ -4,7 +4,6 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <err.h>
 
 #include "nicvf_bsvf.h"
 #include "nicvf_plat.h"

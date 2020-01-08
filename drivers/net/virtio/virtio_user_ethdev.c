@@ -227,7 +227,7 @@ virtio_user_write_dev_config(struct virtio_hw *hw, size_t offset,
 		for (i = 0; i < RTE_ETHER_ADDR_LEN; ++i)
 			dev->mac_addr[i] = ((const uint8_t *)src)[i];
 	else
-		PMD_DRV_LOG(ERR, "not supported offset=%zu, len=%d",
+		PMD_DRV_LOG(ERR, "not supported offset=%" RTE_PRIzu ", len=%d",
 			    offset, length);
 }
 

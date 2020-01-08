@@ -540,8 +540,7 @@ test_external_mem(void)
 
 	/* create external memory area */
 	n_pages = RTE_DIM(iova);
-	addr = rte_mem_map(NULL, len, RTE_PROT_WRITE | RTE_PROT_READ,
-			RTE_MAP_ANONYMOUS | RTE_MAP_PRIVATE, -1, 0);
+	addr = rte_mem_alloc(len, 0);
 	if (addr == NULL) {
 		printf("%s():%i: Failed to create dummy memory area\n",
 			__func__, __LINE__);

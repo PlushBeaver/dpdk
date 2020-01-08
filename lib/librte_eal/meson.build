@@ -20,6 +20,9 @@ endif
 if cc.has_function('getentropy', prefix : '#include <unistd.h>')
 	cflags += '-DRTE_LIBEAL_USE_GETENTROPY'
 endif
+if is_windows and (cc.get_id() == 'gcc')
+	cflags += '-D__USE_MINGW_ANSI_STDIO'
+endif
 sources = common_sources + env_sources
 objs = common_objs + env_objs
 headers = common_headers + env_headers

@@ -141,8 +141,8 @@ test_rte_strlcat(void)
 	char rte_dst[BUF_LEN];
 	size_t i, bsd_ret, rte_ret;
 
-	LOG("dst = '%s', strlen(dst) = %zu\n", dst, strlen(dst));
-	LOG("src = '%s', strlen(src) = %zu\n", src, strlen(src));
+	LOG("dst = '%s', strlen(dst) = %" RTE_PRIzu "\n", dst, strlen(dst));
+	LOG("src = '%s', strlen(src) = %" RTE_PRIzu "\n", src, strlen(src));
 	LOG("---\n");
 
 	for (i = 0; i < BUF_LEN; i++) {
@@ -153,8 +153,8 @@ test_rte_strlcat(void)
 		bsd_ret = strlcat(bsd_dst, src, i);
 		rte_ret = rte_strlcat(rte_dst, src, i);
 		if (bsd_ret != rte_ret) {
-			LOG("Incorrect retval for buf length = %zu\n", i);
-			LOG("BSD: '%zu', rte: '%zu'\n", bsd_ret, rte_ret);
+			LOG("Incorrect retval for buf length = %" RTE_PRIzu "\n", i);
+			LOG("BSD: '%" RTE_PRIzu "', rte: '%" RTE_PRIzu "'\n", bsd_ret, rte_ret);
 			return -1;
 		}
 		if (memcmp(bsd_dst, rte_dst, BUF_LEN) != 0) {
@@ -162,10 +162,10 @@ test_rte_strlcat(void)
 			LOG("BSD: '%s', rte: '%s'\n", bsd_dst, rte_dst);
 			return -1;
 		}
-		LOG("buffer size = %zu: dst = '%s', ret = %zu\n",
+		LOG("buffer size = %" RTE_PRIzu ": dst = '%s', ret = %" RTE_PRIzu "\n",
 			i, rte_dst, rte_ret);
 	}
-	LOG("Checked %zu combinations\n", i);
+	LOG("Checked %" RTE_PRIzu " combinations\n", i);
 #undef BUF_LEN
 #endif /* defined(__BSD_VISIBLE) || defined(RTE_USE_LIBBSD) */
 

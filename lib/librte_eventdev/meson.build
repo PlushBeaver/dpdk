@@ -5,8 +5,12 @@ allow_experimental_apis = true
 
 if is_linux
 	cflags += '-DLINUX'
-else
+elif is_freebsd
 	cflags += '-DBSD'
+elif is_windows
+	build = false
+	reason = 'not supported on Windows'
+	subdir_done()
 endif
 
 sources = files('rte_eventdev.c',

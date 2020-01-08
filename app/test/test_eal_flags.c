@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <sys/wait.h>
+// #include <sys/wait.h>
 #include <sys/file.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -23,7 +23,7 @@
 #include <rte_debug.h>
 #include <rte_string_fns.h>
 
-#include "process.h"
+#include "subprocess.h"
 
 #define DEFAULT_MEM_SIZE "18"
 #define mp_flag "--proc-type=secondary"
@@ -38,6 +38,9 @@
 #define SOCKET_MEM_STRLEN (RTE_MAX_NUMA_NODES * 20)
 #define launch_proc(ARGV) process_dup(ARGV, \
 		sizeof(ARGV)/(sizeof(ARGV[0])), __func__)
+
+/* Functions below require prefixes, which only Linux now supports. */
+#ifdef RTE_EXEC_ENV_LINUX
 
 enum hugepage_action {
 	HUGEPAGE_CHECK_EXISTS = 0,
@@ -75,7 +78,7 @@ get_hugepage_path(char * src, int src_len, char * dst, int dst_len)
  * Returns -1 if it encounters an error
  */
 static int
-process_hugefiles(const char * prefix, enum hugepage_action action)
+process_hugefiles(const char *prefix, enum hugepage_action action)
 {
 	FILE * hugedir_handle = NULL;
 	DIR * hugepage_dir = NULL;
@@ -191,7 +194,6 @@ end:
 	return result;
 }
 
-#ifdef RTE_EXEC_ENV_LINUX
 /*
  * count the number of "node*" files in /sys/devices/system/node/
  */
@@ -232,8 +234,8 @@ static int
 test_whitelist_flag(void)
 {
 	unsigned i;
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -298,8 +300,8 @@ test_whitelist_flag(void)
 static int
 test_invalid_b_flag(void)
 {
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -402,8 +404,8 @@ test_invalid_vdev_flag(void)
 static int
 test_invalid_r_flag(void)
 {
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -446,8 +448,8 @@ test_invalid_r_flag(void)
 static int
 test_missing_c_flag(void)
 {
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -602,8 +604,8 @@ test_missing_c_flag(void)
 static int
 test_master_lcore_flag(void)
 {
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char *prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -659,8 +661,8 @@ test_master_lcore_flag(void)
 static int
 test_invalid_n_flag(void)
 {
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -713,7 +715,8 @@ test_no_hpet_flag(void)
 {
 	char prefix[PATH_MAX] = "";
 
-#ifdef RTE_EXEC_ENV_FREEBSD
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	return 0;
 #else
 	char tmp[PATH_MAX];
@@ -797,8 +800,8 @@ static int
 test_misc_flags(void)
 {
 	char hugepath[PATH_MAX] = {0};
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 	const char * nosh_prefix = "";
 #else
@@ -1028,16 +1031,14 @@ test_file_prefix(void)
 	 *    run in legacy mode, and not present at all after run in default
 	 *    mem mode
 	 */
+
+#ifdef RTE_EXEC_ENV_LINUX
 	char prefix[PATH_MAX] = "";
 
-#ifdef RTE_EXEC_ENV_FREEBSD
-	return 0;
-#else
 	if (get_current_prefix(prefix, sizeof(prefix)) == NULL) {
 		printf("Error - unable to get current prefix!\n");
 		return -1;
 	}
-#endif
 
 	/* this should fail unless the test itself is run with "memtest" prefix */
 	const char *argv0[] = {prgname, mp_flag, "-m",
@@ -1246,6 +1247,7 @@ test_file_prefix(void)
 				memtest1);
 		return -1;
 	}
+#endif /* Linux */
 
 	return 0;
 }
@@ -1290,8 +1292,8 @@ populate_socket_mem_param(int num_sockets, const char *mem,
 static int
 test_memory_flags(void)
 {
-#ifdef RTE_EXEC_ENV_FREEBSD
-	/* BSD target doesn't support prefixes at this point */
+#ifndef RTE_EXEC_ENV_LINUX
+	/* Windows and BSD targets don't support prefixes at this point. */
 	const char * prefix = "";
 #else
 	char prefix[PATH_MAX], tmp[PATH_MAX];
@@ -1345,7 +1347,7 @@ test_memory_flags(void)
 			"--file-prefix=" memtest, "-m", DEFAULT_MEM_SIZE,
 			arg8_socket_mem};
 
-#ifdef RTE_EXEC_ENV_FREEBSD
+#ifndef RTE_EXEC_ENV_LINUX
 	int num_sockets = 1;
 #else
 	int num_sockets = RTE_MIN(get_number_of_sockets(),

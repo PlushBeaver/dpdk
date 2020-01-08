@@ -103,7 +103,7 @@ TAILQ_HEAD(shared_driver_list, shared_driver);
 struct shared_driver {
 	TAILQ_ENTRY(shared_driver) next;
 
-	char name[RTE_PATH_MAX];
+	char name[PATH_MAX];
 	rte_module lib_handle;
 };
 

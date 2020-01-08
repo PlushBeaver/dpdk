@@ -1,6 +1,9 @@
 DPDK_20.0 {
 	global:
 
+	__emutls_v.per_lcore__rte_errno;
+	__emutls_v.per_lcore__lcore_id;
+
 	__rte_panic;
 	eal_parse_sysfs_value;
 	eal_timer_source;
@@ -75,6 +78,7 @@ DPDK_20.0 {
 	rte_get_hpet_hz;
 	rte_get_master_lcore;
 	rte_get_next_lcore;
+	rte_get_page_size;
 	rte_get_tsc_hz;
 	rte_hexdump;
 	rte_hypervisor_get;
@@ -133,7 +137,13 @@ DPDK_20.0 {
 	rte_mcfg_tailq_read_unlock;
 	rte_mcfg_tailq_write_lock;
 	rte_mcfg_tailq_write_unlock;
+	rte_mem_alloc;
+	rte_mem_free;
 	rte_mem_lock_page;
+	rte_mem_lock;
+	rte_mem_map;
+	rte_mem_protect;
+	rte_mem_unmap;
 	rte_mem_virt2iova;
 	rte_mem_virt2phy;
 	rte_memdump;

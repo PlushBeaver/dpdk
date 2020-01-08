@@ -22,6 +22,7 @@
 extern "C" {
 #endif
 
+#include <sched.h>
 #include <pthread.h>
 
 /**

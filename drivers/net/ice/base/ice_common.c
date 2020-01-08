@@ -373,10 +373,10 @@ ice_aq_get_link_info(struct ice_port_info *pi, bool ena_lse,
 	li->lse_ena = !!(resp->cmd_flags & CPU_TO_LE16(ICE_AQ_LSE_IS_ENABLED));
 
 	ice_debug(hw, ICE_DBG_LINK, "link_speed = 0x%x\n", li->link_speed);
-	ice_debug(hw, ICE_DBG_LINK, "phy_type_low = 0x%llx\n",
-		  (unsigned long long)li->phy_type_low);
-	ice_debug(hw, ICE_DBG_LINK, "phy_type_high = 0x%llx\n",
-		  (unsigned long long)li->phy_type_high);
+	ice_debug(hw, ICE_DBG_LINK, "phy_type_low = 0x%" PRIx64 "\n",
+		  li->phy_type_low);
+	ice_debug(hw, ICE_DBG_LINK, "phy_type_high = 0x%" PRIx64 "\n",
+		  li->phy_type_high);
 	ice_debug(hw, ICE_DBG_LINK, "media_type = 0x%x\n", *hw_media_type);
 	ice_debug(hw, ICE_DBG_LINK, "link_info = 0x%x\n", li->link_info);
 	ice_debug(hw, ICE_DBG_LINK, "an_info = 0x%x\n", li->an_info);
@@ -2373,10 +2373,10 @@ ice_aq_set_phy_cfg(struct ice_hw *hw, struct ice_port_info *pi,
 	desc.params.set_phy.lport_num = pi->lport;
 	desc.flags |= CPU_TO_LE16(ICE_AQ_FLAG_RD);
 
-	ice_debug(hw, ICE_DBG_LINK, "phy_type_low = 0x%llx\n",
-		  (unsigned long long)LE64_TO_CPU(cfg->phy_type_low));
-	ice_debug(hw, ICE_DBG_LINK, "phy_type_high = 0x%llx\n",
-		  (unsigned long long)LE64_TO_CPU(cfg->phy_type_high));
+	ice_debug(hw, ICE_DBG_LINK, "phy_type_low = 0x%" PRIx64 "\n",
+		  LE64_TO_CPU(cfg->phy_type_low));
+	ice_debug(hw, ICE_DBG_LINK, "phy_type_high = 0x%" PRIx64 "\n",
+		  LE64_TO_CPU(cfg->phy_type_high));
 	ice_debug(hw, ICE_DBG_LINK, "caps = 0x%x\n", cfg->caps);
 	ice_debug(hw, ICE_DBG_LINK, "low_power_ctrl = 0x%x\n",
 		  cfg->low_power_ctrl);

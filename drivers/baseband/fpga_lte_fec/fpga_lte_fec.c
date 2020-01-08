@@ -2356,7 +2356,7 @@ fpga_lte_fec_probe(struct rte_pci_driver *pci_drv,
 
 	if (bbdev->data->dev_private == NULL) {
 		rte_bbdev_log(CRIT,
-				"Allocate of %zu bytes for device \"%s\" failed",
+				"Allocate of %" RTE_PRIzu " bytes for device \"%s\" failed",
 				sizeof(struct fpga_lte_fec_device), dev_name);
 				rte_bbdev_release(bbdev);
 			return -ENOMEM;

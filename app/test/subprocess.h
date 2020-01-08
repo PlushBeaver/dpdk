@@ -5,6 +5,10 @@
 #ifndef _PROCESS_H_
 #define _PROCESS_H_
 
+#include "test.h"
+
+#ifndef RTE_EXEC_ENV_WINDOWS /* POSIX implementation */
+
 #include <errno.h>  /* errno */
 #include <limits.h> /* PATH_MAX */
 #include <libgen.h> /* basename et al */
@@ -160,4 +164,104 @@ get_current_prefix(char *prefix, int size)
 }
 #endif
 
+#else /* Windows implementation */
+
+#include <rte_windows.h>
+
+static inline int
+process_dup(const char *const argv[], int numargs, const char *env_value)
+{
+	char exe_path[PATH_MAX];
+	char *env = NULL, *new_env = NULL, *new_cmdline = NULL, *env_var;
+	size_t env_size, new_env_size, env_string_size, new_cmdline_size;
+	STARTUPINFO sinfo;
+	PROCESS_INFORMATION pinfo;
+	DWORD exit_code;
+	int i, ret = -1;
+
+	RTE_SET_USED(argv);
+	RTE_SET_USED(numargs);
+
+	if (!GetModuleFileNameA(NULL, exe_path, sizeof(exe_path))) {
+		printf("Cannot get current executable path\n");
+		goto exit;
+	}
+
+	env = GetEnvironmentStrings();
+	if (env == NULL) {
+		printf("Cannot get current process environment\n");
+		goto exit;
+	}
+
+	env_var = env;
+	while (env_var[0] != '\0') {
+		env_var += strlen(env_var) + 1;
+	}
+	env_size = env_var - env;
+
+	new_cmdline_size = 0;
+	for (i = 0; i < numargs; i++) {
+		new_cmdline_size += strlen(argv[i]) + 1;
+	}
+
+	new_cmdline = malloc(new_cmdline_size);
+	if (new_cmdline == NULL) {
+		printf("Cannot allocate new process command line\n");
+		goto exit;
+	}
+
+	new_cmdline[0] = '\0';
+	for (i = 0; i < numargs; i++) {
+		strcat(new_cmdline, argv[i]);
+		strcat(new_cmdline, " ");
+	}
+
+	env_string_size = strlen(RECURSIVE_ENV_VAR) + strlen(env_value) + 1;
+	new_env_size = env_size + env_string_size + 1; /* + empty last string */
+	new_env = malloc(new_env_size);
+	if (new_env == NULL) {
+		printf("Cannot allocate new process environment\n");
+		goto exit;
+	}
+
+	memcpy(new_env, env, env_size);
+	sprintf(new_env + env_size, "%s=%s", RECURSIVE_ENV_VAR, env_value);
+	new_env[new_env_size - 1] = '\0';
+
+	memset(&sinfo, 0, sizeof(sinfo));
+	sinfo.cb = sizeof(sinfo);
+	pinfo.hProcess = INVALID_HANDLE_VALUE; /* marker for cleanup */
+	if (!CreateProcessA(NULL, new_cmdline, NULL, NULL, FALSE, 0, new_env,
+			NULL, &sinfo, &pinfo)) {
+		printf("Cannot create process\n");
+		goto exit;
+	}
+
+	WaitForSingleObject(pinfo.hProcess, INFINITE);
+
+	if (!GetExitCodeProcess(pinfo.hProcess, &exit_code)) {
+		printf("Cannot get process exit code\n");
+		goto exit;
+	}
+
+	ret = (int)exit_code;
+
+exit:
+	if (env != NULL) {
+		FreeEnvironmentStrings(env);
+	}
+	if (new_env != NULL) {
+		free(new_env);
+	}
+	if (new_cmdline != NULL) {
+		free(new_cmdline);
+	}
+	if (pinfo.hProcess != INVALID_HANDLE_VALUE) {
+		CloseHandle(pinfo.hProcess);
+		CloseHandle(pinfo.hThread);
+	}
+	return ret;
+}
+
+#endif /* POSIX or Windows */
 #endif /* _PROCESS_H_ */

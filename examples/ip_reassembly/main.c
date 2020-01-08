@@ -839,7 +839,7 @@ setup_port_tbl(struct lcore_queue_conf *qconf, uint32_t lcore, int socket,
 	if ((mtb = rte_zmalloc_socket(__func__, sz, RTE_CACHE_LINE_SIZE,
 			socket)) == NULL) {
 		RTE_LOG(ERR, IP_RSMBL, "%s() for lcore: %u, port: %u "
-			"failed to allocate %zu bytes\n",
+			"failed to allocate %" RTE_PRIzu " bytes\n",
 			__func__, lcore, port, sz);
 		return -1;
 	}

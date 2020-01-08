@@ -83,7 +83,7 @@ get_used_mask(void *data, unsigned int elt_sz, unsigned int len)
 static int
 resize_and_map(int fd, void *addr, size_t len)
 {
-	char path[RTE_PATH_MAX];
+	char path[PATH_MAX];
 	void *map_addr;
 
 	if (rte_ftruncate(fd, len)) {
@@ -712,7 +712,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 		unsigned int elt_sz)
 {
 	size_t page_sz, mmap_len;
-	char path[RTE_PATH_MAX];
+	char path[PATH_MAX];
 	struct used_mask *msk;
 	struct mem_area *ma = NULL;
 	void *data = NULL;
@@ -835,7 +835,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 {
 	struct mem_area *ma = NULL, *tmp = NULL;
 	size_t page_sz, mmap_len;
-	char path[RTE_PATH_MAX];
+	char path[PATH_MAX];
 	void *data = NULL;
 	int fd = -1;
 
@@ -979,7 +979,7 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 	struct mem_area *tmp = NULL;
 	size_t mmap_len;
 	int fd, ret;
-	char path[RTE_PATH_MAX];
+	char path[PATH_MAX];
 
 	if (arr == NULL) {
 		rte_errno = EINVAL;
