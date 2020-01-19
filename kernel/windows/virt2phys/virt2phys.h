@@ -16,9 +16,14 @@ DEFINE_GUID(GUID_DEVINTERFACE_VIRT2PHYS,
 #define VIRT2PHYS_DEVTYPE 0x8000
 
 /**
- * Translate virtual address to physical address.
+ * Translate a valid non-paged virtual address to a physical address.
  *
- * Input:  a non-paged virtual address (PVOID).
+ * Note: A physical address zero (0) is reported if input address
+ * is paged out or not mapped. However, if input is a valid mapping
+ * of I/O port 0x0000, output is also zero. There is no way
+ * to distinguish between these cases by return value only.
+ *
+ * Input: a non-paged virtual address (PVOID).
  *
  * Output: the corresponding physical address (LARGE_INTEGER).
  */

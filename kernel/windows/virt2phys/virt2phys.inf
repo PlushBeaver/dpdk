@@ -28,7 +28,7 @@ HKR,,Icon,,-5
 
 [SourceDisksFiles]
 virt2phys.sys  = 1,,
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll = 1 ; make sure the number matches with SourceDisksNames
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll = 1
 
 ;*****************************************
 ; Install Section
@@ -53,9 +53,9 @@ AddService = virt2phys,%SPSVCINST_ASSOCSERVICE%, virt2phys_Service_Inst
 ; -------------- virt2phys driver install sections
 [virt2phys_Service_Inst]
 DisplayName    = %virt2phys.SVCDESC%
-ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
-StartType      = 3               ; SERVICE_DEMAND_START
-ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceType    = 1 ; SERVICE_KERNEL_DRIVER
+StartType      = 3 ; SERVICE_DEMAND_START
+ErrorControl   = 1 ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\virt2phys.sys
 
 ;
@@ -80,7 +80,7 @@ KmdfLibraryVersion = $KMDFVERSION$
 [Strings]
 SPSVCINST_ASSOCSERVICE = 0x00000002
 ManufacturerName = "Dmitry Kozlyuk"
-ClassName = "virt2phys"
+ClassName = "Kernel bypass"
 DiskName = "virt2phys Installation Disk"
-virt2phys.DeviceDesc = "virt2phys Device"
+virt2phys.DeviceDesc = "Virtual to physical address translator"
 virt2phys.SVCDESC = "virt2phys Service"
