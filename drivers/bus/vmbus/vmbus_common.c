@@ -37,7 +37,7 @@ vmbus_map_resource(void *requested_addr, int fd, off_t offset, size_t size,
 		       MAP_SHARED | flags, fd, offset);
 	if (mapaddr == MAP_FAILED) {
 		VMBUS_LOG(ERR,
-			  "mmap(%d, %p, %" RTE_PRIzu ", %ld) failed: %s",
+			  "mmap(%d, %p, %zu, %ld) failed: %s",
 			  fd, requested_addr, size, (long)offset,
 			  strerror(errno));
 	}

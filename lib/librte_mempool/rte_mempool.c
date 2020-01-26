@@ -692,7 +692,7 @@ rte_mempool_populate_anon(struct rte_mempool *mp)
 		return 0;
 	}
 
-	ret = rte_mempool_populate_virt(mp, addr, size, getpagesize(),
+	ret = rte_mempool_populate_virt(mp, addr, size, rte_get_page_size(),
 		rte_mempool_memchunk_anon_free, addr);
 	if (ret < 0) {
 		rte_errno = -ret;
@@ -1222,8 +1222,8 @@ rte_mempool_dump(FILE *f, struct rte_mempool *mp)
 		mem_len += memhdr->len;
 	if (mem_len != 0) {
 		/* TODO: MSVCRT does not work with long double */
-		fprintf(f, "  avg bytes/object=%" RTE_PRILf "\n",
-			(rte_long_double)mem_len / mp->size);
+		fprintf(f, "  avg bytes/object=%Lf\n",
+			(long double)mem_len / mp->size);
 	}
 
 	cache_count = rte_mempool_dump_cache(f, mp);

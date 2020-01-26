@@ -222,7 +222,7 @@ rte_rcu_qsbr_dump(FILE *f, struct rte_rcu_qsbr *v)
 
 	fprintf(f, "\nQuiescent State Variable @%p\n", v);
 
-	fprintf(f, "  QS variable memory size = %" RTE_PRIzu "\n",
+	fprintf(f, "  QS variable memory size = %zu\n",
 				rte_rcu_qsbr_get_memsize(v->max_threads));
 	fprintf(f, "  Given # max threads = %u\n", v->max_threads);
 	fprintf(f, "  Current # threads = %u\n", v->num_threads);

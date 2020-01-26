@@ -166,7 +166,7 @@ nicvf_handle_mbx_intr(struct nicvf *nic)
 		}
 		for (i = 0; i < mbx.sqs_alloc.qs_count; i++) {
 			if (mbx.sqs_alloc.svf[i] != nic->snicvf[i]->vf_id) {
-				nicvf_log_error("Received secondary qset[%" RTE_PRIzu "] "
+				nicvf_log_error("Received secondary qset[%zu] "
 				                "ID %" PRIu8 " expected %"
 				                PRIu8, i, mbx.sqs_alloc.svf[i],
 				                nic->snicvf[i]->vf_id);

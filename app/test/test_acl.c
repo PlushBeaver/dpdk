@@ -920,14 +920,14 @@ test_convert_rules(const char *desc,
 
 		rc = build_convert_rules(acx, config, mem_sizes[i]);
 		if (rc != 0) {
-			printf("Line %i: Error @ build_convert_rules(%" RTE_PRIzu ")!\n",
+			printf("Line %i: Error @ build_convert_rules(%zu)!\n",
 				__LINE__, mem_sizes[i]);
 			break;
 		}
 
 		rc = test_classify_run(acx);
 		if (rc != 0)
-			printf("%s failed at line %i, max_size=%" RTE_PRIzu "\n",
+			printf("%s failed at line %i, max_size=%zu\n",
 				__func__, __LINE__, mem_sizes[i]);
 	}
 

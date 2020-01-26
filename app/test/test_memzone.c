@@ -523,7 +523,7 @@ test_memzone_reserve_max(void)
 
 		if (mz->len != maxlen) {
 			printf("Memzone reserve with 0 size did not return bigest block\n");
-			printf("Expected size = %" RTE_PRIzu ", actual size = %" RTE_PRIzu "\n",
+			printf("Expected size = %zu, actual size = %zu\n",
 					maxlen, mz->len);
 			rte_dump_physmem_layout(stdout);
 			rte_memzone_dump(stdout);
@@ -586,7 +586,7 @@ test_memzone_reserve_max_aligned(void)
 		if (mz->len < minlen || mz->len > maxlen) {
 			printf("Memzone reserve with 0 size and alignment %u did not return"
 					" bigest block\n", align);
-			printf("Expected size = %" RTE_PRIzu "-%" RTE_PRIzu ", actual size = %" RTE_PRIzu "\n",
+			printf("Expected size = %zu-%zu, actual size = %zu\n",
 					minlen, maxlen, mz->len);
 			rte_dump_physmem_layout(stdout);
 			rte_memzone_dump(stdout);

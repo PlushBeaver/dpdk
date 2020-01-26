@@ -217,7 +217,7 @@ process_reloc(Elf *elf, size_t sym_idx, Elf64_Rel *re, size_t re_sz,
 		rc = resolve_xsym(sn, ofs, ins, ins_sz, prm);
 		if (rc != 0) {
 			RTE_BPF_LOG(ERR,
-				"resolve_xsym(%s, %" RTE_PRIzu ") error code: %d\n",
+				"resolve_xsym(%s, %zu) error code: %d\n",
 				sn, ofs, rc);
 			return rc;
 		}
@@ -327,7 +327,7 @@ rte_bpf_elf_load(const struct rte_bpf_prm *prm, const char *fname,
 	}
 
 	RTE_BPF_LOG(INFO, "%s(fname=\"%s\", sname=\"%s\") "
-		"successfully creates %p(jit={.func=%p,.sz=%" RTE_PRIzu "});\n",
+		"successfully creates %p(jit={.func=%p,.sz=%zu});\n",
 		__func__, fname, sname, bpf, bpf->jit.func, bpf->jit.sz);
 	return bpf;
 }

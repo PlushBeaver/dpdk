@@ -52,4 +52,6 @@ foreach src:common_sources
 endforeach
 common_sources = win_common_sources
 
+install_headers('include/sys/queue.h', subdir: 'sys')
+
 deps += ['kvargs']

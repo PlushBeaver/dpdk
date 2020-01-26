@@ -24,6 +24,13 @@ endif
 
 EXPORT_MAP := rte_common_octeontx2_version.map
 
+build_octeontx2 += $(CONFIG_RTE_LIBRTE_PMD_OCTEONTX2_CRYPTO)
+build_octeontx2 += $(CONFIG_RTE_LIBRTE_PMD_OCTEONTX2_EVENTDEV)
+build_octeontx2 += $(CONFIG_RTE_LIBRTE_PMD_OCTEONTX2_DMA_RAWDEV)
+build_octeontx2 += $(CONFIG_RTE_LIBRTE_PMD_OCTEONTX2_EP_RAWDEV)
+build_octeontx2 += $(CONFIG_RTE_LIBRTE_OCTEONTX2_MEMPOOL)
+ifneq ($(build_octeontx2),)
+
 #
 # all source are stored in SRCS-y
 #
@@ -36,3 +43,5 @@ LDLIBS += -lrte_eal
 LDLIBS += -lrte_ethdev
 
 include $(RTE_SDK)/mk/rte.lib.mk
+
+endif # build_octeontx2

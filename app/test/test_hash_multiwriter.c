@@ -241,7 +241,7 @@ test_hash_multiwriter(void)
 		rte_atomic64_read(&gcycles)/
 		rte_atomic64_read(&ginsertions);
 
-	printf(" cycles per insertion: %" RTE_PRIllu "\n", cycles_per_insertion);
+	printf(" cycles per insertion: %llu\n", cycles_per_insertion);
 
 	rte_free(tbl_multiwriter_test_params.found);
 	rte_free(tbl_multiwriter_test_params.keys);

@@ -890,7 +890,7 @@ mlx5_mr_mem_event_free_cb(struct mlx5_ibv_shared *sh,
 	int i;
 	int rebuild = 0;
 
-	DEBUG("device %s free callback: addr=%p, len=%" RTE_PRIzu "",
+	DEBUG("device %s free callback: addr=%p, len=%zu",
 	      sh->ibdev_name, addr, len);
 	msl = rte_mem_virt2memseg_list(addr);
 	/* addr and len must be page-aligned. */

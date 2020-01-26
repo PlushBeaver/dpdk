@@ -40,11 +40,11 @@ eal_create_cpu_map(void)
 
 	infos_size = 0;
 	if (!GetLogicalProcessorInformationEx(
-			RelationNumaNode, NULL, &infos_size)) {
+	    RelationNumaNode, NULL, &infos_size)) {
 		DWORD error = GetLastError();
 		if (error != ERROR_INSUFFICIENT_BUFFER) {
-			rte_panic("cannot get NUMA node information size, error %lu",
-					GetLastError());
+			rte_panic("cannot get NUMA node info size, error %lu",
+				GetLastError());
 		}
 	}
 
@@ -55,9 +55,9 @@ eal_create_cpu_map(void)
 	}
 
 	if (!GetLogicalProcessorInformationEx(
-			RelationNumaNode, infos, &infos_size)) {
+	    RelationNumaNode, infos, &infos_size)) {
 		rte_panic("cannot get NUMA node information, error %lu",
-				GetLastError());
+			GetLastError());
 	}
 
 	info = infos;
@@ -69,11 +69,12 @@ eal_create_cpu_map(void)
 		unsigned int i;
 
 		/* NUMA node may be reported multiple times if it includes
-		 * cores from different "processor groups", e. g. 80 cores
+		 * cores from different processor groups, e. g. 80 cores
 		 * of a physical processor comprise one NUMA node, but two
 		 * processor groups, because group size is limited by 32/64.
 		 */
-		for (socket_id = 0; socket_id < cpu_map.socket_count; socket_id++) {
+		for (socket_id = 0; socket_id < cpu_map.socket_count;
+		    socket_id++) {
 			if (cpu_map.sockets[socket_id].node_id == node_id) {
 				break;
 			}
@@ -100,20 +101,21 @@ eal_create_cpu_map(void)
 			}
 
 			lcore = &cpu_map.lcores[cpu_map.lcore_count];
-			lcore->core_id = cores->Group * EAL_PROCESSOR_GROUP_SIZE + i;
 			lcore->socket_id = socket_id;
+			lcore->core_id =
+				cores->Group * EAL_PROCESSOR_GROUP_SIZE + i;
 			cpu_map.lcore_count++;
 		}
 
 		info = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *)(
-				(uint8_t *)info + info->Size);
+			(uint8_t *)info + info->Size);
 	}
 
 exit:
 	if (full) {
-		/* Logging not yet initialized. This is non-fatal, but important. */
+		/* RTE_LOG() is not yet available, but this is important. */
 		printf("Enumerated maximum of %u NUMA nodes and %u cores\n",
-				cpu_map.socket_count, cpu_map.lcore_count);
+			cpu_map.socket_count, cpu_map.lcore_count);
 	}
 
 	free(infos);

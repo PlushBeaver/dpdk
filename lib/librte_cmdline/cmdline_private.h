@@ -17,7 +17,8 @@ struct cmdline_terminal {
 #else
 	DWORD input_mode;
 	DWORD output_mode;
-	int is_console;
+	int is_console_input;
+	int is_console_output;
 #endif
 };
 

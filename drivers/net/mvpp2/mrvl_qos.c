@@ -761,7 +761,7 @@ mrvl_configure_rxqs(struct mrvl_priv *priv, uint16_t portid,
 		if (port_cfg->tc[tc].pcps > RTE_DIM(port_cfg->tc[0].pcp)) {
 			/* Better safe than sorry. */
 			MRVL_LOG(ERR,
-				"Too many PCPs configured in TC %" RTE_PRIzu "!", tc);
+				"Too many PCPs configured in TC %zu!", tc);
 			return -1;
 		}
 		for (i = 0; i < port_cfg->tc[tc].pcps; ++i) {
@@ -783,7 +783,7 @@ mrvl_configure_rxqs(struct mrvl_priv *priv, uint16_t portid,
 		if (port_cfg->tc[tc].dscps > RTE_DIM(port_cfg->tc[0].dscp)) {
 			/* Better safe than sorry. */
 			MRVL_LOG(ERR,
-				"Too many DSCPs configured in TC %" RTE_PRIzu "!", tc);
+				"Too many DSCPs configured in TC %zu!", tc);
 			return -1;
 		}
 		for (i = 0; i < port_cfg->tc[tc].dscps; ++i) {
@@ -805,7 +805,7 @@ mrvl_configure_rxqs(struct mrvl_priv *priv, uint16_t portid,
 		if (port_cfg->tc[tc].inqs > RTE_DIM(port_cfg->tc[0].inq)) {
 			/* Overflow. */
 			MRVL_LOG(ERR,
-				"Too many RX queues configured per TC %" RTE_PRIzu "!",
+				"Too many RX queues configured per TC %zu!",
 				tc);
 			return -1;
 		}

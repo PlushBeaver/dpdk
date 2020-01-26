@@ -534,12 +534,18 @@ rte_eal_init(int argc __rte_unused, char **argv __rte_unused)
 		return -1;
 	}
 
+	if (rte_eal_timer_init() < 0) {
+		rte_eal_init_alert("Cannot init HPET or TSC timers");
+		rte_errno = ENOTSUP;
+		return -1;
+	}
+
 	eal_thread_init_master(rte_config.master_lcore);
 
 	ret = eal_thread_dump_affinity(cpuset, sizeof(cpuset));
 
 	RTE_LOG(DEBUG, EAL, "Master lcore %u is ready "
-			"(tid=%#" RTE_PRIzx ";cpuset=[%s%s])\n",
+			"(tid=%#llx;cpuset=[%s%s])\n",
 		rte_config.master_lcore, (uintptr_t)thread_id, cpuset,
 		ret == 0 ? "" : "...");
 

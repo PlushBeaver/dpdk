@@ -1147,7 +1147,7 @@ test_ipsec_dump_buffers(struct ipsec_unitest_params *ut_params, int i)
 	printf("	replay_win_sz %u\n", test_cfg[i].replay_win_sz);
 	printf("	esn %u\n", test_cfg[i].esn);
 	printf("	flags 0x%" PRIx64 "\n", test_cfg[i].flags);
-	printf("	pkt_sz %" RTE_PRIzu "\n", test_cfg[i].pkt_sz);
+	printf("	pkt_sz %zu\n", test_cfg[i].pkt_sz);
 	printf("	num_pkts %u\n\n", test_cfg[i].num_pkts);
 
 	if (ut_params->ibuf[j]) {

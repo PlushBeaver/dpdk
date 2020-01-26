@@ -273,7 +273,7 @@ test_hash_readwrite_functional(int use_ext, int use_htm)
 		rte_atomic64_read(&gcycles) /
 		rte_atomic64_read(&ginsertions);
 
-	printf("cycles per insertion and lookup: %" RTE_PRIllu "\n",
+	printf("cycles per insertion and lookup: %llu\n",
 			cycles_per_insertion);
 
 	rte_free(tbl_rw_test_param.found);
@@ -483,7 +483,7 @@ test_hash_readwrite_perf(struct perf *perf_results, int use_htm,
 				rte_atomic64_read(&gread_cycles) /
 				rte_atomic64_read(&greads);
 			perf_results->read_only[n] = cycles_per_insertion;
-			printf("Reader only: cycles per lookup: %" RTE_PRIllu "\n",
+			printf("Reader only: cycles per lookup: %llu\n",
 							cycles_per_insertion);
 		}
 
@@ -492,7 +492,7 @@ test_hash_readwrite_perf(struct perf *perf_results, int use_htm,
 				rte_atomic64_read(&gwrite_cycles) /
 				rte_atomic64_read(&gwrites);
 			perf_results->write_only[n] = cycles_per_insertion;
-			printf("Writer only: cycles per writes: %" RTE_PRIllu "\n",
+			printf("Writer only: cycles per writes: %llu\n",
 							cycles_per_insertion);
 		}
 
@@ -577,7 +577,7 @@ test_hash_readwrite_perf(struct perf *perf_results, int use_htm,
 				rte_atomic64_read(&gread_cycles) /
 				rte_atomic64_read(&greads);
 			perf_results->read_write_r[n] = cycles_per_insertion;
-			printf("Read-write cycles per lookup: %" RTE_PRIllu "\n",
+			printf("Read-write cycles per lookup: %llu\n",
 							cycles_per_insertion);
 		}
 
@@ -586,7 +586,7 @@ test_hash_readwrite_perf(struct perf *perf_results, int use_htm,
 				rte_atomic64_read(&gwrite_cycles) /
 				rte_atomic64_read(&gwrites);
 			perf_results->read_write_w[n] = cycles_per_insertion;
-			printf("Read-write cycles per writes: %" RTE_PRIllu "\n",
+			printf("Read-write cycles per writes: %llu\n",
 							cycles_per_insertion);
 		}
 	}

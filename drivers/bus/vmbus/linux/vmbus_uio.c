@@ -225,7 +225,7 @@ static int vmbus_uio_map_subchan(const struct rte_vmbus_device *dev,
 	file_size = sb.st_size;
 
 	if (file_size == 0 || (file_size & (PAGE_SIZE - 1))) {
-		VMBUS_LOG(ERR, "incorrect size %s: %" RTE_PRIzu "",
+		VMBUS_LOG(ERR, "incorrect size %s: %zu",
 			  ring_path, file_size);
 
 		close(fd);

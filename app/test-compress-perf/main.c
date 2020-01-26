@@ -272,12 +272,12 @@ comp_perf_dump_input_data(struct comp_test_data *test_data)
 
 	if (test_data->input_data_sz > actual_file_sz)
 		RTE_LOG(INFO, USER1,
-		  "%" RTE_PRIzu " bytes read from file %s, extending the file %.2f times\n",
+		  "%zu bytes read from file %s, extending the file %.2f times\n",
 			test_data->input_data_sz, test_data->input_file,
 			(double)test_data->input_data_sz/actual_file_sz);
 	else
 		RTE_LOG(INFO, USER1,
-			"%" RTE_PRIzu " bytes read from file %s\n",
+			"%zu bytes read from file %s\n",
 			test_data->input_data_sz, test_data->input_file);
 
 	ret = 0;
@@ -367,7 +367,7 @@ main(int argc, char **argv)
 
 	printf("App uses socket: %u\n", rte_socket_id());
 	printf("Burst size = %u\n", test_data->burst_sz);
-	printf("Input data size = %" RTE_PRIzu "\n", test_data->input_data_sz);
+	printf("Input data size = %zu\n", test_data->input_data_sz);
 
 	test_data->cleanup = ST_DURING_TEST;
 	total_nb_qps = nb_compressdevs * test_data->nb_qps;

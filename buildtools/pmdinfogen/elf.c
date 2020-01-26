@@ -21,7 +21,6 @@
 #include <unistd.h>
 #include <elf.h>
 
-#include <rte_byteorder.h>
 #include <rte_config.h>
 #include <rte_pci.h>
 

@@ -139,7 +139,7 @@ malloc_add_seg(const struct rte_memseg_list *msl,
 
 	heap->total_size += len;
 
-	RTE_LOG(DEBUG, EAL, "Added %"RTE_PRIzu"M to heap on socket %i\n",
+	RTE_LOG(DEBUG, EAL, "Added %zuM to heap on socket %i\n",
 			len >> 20, msl->socket_id);
 	return 0;
 }
@@ -431,7 +431,7 @@ try_expand_heap_primary(struct malloc_heap *heap, uint64_t pg_sz,
 	}
 	heap->total_size += alloc_sz;
 
-	RTE_LOG(DEBUG, EAL, "Heap on socket %d was expanded by %"RTE_PRIzu"MB\n",
+	RTE_LOG(DEBUG, EAL, "Heap on socket %d was expanded by %zuMB\n",
 		socket, alloc_sz >> 20ULL);
 
 	free(ms);
@@ -988,7 +988,7 @@ malloc_heap_free(struct malloc_elem *elem)
 		request_to_primary(&req);
 	}
 
-	RTE_LOG(DEBUG, EAL, "Heap on socket %d was shrunk by %"RTE_PRIzu"MB\n",
+	RTE_LOG(DEBUG, EAL, "Heap on socket %d was shrunk by %zuMB\n",
 		msl->socket_id, aligned_len >> 20ULL);
 
 	rte_mcfg_mem_write_unlock();
@@ -1062,7 +1062,7 @@ malloc_heap_dump(struct malloc_heap *heap, FILE *f)
 
 	rte_spinlock_lock(&heap->lock);
 
-	fprintf(f, "Heap size: 0x%"RTE_PRIzx"\n", heap->total_size);
+	fprintf(f, "Heap size: 0x%zx\n", heap->total_size);
 	fprintf(f, "Heap alloc count: %u\n", heap->alloc_count);
 
 	elem = heap->first;

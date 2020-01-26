@@ -43,7 +43,7 @@ nfp_mip_try_read(struct nfp_cpp *cpp, uint32_t cpp_id, uint64_t addr,
 
 	ret = nfp_cpp_read(cpp, cpp_id, addr, mip, sizeof(*mip));
 	if (ret != sizeof(*mip)) {
-		printf("Failed to read MIP data (%d, %" RTE_PRIzu ")\n",
+		printf("Failed to read MIP data (%d, %zu)\n",
 			ret, sizeof(*mip));
 		return -EIO;
 	}

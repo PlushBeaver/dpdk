@@ -677,6 +677,6 @@ malloc_elem_dump(const struct malloc_elem *elem, FILE *f)
 {
 	fprintf(f, "Malloc element at %p (%s)\n", elem,
 			elem_state_to_str(elem->state));
-	fprintf(f, "  len: 0x%"RTE_PRIzx" pad: 0x%" PRIx32 "\n", elem->size, elem->pad);
+	fprintf(f, "  len: 0x%zx pad: 0x%" PRIx32 "\n", elem->size, elem->pad);
 	fprintf(f, "  prev: %p next: %p\n", elem->prev, elem->next);
 }

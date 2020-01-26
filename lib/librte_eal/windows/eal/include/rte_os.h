@@ -76,56 +76,6 @@ int usleep(unsigned int usec);
 int vdprintf(int fd, const char* format, va_list op);
 
 /**
- * The most precise floating-point type supported by target platform.
- *
- * MSVCRT does not distinguish between "double" and "long double",
- * but GCC issues a warning if "%lf" is used with "double".
- * 
- * @see RTE_PRILf
- */
-typedef double rte_long_double;
-
-/**
- * Formatting specifier for @code rte_long_double @endcode.
- * 
- * MSVCRT does not support "%Lf".
- */
-#define RTE_PRILf "lf"
-
-/**
- * Formatting specifier for uppercase decimal floating-point.
- * 
- * MinGW does not support "%F".
- */
-#ifdef __MINGW32__
-#define RTE_PRIF "f"
-#else
-#define RTE_PRIF "F"
-#endif
-
-/**
- * Formatting specifiers for (s)size_t.
- *
- * MSVCRT does not support "%z" modifier.
- */
-#define RTE_PRIzd PRId64
-#define RTE_PRIzu PRIu64
-#define RTE_PRIzx PRIx64
-
-/**
- * Formatting specifier for "(unsigned) long long".
- * 
- * MinGW does not support "%lld" and "%llu".
- */
-#ifdef __MINGW32__
-#define RTE_PRIllu PRIu64
-#define RTE_PRIlld PRId64
-#else
-#define RTE_PRIllu "llu"
-#define RTE_PRIlld "lld"
-#endif
-
-/**
  * Dynamically loaded module descriptor.
  * 
  * In Windows, this is @code HMODULE @endcode.
@@ -170,6 +120,11 @@ typedef void *rte_fd;
 
 #ifndef CPU_SET_SIZE
 #define CPU_SET_SIZE 128
+#endif
+
+/* GNU extension used across EAL. */
+#ifndef CPU_SETSIZE
+#define CPU_SETSIZE CPU_SET_SIZE
 #endif
 
 #define _BITS_PER_SET (sizeof(long long) * 8)

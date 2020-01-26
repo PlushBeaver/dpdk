@@ -777,7 +777,7 @@ setup_extmem(uint32_t nb_mbufs, uint32_t mbuf_sz, bool huge)
 
 	/* success */
 
-	TESTPMD_LOG(DEBUG, "Allocated %" RTE_PRIzu "MB of external memory\n",
+	TESTPMD_LOG(DEBUG, "Allocated %zuMB of external memory\n",
 			param.len >> 20);
 
 	return 0;
