@@ -1,0 +1,89 @@
+; SPDX-License-Identifier: BSD-3-Clause
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=userpci
+ClassGuid={292ddd12-e52f-446d-b29c-426b493c2c5f}
+Provider=%ManufacturerName%
+CatalogFile=userpci.cat
+DriverVer=
+
+[DestinationDirs]
+DefaultDestDir = 12
+userpci_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=userpciClassReg
+
+[userpciClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+userpci.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%userpci.DeviceDesc.net.e1000.82540em% = userpci_Device, PCI\VEN_8086&DEV_100F&SUBSYS_075015AD&REV_02
+%userpci.DeviceDesc.net.virtio.legacy% = userpci_Device, PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00
+%userpci.DeviceDesc.net.virtio.modern% = userpci_Device, PCI\VEN_1AF4&DEV_1041&SUBSYS_11001AF4&REV_01
+
+[userpci_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+userpci.sys
+
+;-------------- Service installation
+[userpci_Device.NT.Services]
+AddService = userpci,%SPSVCINST_ASSOCSERVICE%, userpci_Service_Inst
+
+; -------------- userpci driver install sections
+[userpci_Service_Inst]
+DisplayName    = %userpci.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\userpci.sys
+
+;
+;--- userpci_Device Coinstaller installation ------
+;
+
+[userpci_Device.NT.CoInstallers]
+AddReg=userpci_Device_CoInstaller_AddReg
+CopyFiles=userpci_Device_CoInstaller_CopyFiles
+
+[userpci_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[userpci_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[userpci_Device.NT.Wdf]
+KmdfService =  userpci, userpci_wdfsect
+[userpci_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Dmitry Kozlyuk"
+ClassName = "User-space PCI devices"
+DiskName = "User-space PCI Installation Disk"
+userpci.DeviceDesc = "Generic PCI device"
+userpci.DeviceDesc.net.e1000.82540em = "Intel 82540em network adapter"
+userpci.DeviceDesc.net.virtio.legacy = "virtio-net-pci (legacy)"
+userpci.DeviceDesc.net.virtio.modern = "virtio-net-pci (modern)"
+userpci.SVCDESC = "User-space PCI Service"
