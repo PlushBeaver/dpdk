@@ -2100,7 +2100,7 @@ log_eval_state(const struct bpf_verifier *bvf, const struct ebpf_insn *ins,
 
 	rte_log(loglvl, rte_bpf_logtype,
 		"r%u={\n"
-		"\tv={type=%u, size=%" RTE_PRIzu "},\n"
+		"\tv={type=%u, size=%zu},\n"
 		"\tmask=0x%" PRIx64 ",\n"
 		"\tu={min=0x%" PRIx64 ", max=0x%" PRIx64 "},\n"
 		"\ts={min=%" PRId64 ", max=%" PRId64 "},\n"

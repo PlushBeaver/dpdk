@@ -75,7 +75,7 @@ ionic_tx_flush(struct ionic_cq *cq)
 	struct rte_mbuf *txm, *next;
 	struct ionic_txq_comp *cq_desc_base = cq->base;
 	struct ionic_txq_comp *cq_desc;
-	u_int32_t comp_index = (u_int32_t)-1;
+	uint32_t comp_index = (uint32_t)-1;
 
 	cq_desc = &cq_desc_base[cq->tail_idx];
 	while (color_match(cq_desc->color, cq->done_color)) {
@@ -93,7 +93,7 @@ ionic_tx_flush(struct ionic_cq *cq)
 		cq_desc = &cq_desc_base[cq->tail_idx];
 	}
 
-	if (comp_index != (u_int32_t)-1) {
+	if (comp_index != (uint32_t)-1) {
 		while (q->tail_idx != comp_index) {
 			q_desc_info = &q->info[q->tail_idx];
 

@@ -21,9 +21,11 @@ elif is_freebsd
 elif is_windows
 	sources += files(
 		'windows/pci.c',
-		'windows/pci_windio.c'
+		'windows/pci_user.c'
 	)
-	includes += include_directories('windows')
+	includes += include_directories(
+		'windows',
+		'../../../kernel/windows/userpci')
 endif
 
 # memseg walk is not part of stable API yet

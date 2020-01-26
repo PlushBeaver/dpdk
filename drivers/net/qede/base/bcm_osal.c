@@ -138,7 +138,7 @@ void *osal_dma_alloc_coherent(struct ecore_dev *p_dev,
 			RTE_MEMZONE_IOVA_CONTIG, RTE_CACHE_LINE_SIZE);
 	if (!mz) {
 		DP_ERR(p_dev, "Unable to allocate DMA memory "
-		       "of size %" RTE_PRIzu " bytes - %s\n",
+		       "of size %zu bytes - %s\n",
 		       size, rte_strerror(rte_errno));
 		*phys = 0;
 		return OSAL_NULL;
@@ -146,7 +146,7 @@ void *osal_dma_alloc_coherent(struct ecore_dev *p_dev,
 	*phys = mz->iova;
 	ecore_mz_mapping[ecore_mz_count++] = mz;
 	DP_VERBOSE(p_dev, ECORE_MSG_SP,
-		   "Allocated dma memory size=%" RTE_PRIzu " phys=0x%lx"
+		   "Allocated dma memory size=%zu phys=0x%lx"
 		   " virt=%p core=%d\n",
 		   mz->len, (unsigned long)mz->iova, mz->addr, core_id);
 	return mz->addr;
@@ -177,7 +177,7 @@ void *osal_dma_alloc_coherent_aligned(struct ecore_dev *p_dev,
 			RTE_MEMZONE_IOVA_CONTIG, align);
 	if (!mz) {
 		DP_ERR(p_dev, "Unable to allocate DMA memory "
-		       "of size %" RTE_PRIzu " bytes - %s\n",
+		       "of size %zu bytes - %s\n",
 		       size, rte_strerror(rte_errno));
 		*phys = 0;
 		return OSAL_NULL;
@@ -185,7 +185,7 @@ void *osal_dma_alloc_coherent_aligned(struct ecore_dev *p_dev,
 	*phys = mz->iova;
 	ecore_mz_mapping[ecore_mz_count++] = mz;
 	DP_VERBOSE(p_dev, ECORE_MSG_SP,
-		   "Allocated aligned dma memory size=%" RTE_PRIzu " phys=0x%lx"
+		   "Allocated aligned dma memory size=%zu phys=0x%lx"
 		   " virt=%p core=%d\n",
 		   mz->len, (unsigned long)mz->iova, mz->addr, core_id);
 	return mz->addr;

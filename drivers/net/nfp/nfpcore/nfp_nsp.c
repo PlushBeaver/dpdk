@@ -305,7 +305,7 @@ nfp_nsp_command_buf(struct nfp_nsp *nsp, uint16_t code, uint32_t option,
 	if (FIELD_GET(NSP_DFLT_BUFFER_SIZE_MB, reg) * SZ_1M < max_size) {
 		printf("NSP: default buffer too small for command 0x%04x\n",
 		       code);
-		printf("\t(%" RTE_PRIllu " < %u)\n",
+		printf("\t(%llu < %u)\n",
 		       FIELD_GET(NSP_DFLT_BUFFER_SIZE_MB, reg) * SZ_1M,
 		       max_size);
 		return -EINVAL;

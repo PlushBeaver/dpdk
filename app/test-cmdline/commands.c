@@ -294,7 +294,7 @@ cmd_get_history_bufsize_parsed(__attribute__((unused)) void *parsed_result,
 		struct cmdline *cl,
 		__attribute__((unused)) void *data)
 {
-	cmdline_printf(cl, "History buffer size: %" RTE_PRIzu "\n",
+	cmdline_printf(cl, "History buffer size: %zu\n",
 			sizeof(cmdline_get_rdline(cl)->history_buf));
 }
 

@@ -180,7 +180,7 @@ hn_tx_pool_init(struct rte_eth_dev *dev)
 	snprintf(name, sizeof(name),
 		 "hn_txd_%u", dev->data->port_id);
 
-	PMD_INIT_LOG(DEBUG, "create a TX send pool %s n=%u size=%" RTE_PRIzu " socket=%d",
+	PMD_INIT_LOG(DEBUG, "create a TX send pool %s n=%u size=%zu socket=%d",
 		     name, hv->chim_cnt, sizeof(struct hn_txdesc),
 		     dev->device->numa_node);
 

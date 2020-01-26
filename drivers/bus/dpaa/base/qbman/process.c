@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
-#include "subprocess.h"
+#include "process.h"
 
 #include <fsl_usd.h>
 

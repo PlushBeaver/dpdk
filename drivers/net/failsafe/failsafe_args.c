@@ -391,7 +391,7 @@ failsafe_args_parse(struct rte_eth_dev *dev, const char *params)
 	/* default parameters */
 	n = strlcpy(mut_params, params, sizeof(mut_params));
 	if (n >= sizeof(mut_params)) {
-		ERROR("Parameter string too long (>=%" RTE_PRIzu ")",
+		ERROR("Parameter string too long (>=%zu)",
 				sizeof(mut_params));
 		return -ENOMEM;
 	}

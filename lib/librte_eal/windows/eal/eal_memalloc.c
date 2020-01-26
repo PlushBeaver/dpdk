@@ -52,7 +52,7 @@ alloc_seg(struct rte_memseg *ms, void *requested_addr, int socket_id,
 
 		/* Bugcheck, should not happen. */
 		RTE_LOG(DEBUG, EAL, "Attempted to reallocate segment %p "
-			"(size %" RTE_PRIzu ") on socket %d", ms->addr,
+			"(size %zu) on socket %d", ms->addr,
 			ms->len, ms->socket_id);
 		return -1;
 	}
@@ -65,7 +65,7 @@ alloc_seg(struct rte_memseg *ms, void *requested_addr, int socket_id,
 		/* Request a new chunk of memory and enforce address hint. */
 		addr = eal_mem_alloc(alloc_sz, socket_id);
 		if (addr == NULL) {
-			RTE_LOG(ERR, EAL, "Cannot allocate %" RTE_PRIzu
+			RTE_LOG(ERR, EAL, "Cannot allocate %zu bytes"
 				" on socket %d\n", alloc_sz, socket_id);
 			return -1;
 		}
@@ -80,7 +80,7 @@ alloc_seg(struct rte_memseg *ms, void *requested_addr, int socket_id,
 		addr = eal_mem_commit(requested_addr, alloc_sz, socket_id);
 		if (addr == NULL) {
 			RTE_LOG(ERR, EAL, "Cannot commit reserved memory %p "
-				"(size %" RTE_PRIzu "\n", requested_addr,
+				"(size %zu\n", requested_addr,
 				alloc_sz);
 			goto error;
 		}

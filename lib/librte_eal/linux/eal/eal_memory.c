@@ -126,7 +126,7 @@ mem_unmap(void* virt, size_t size)
 }
 
 void*
-rte_mem_reserve(void *requested_addr, size_t size,
+eal_mem_reserve(void *requested_addr, size_t size,
 		enum rte_mem_reserve_flags flags)
 {
 	int sys_flags = MAP_PRIVATE | MAP_ANONYMOUS;
@@ -1000,7 +1000,7 @@ alloc_va_space(struct rte_memseg_list *msl)
 	addr = eal_get_virtual_area(msl->base_va, &mem_sz, page_sz, 0, 0);
 	if (addr == NULL) {
 		if (rte_errno == EADDRNOTAVAIL)
-			RTE_LOG(ERR, EAL, "Could not mmap %" RTE_PRIllu " bytes at [%p] - "
+			RTE_LOG(ERR, EAL, "Could not mmap %llu bytes at [%p] - "
 				"please use '--" OPT_BASE_VIRTADDR "' option\n",
 				(unsigned long long)mem_sz, msl->base_va);
 		else

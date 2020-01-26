@@ -7,8 +7,10 @@
 #include <rte_windows.h>
 
 #include "pci_windows.h"
-#include "pci_windio.h"
-#include "windio.h"
+#include "pci_user.h"
+
+#include <winioctl.h>
+#include <userpci.h>
 
 /* Offset to command register in PCI config space. */
 #define PCI_COMMAND 0x04
@@ -17,7 +19,7 @@
 #define PCI_COMMAND_MASTER 0x0004
 
 static struct rte_tailq_elem rte_windio_tailq = {
-	.name = "WINDIO_RESOURCE_LIST",
+	.name = "USERPCI_RESOURCE_LIST",
 };
 EAL_REGISTER_TAILQ(rte_windio_tailq)
 
@@ -42,10 +44,10 @@ pci_system_strerror(DWORD last_error_code) {
 }
 
 static void*
-winuio_mmap(rte_fd fd, int bar, void *address, size_t length)
+userpci_mmap(rte_fd fd, int bar, void *address, size_t length)
 {
-    struct WINDIO_MEMORY_MAP_IN in;
-    struct WINDIO_MEMORY_MAP_OUT out;
+    struct userpci_memory_map_in in;
+    struct userpci_memory_map_out out;
     DWORD bytes_returned = 0;
 
     in.resource = bar;
@@ -53,7 +55,7 @@ winuio_mmap(rte_fd fd, int bar, void *address, size_t length)
     in.length = length;
     in.protection = PAGE_READWRITE;
     if (!DeviceIoControl(
-            fd, IOCTL_WINDIO_MEMORY_MAP,
+            fd, IOCTL_USERPCI_MEMORY_MAP,
             &in, sizeof(in), &out, sizeof(out),
             &bytes_returned, NULL)) {
         RTE_LOG_SYSTEM_ERROR("DeviceIoControl()");
@@ -64,15 +66,15 @@ winuio_mmap(rte_fd fd, int bar, void *address, size_t length)
 }
 
 static int
-winuio_munmap(rte_fd fd, void* address, size_t length)
+userpci_munmap(rte_fd fd, void* address, size_t length)
 {
-    struct WINDIO_MEMORY_UNMAP_IN in;
+    struct userpci_memory_unmap_in in;
     DWORD bytes_returned = 0;
 
     in.address = address;
     in.length = length;
     if (!DeviceIoControl(
-            fd, IOCTL_WINDIO_MEMORY_UNMAP,
+            fd, IOCTL_USERPCI_MEMORY_UNMAP,
             &in, sizeof(in), NULL, 0,
             &bytes_returned, NULL)) {
         RTE_LOG_SYSTEM_ERROR("DeviceIoControl()");
@@ -83,12 +85,12 @@ winuio_munmap(rte_fd fd, void* address, size_t length)
 }
 
 static int
-pci_windio_set_bus_master(struct rte_intr_handle *intr)
+userpci_set_bus_master(struct rte_intr_handle *intr)
 {
     uint16_t reg;
 	int ret;
 
-	ret = pci_windio_read_config(intr, &reg, sizeof(reg), PCI_COMMAND);
+	ret = pci_userpci_read_config(intr, &reg, sizeof(reg), PCI_COMMAND);
 	if (ret != sizeof(reg)) {
 		RTE_LOG(ERR, EAL,
 			"Cannot read command register from PCI config space!\n");
@@ -101,7 +103,7 @@ pci_windio_set_bus_master(struct rte_intr_handle *intr)
 
 	reg |= PCI_COMMAND_MASTER;
 
-	ret = pci_windio_write_config(intr, &reg, sizeof(reg), PCI_COMMAND);
+	ret = pci_userpci_write_config(intr, &reg, sizeof(reg), PCI_COMMAND);
 	if (ret != sizeof(reg)) {
 		RTE_LOG(ERR, EAL,
 			"Cannot write command register to PCI config space!\n");
@@ -112,7 +114,7 @@ pci_windio_set_bus_master(struct rte_intr_handle *intr)
 }
 
 static void
-pci_windio_free_resource(
+userpci_free_resource(
         struct rte_pci_device *dev, struct mapped_pci_resource *res)
 {
     if (res) {
@@ -130,7 +132,7 @@ pci_windio_free_resource(
  * Open driver interface device.
  *
  * @param dev
- *  winio PCI device.
+ *  Windows PCI device.
  * 
  * @param fd
  *  Receives devie interface descriptor on success.
@@ -141,7 +143,7 @@ pci_windio_free_resource(
  *  * negative error code on error.
  */
 static int
-windio_open_device(struct rte_pci_device *dev, rte_fd *fd)
+userpci_open_device(struct rte_pci_device *dev, rte_fd *fd)
 {
     struct windows_pci_device *windev;
 
@@ -150,7 +152,7 @@ windio_open_device(struct rte_pci_device *dev, rte_fd *fd)
         return 1;
     }
 
-    if (dev->kdrv != RTE_KDRV_WINDIO) {
+    if (dev->kdrv != RTE_KDRV_USERPCI) {
         return -ENOTSUP;
     }
     windev = (struct windows_pci_device *)dev;
@@ -166,19 +168,19 @@ windio_open_device(struct rte_pci_device *dev, rte_fd *fd)
 }
 
 static int
-pci_windio_alloc_resource(
+userpci_alloc_resource(
         struct rte_pci_device *dev, struct mapped_pci_resource **res)
 {
     struct windows_pci_device *windev = (struct windows_pci_device *)dev;
     int ret = 0;
 
     /* sanity check */
-    if (dev->kdrv != RTE_KDRV_WINDIO) {
+    if (dev->kdrv != RTE_KDRV_USERPCI) {
         return -ENOTSUP;
     }
 
 	/* save fd if in primary process */
-	ret = windio_open_device(dev, &dev->intr_handle.fd);
+	ret = userpci_open_device(dev, &dev->intr_handle.fd);
 	if (ret < 0) {
         return ret;
     }
@@ -186,7 +188,7 @@ pci_windio_alloc_resource(
     /* TODO: interrupt support */
 	dev->intr_handle.type = RTE_INTR_HANDLE_UNKNOWN;
 
-    ret = pci_windio_set_bus_master(&dev->intr_handle);
+    ret = userpci_set_bus_master(&dev->intr_handle);
     if (ret) {
         RTE_LOG(ERR, EAL, "cannot set up bus mastering\n");
         goto error;
@@ -196,7 +198,7 @@ pci_windio_alloc_resource(
 	*res = rte_zmalloc("WINUIO_RES", sizeof(**res), 0);
 	if (*res == NULL) {
 		RTE_LOG(ERR, EAL,
-                "cannot allocate %" RTE_PRIzu " bytes for resource record",
+                "cannot allocate %zu bytes for resource record",
                 sizeof(**res));
         ret = -ENOMEM;
 		goto error;
@@ -217,12 +219,12 @@ pci_windio_alloc_resource(
 	return 0;
 
 error:
-	pci_windio_free_resource(dev, *res);
+	userpci_free_resource(dev, *res);
 	return ret;
 }
 
 static int
-pci_windio_map_resource(
+userpci_map_resource(
         struct rte_pci_device *dev, int resource_idx,
         struct mapped_pci_resource *res, int map_idx)
 {
@@ -233,12 +235,12 @@ pci_windio_map_resource(
     map->path = rte_malloc(NULL, path_size, 0);
     if (map->path == NULL) {
         RTE_LOG(ERR, EAL,
-                "cannot allocate %" RTE_PRIzu " bytes for resource path\n",
+                "cannot allocate %zu bytes for resource path\n",
                 path_size);
         return -ENOMEM;
     }
 
-    resource->addr = winuio_mmap(
+    resource->addr = userpci_mmap(
             dev->intr_handle.fd, resource_idx, resource->addr, resource->len);
     if (resource->addr == NULL) {
         RTE_LOG(ERR, EAL, "cannot map resource %d\n", resource_idx);
@@ -255,7 +257,7 @@ pci_windio_map_resource(
 }
 
 int
-pci_windio_map_device(struct rte_pci_device *dev)
+pci_userpci_map_device(struct rte_pci_device *dev)
 {
     int i, map_idx = 0, ret;
 	struct mapped_pci_resource *res = NULL;
@@ -270,7 +272,7 @@ pci_windio_map_device(struct rte_pci_device *dev)
     }
 
 	/* allocate uio resource */
-	ret = pci_windio_alloc_resource(dev, &res);
+	ret = userpci_alloc_resource(dev, &res);
 	if (ret) {
 		return ret;
     }
@@ -280,7 +282,7 @@ pci_windio_map_device(struct rte_pci_device *dev)
 		if (phys == 0)
 			continue;
 
-		ret = pci_windio_map_resource(dev, i, res, map_idx);
+		ret = userpci_map_resource(dev, i, res, map_idx);
 		if (ret) {
 			goto error;
         }
@@ -297,28 +299,28 @@ pci_windio_map_device(struct rte_pci_device *dev)
 error:
 	for (i = 0; i < map_idx; i++) {
         struct pci_map *map = &res->maps[i];
-		winuio_munmap(dev->intr_handle.fd, map->addr, (size_t)map->size);
+		userpci_munmap(dev->intr_handle.fd, map->addr, (size_t)map->size);
 		rte_free(map->path);
 	}
-	pci_windio_free_resource(dev, res);
+	userpci_free_resource(dev, res);
 	return -1;
 }
 
 static void
-pci_windio_unmap_resource(
+userpci_unmap_resource(
         struct rte_pci_device *dev, struct mapped_pci_resource *res)
 {
     int i;
 
     for (i = 0; i < res->nb_maps; i++) {
         struct pci_map *map = &res->maps[i];
-		winuio_munmap(dev->intr_handle.fd, map->addr, (size_t)map->size);
+		userpci_munmap(dev->intr_handle.fd, map->addr, (size_t)map->size);
 		rte_free(map->path);
 	}
 }
 
 static struct mapped_pci_resource *
-pci_windio_find_resource(struct rte_pci_device *dev)
+userpci_find_resource(struct rte_pci_device *dev)
 {
 	struct mapped_pci_resource *res;
 	struct mapped_pci_res_list *res_list =
@@ -337,7 +339,7 @@ pci_windio_find_resource(struct rte_pci_device *dev)
 }
 
 void
-pci_windio_unmap_device(struct rte_pci_device *dev)
+pci_userpci_unmap_device(struct rte_pci_device *dev)
 {
     struct mapped_pci_resource *res;
 	struct mapped_pci_res_list *res_list =
@@ -348,7 +350,7 @@ pci_windio_unmap_device(struct rte_pci_device *dev)
     }
 
 	/* find an entry for the device */
-	res = pci_windio_find_resource(dev);
+	res = userpci_find_resource(dev);
 	if (res == NULL)
 		return;
 
@@ -358,22 +360,22 @@ pci_windio_unmap_device(struct rte_pci_device *dev)
     }
 
 	TAILQ_REMOVE(res_list, res, next);
-	pci_windio_unmap_resource(dev, res);
-    pci_windio_free_resource(dev, res);
+	userpci_unmap_resource(dev, res);
+    userpci_free_resource(dev, res);
 }
 
 int
-pci_windio_read_config(const struct rte_intr_handle *intr_handle,
+pci_userpci_read_config(const struct rte_intr_handle *intr_handle,
 		    void *buf, size_t len, off_t offset)
 {
-    struct WINDIO_CONFIG_DATA in;
+    struct userpci_config_data in;
     DWORD bytes_read = 0;
 
     in.offset = offset;
     in.size = len;
     if (!DeviceIoControl(
             intr_handle->fd,
-            IOCTL_WINDIO_CONFIG_READ,
+            IOCTL_USERPCI_CONFIG_READ,
             &in, sizeof(in), buf, len,
             &bytes_read, NULL)) {
         RTE_LOG_SYSTEM_ERROR("DeviceIoControl()");
@@ -383,10 +385,10 @@ pci_windio_read_config(const struct rte_intr_handle *intr_handle,
 }
 
 int
-pci_windio_write_config(const struct rte_intr_handle *intr_handle,
+pci_userpci_write_config(const struct rte_intr_handle *intr_handle,
 		     const void *buf, size_t len, off_t offset)
 {
-	struct WINDIO_CONFIG_DATA *in = NULL;
+	struct userpci_config_data *in = NULL;
     DWORD bytes_written = 0;
     BOOL ret;
 
@@ -400,7 +402,7 @@ pci_windio_write_config(const struct rte_intr_handle *intr_handle,
     memcpy(in + 1, buf, len);
     ret = DeviceIoControl(
             intr_handle->fd,
-            IOCTL_WINDIO_CONFIG_WRITE,
+            IOCTL_USERPCI_CONFIG_WRITE,
             in, sizeof(*in) + len, NULL, 0,
             &bytes_written, NULL);
 
@@ -414,16 +416,16 @@ pci_windio_write_config(const struct rte_intr_handle *intr_handle,
 }
 
 int
-pci_windio_ioport_map(
+pci_userpci_ioport_map(
         struct rte_pci_device *dev, int bar, struct rte_pci_ioport *p)
 {
     rte_fd device;
     int open_ret, ret = 0;
-    struct WINDIO_IOPORT_MAP_IN in;
+    struct userpci_ioport_map_in in;
 
     RTE_SET_USED(p);
 
-    open_ret = windio_open_device(dev, &device);
+    open_ret = userpci_open_device(dev, &device);
     if (open_ret < 0) {
         return open_ret;
     }
@@ -431,7 +433,7 @@ pci_windio_ioport_map(
     in.resource = bar;
     if (!DeviceIoControl(
             dev->intr_handle.fd,
-            IOCTL_WINDIO_IOPORT_MAP,
+            IOCTL_USERPCI_IOPORT_MAP,
             &in, sizeof(in), NULL, 0,
             NULL, NULL)) {
         RTE_LOG_SYSTEM_ERROR("DeviceIoControl()");
@@ -445,17 +447,17 @@ pci_windio_ioport_map(
 }
 
 int
-pci_windio_ioport_unmap(struct rte_pci_ioport *p)
+pci_userpci_ioport_unmap(struct rte_pci_ioport *p)
 {
     RTE_SET_USED(p);
     return 0;
 }
 
 static int
-winuio_ioport_read(rte_fd fd, int bar, off_t offset,
+userpci_ioport_read(rte_fd fd, int bar, off_t offset,
         uint8_t item_size, uint16_t item_count, void* data)
 {
-    struct WINDIO_IOPORT_DATA in;
+    struct userpci_ioport_data in;
     DWORD bytes_read = 0;
 
     in.resource = bar;
@@ -463,7 +465,7 @@ winuio_ioport_read(rte_fd fd, int bar, off_t offset,
     in.item_size = item_size;
     in.item_count = item_count;
     if (!DeviceIoControl(
-            fd, IOCTL_WINDIO_IOPORT_READ,
+            fd, IOCTL_USERPCI_IOPORT_READ,
             &in, sizeof(in), data, item_size * item_count,
             &bytes_read, NULL)) {
         RTE_LOG_SYSTEM_ERROR("DeviceIoControl()");
@@ -473,7 +475,7 @@ winuio_ioport_read(rte_fd fd, int bar, off_t offset,
 }
 
 void
-pci_windio_ioport_read(struct rte_pci_ioport *p,
+pci_userpci_ioport_read(struct rte_pci_ioport *p,
 		void *data, size_t len, off_t offset)
 {
     rte_fd fd = p->dev->intr_handle.fd;
@@ -483,7 +485,7 @@ pci_windio_ioport_read(struct rte_pci_ioport *p,
     count = len / 4;
     if (count) {
         int size = count * sizeof(uint32_t);
-        if (winuio_ioport_read(
+        if (userpci_ioport_read(
                 fd, p->bar, offset, sizeof(uint32_t), count, out) != size) {
             return;
         }
@@ -494,7 +496,7 @@ pci_windio_ioport_read(struct rte_pci_ioport *p,
 
     if (len >= 2) {
         int size = sizeof(uint16_t);
-        if (winuio_ioport_read(
+        if (userpci_ioport_read(
                 fd, p->bar, offset, sizeof(uint16_t), 1, out) != size) {
             return;
         }
@@ -504,15 +506,15 @@ pci_windio_ioport_read(struct rte_pci_ioport *p,
     }
 
     if (len >= 1) {
-        winuio_ioport_read(fd, p->bar, offset, sizeof(uint8_t), 1, out);
+        userpci_ioport_read(fd, p->bar, offset, sizeof(uint8_t), 1, out);
     }
 }
 
 static int
-winuio_ioport_write(rte_fd fd, int bar, off_t offset,
+userpci_ioport_write(rte_fd fd, int bar, off_t offset,
         uint8_t item_size, uint16_t item_count, const void* data)
 {
-    struct WINDIO_IOPORT_DATA *in = NULL;
+    struct userpci_ioport_data *in = NULL;
     size_t data_size = item_size * item_count;
     size_t total_size = sizeof(*in) + data_size;
     DWORD bytes_written = 0;
@@ -529,7 +531,7 @@ winuio_ioport_write(rte_fd fd, int bar, off_t offset,
     in->item_count = item_count;
     memcpy(in + 1, data, data_size);
     ret = DeviceIoControl(
-            fd, IOCTL_WINDIO_IOPORT_WRITE,
+            fd, IOCTL_USERPCI_IOPORT_WRITE,
             in, total_size, NULL, 0,
             &bytes_written, NULL);
 
@@ -543,7 +545,7 @@ winuio_ioport_write(rte_fd fd, int bar, off_t offset,
 }
 
 void
-pci_windio_ioport_write(struct rte_pci_ioport *p,
+pci_userpci_ioport_write(struct rte_pci_ioport *p,
 		const void *data, size_t len, off_t offset)
 {
     rte_fd fd = p->dev->intr_handle.fd;
@@ -553,7 +555,7 @@ pci_windio_ioport_write(struct rte_pci_ioport *p,
     count = len / 4;
     if (count) {
         int size = count * sizeof(uint32_t);
-        if (winuio_ioport_write(
+        if (userpci_ioport_write(
                 fd, p->bar, offset, sizeof(uint32_t), count, in) != size) {
             return;
         }
@@ -564,7 +566,7 @@ pci_windio_ioport_write(struct rte_pci_ioport *p,
 
     if (len >= 2) {
         int size = sizeof(uint16_t);
-        if (winuio_ioport_write(
+        if (userpci_ioport_write(
                 fd, p->bar, offset, sizeof(uint16_t), 1, in) != size) {
             return;
         }
@@ -574,6 +576,6 @@ pci_windio_ioport_write(struct rte_pci_ioport *p,
     }
 
     if (len >= 1) {
-        winuio_ioport_write(fd, p->bar, offset, sizeof(uint8_t), 1, in);
+        userpci_ioport_write(fd, p->bar, offset, sizeof(uint8_t), 1, in);
     }
 }

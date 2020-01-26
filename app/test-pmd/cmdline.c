@@ -5135,7 +5135,7 @@ cmd_gso_size_parsed(void *parsed_result,
 	if (!strcmp(res->cmd_keyword, "gso") &&
 			!strcmp(res->cmd_segsz, "segsz")) {
 		if (res->cmd_size < RTE_GSO_SEG_SIZE_MIN)
-			printf("gso_size should be larger than %" RTE_PRIzu "."
+			printf("gso_size should be larger than %zu."
 					" Please input a legal value\n",
 					RTE_GSO_SEG_SIZE_MIN);
 		else
@@ -18895,7 +18895,7 @@ cmdline_parse_token_string_t cmd_config_tx_dynf_specific_keyword =
 			keyword, "config");
 cmdline_parse_token_num_t cmd_config_tx_dynf_specific_port_id =
 	TOKEN_NUM_INITIALIZER(struct cmd_config_tx_dynf_specific_result,
-			port_id, UINT16);
+			port_id, NUMTYPE_UINT16);
 cmdline_parse_token_string_t cmd_config_tx_dynf_specific_item =
 	TOKEN_STRING_INITIALIZER(struct cmd_config_tx_dynf_specific_result,
 			item, "dynf");
@@ -19290,7 +19290,7 @@ cmdline_parse_token_string_t cmd_showport_macs_port =
 			cmd_port, "port");
 cmdline_parse_token_num_t cmd_showport_macs_pid =
 	TOKEN_NUM_INITIALIZER(struct cmd_showport_macs_result,
-			cmd_pid, UINT16);
+			cmd_pid, NUMTYPE_UINT16);
 cmdline_parse_token_string_t cmd_showport_macs_keyword =
 	TOKEN_STRING_INITIALIZER(struct cmd_showport_macs_result,
 			cmd_keyword, "macs#mcast_macs");

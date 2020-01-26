@@ -1354,7 +1354,7 @@ acl_build_log(const struct acl_build_context *ctx)
 	RTE_LOG(DEBUG, ACL, "Build phase for ACL \"%s\":\n"
 		"node limit for tree split: %u\n"
 		"nodes created: %u\n"
-		"memory consumed: %" RTE_PRIzu "\n",
+		"memory consumed: %zu\n",
 		ctx->acx->name,
 		ctx->node_max,
 		ctx->num_nodes,

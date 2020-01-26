@@ -26,10 +26,10 @@ static void
 cmdline_adjust_terminal(struct cmdline_terminal* oldterm)
 {
 #ifndef RTE_EXEC_ENV_WINDOWS
-	struct termios oldterm, term;
+	struct termios term;
 
-	tcgetattr(0, &oldterm);
-	memcpy(&term, &oldterm, sizeof(term));
+	tcgetattr(0, &oldterm->termios);
+	memcpy(&term, &oldterm->termios, sizeof(term));
 	term.c_lflag &= ~(ICANON | ECHO | ISIG);
 	tcsetattr(0, TCSANOW, &term);
 
@@ -40,24 +40,32 @@ cmdline_adjust_terminal(struct cmdline_terminal* oldterm)
 
 	ZeroMemory(oldterm, sizeof(*oldterm));
 
-	/* Detect console input and adjust its mode. */
+	/* Detect console input, set it up and make it emulate VT100. */
 	handle = GetStdHandle(STD_INPUT_HANDLE);
 	if (GetConsoleMode(handle, &mode)) {
-		oldterm->is_console = 1;
+		oldterm->is_console_input = 1;
 		oldterm->input_mode = mode;
 
-		mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+		mode &= ~(
+			ENABLE_LINE_INPUT |      /* no line buffering */
+			ENABLE_ECHO_INPUT |      /* no echo */
+			ENABLE_PROCESSED_INPUT | /* pass Ctrl+C to program */
+			ENABLE_MOUSE_INPUT |     /* no mouse events */
+			ENABLE_WINDOW_INPUT);    /* no window resize events */
 		mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 		SetConsoleMode(handle, mode);
 	}
 
-	/* Set output to interpret ANSI escape sequences (emulate VT100). */
+	/* Detect console output and make it emulate VT100. */
 	handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	GetConsoleMode(handle, &mode);
-	oldterm->output_mode = mode;
+	if (GetConsoleMode(handle, &mode)) {
+		oldterm->is_console_output = 1;
+		oldterm->output_mode = mode;
 
-	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	SetConsoleMode(handle, mode);
+		mode &= ~ENABLE_WRAP_AT_EOL_OUTPUT;
+		mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		SetConsoleMode(handle, mode);
+	}
 #endif
 }
 
@@ -65,13 +73,16 @@ cmdline_adjust_terminal(struct cmdline_terminal* oldterm)
 static void
 cmdline_restore_terminal(const struct cmdline_terminal *oldterm) {
 #ifndef RTE_EXEC_ENV_WINDOWS
-	tcsetattr(fileno(stdin), TCSANOW, &cl->oldterm);
+	tcsetattr(fileno(stdin), TCSANOW, &oldterm->termios);
 #else
-	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-	SetConsoleMode(handle, oldterm->input_mode);
-	
-	handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleMode(handle, oldterm->output_mode);
+	if (oldterm->is_console_input) {
+		HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+		SetConsoleMode(handle, oldterm->input_mode);
+	}
+	if (oldterm->is_console_output) {
+		HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleMode(handle, oldterm->output_mode);
+	}
 #endif
 }
 

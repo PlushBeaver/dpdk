@@ -8,9 +8,10 @@
 #include <rte_windows.h>
 
 #include "pci_windows.h"
-#include "pci_windio.h"
+#include "pci_user.h"
 #include "private.h"
-#include "windio.h"
+
+#include <userpci.h>
 
 #include <cfgmgr32.h>
 #include <setupapi.h>
@@ -30,8 +31,8 @@ int
 rte_pci_map_device(struct rte_pci_device *dev)
 {
 	switch (dev->kdrv) {
-	case RTE_KDRV_WINDIO:
-		return pci_windio_map_device(dev);
+	case RTE_KDRV_USERPCI:
+		return pci_userpci_map_device(dev);
 	default:
 		RTE_LOG(DEBUG, EAL,
 			"  Not managed by a supported kernel driver, skipped\n");
@@ -43,8 +44,8 @@ void
 rte_pci_unmap_device(struct rte_pci_device *dev __rte_unused)
 {
 	switch (dev->kdrv) {
-	case RTE_KDRV_WINDIO:
-		pci_windio_unmap_device(dev);
+	case RTE_KDRV_USERPCI:
+		pci_userpci_unmap_device(dev);
 		break;
 	default:
 		RTE_LOG(DEBUG, EAL,
@@ -61,8 +62,8 @@ rte_pci_read_config(const struct rte_pci_device *device,
 	const struct rte_intr_handle *intr_handle = &device->intr_handle;
 
 	switch (device->kdrv) {
-	case RTE_KDRV_WINDIO:
-		return pci_windio_read_config(intr_handle, buf, len, offset);
+	case RTE_KDRV_USERPCI:
+		return pci_userpci_read_config(intr_handle, buf, len, offset);
 	default:
 		rte_pci_device_name(&device->addr, devname, RTE_DEV_NAME_MAX_LEN);
 		RTE_LOG(ERR, EAL, "Unknown driver type for %s\n", devname);
@@ -78,8 +79,8 @@ rte_pci_write_config(const struct rte_pci_device *device,
 	const struct rte_intr_handle *intr_handle = &device->intr_handle;
 
 	switch (device->kdrv) {
-	case RTE_KDRV_WINDIO:
-		return pci_windio_write_config(intr_handle, buf, len, offset);
+	case RTE_KDRV_USERPCI:
+		return pci_userpci_write_config(intr_handle, buf, len, offset);
 	default:
 		rte_pci_device_name(&device->addr, devname, RTE_DEV_NAME_MAX_LEN);
 		RTE_LOG(ERR, EAL, "Unknown driver type for %s\n", devname);
@@ -94,8 +95,8 @@ rte_pci_ioport_map(struct rte_pci_device *dev, int bar,
 	int ret = -ENOTSUP;
 
 	switch (dev->kdrv) {
-	case RTE_KDRV_WINDIO:
-		ret = pci_windio_ioport_map(dev, bar, p);
+	case RTE_KDRV_USERPCI:
+		ret = pci_userpci_ioport_map(dev, bar, p);
 		break;
 	default:
 		break;
@@ -113,8 +114,8 @@ int
 rte_pci_ioport_unmap(struct rte_pci_ioport *p)
 {
 	switch (p->dev->kdrv) {
-	case RTE_KDRV_WINDIO:
-		return pci_windio_ioport_unmap(p);
+	case RTE_KDRV_USERPCI:
+		return pci_userpci_ioport_unmap(p);
 	default:
 		return -ENOTSUP;
 	}
@@ -125,8 +126,8 @@ rte_pci_ioport_read(struct rte_pci_ioport *p,
 		void *data, size_t len, off_t offset)
 {
 	switch (p->dev->kdrv) {
-	case RTE_KDRV_WINDIO:
-		pci_windio_ioport_read(p, data, len, offset);
+	case RTE_KDRV_USERPCI:
+		pci_userpci_ioport_read(p, data, len, offset);
 		break;
 	default:
 		break;
@@ -138,8 +139,8 @@ rte_pci_ioport_write(struct rte_pci_ioport *p,
 		const void *data, size_t len, off_t offset)
 {
 	switch (p->dev->kdrv) {
-	case RTE_KDRV_WINDIO:
-		pci_windio_ioport_write(p, data, len, offset);
+	case RTE_KDRV_USERPCI:
+		pci_userpci_ioport_write(p, data, len, offset);
 		break;
 	default:
 		break;
@@ -467,8 +468,8 @@ pci_get_device_driver(
 
 	static struct pci_driver_guid table[] = {
 		{
-			.guid = &GUID_DEVINTERFACE_WINDIO,
-			.driver = RTE_KDRV_WINDIO
+			.guid = &GUID_DEVINTERFACE_USERPCI,
+			.driver = RTE_KDRV_USERPCI
 		}
 	};
 
@@ -529,7 +530,7 @@ pci_scan_one(HDEVINFO list, SP_DEVINFO_DATA *devinfo)
 
 	windev = malloc(sizeof(*windev));
 	if (windev == NULL) {
-		RTE_LOG(ERR, EAL, "Cannot allocate %" RTE_PRIzu " bytes for device\n",
+		RTE_LOG(ERR, EAL, "Cannot allocate %zu bytes for device\n",
 				sizeof(*windev));
 		return -1;
 	}

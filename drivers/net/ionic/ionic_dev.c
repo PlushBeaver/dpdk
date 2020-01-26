@@ -15,7 +15,7 @@ ionic_dev_setup(struct ionic_adapter *adapter)
 	unsigned int num_bars = adapter->num_bars;
 	struct ionic_dev *idev = &adapter->idev;
 	uint32_t sig;
-	u_char *bar0_base;
+	uint8_t *bar0_base;
 	unsigned int i;
 
 	/* BAR0: dev_cmd and interrupts */

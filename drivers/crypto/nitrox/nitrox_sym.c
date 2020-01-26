@@ -342,7 +342,7 @@ flexi_aes_keylen(size_t keylen, bool is_aes)
 		aes_keylen = 3;
 		break;
 	default:
-		NITROX_LOG(ERR, "Invalid keylen %" RTE_PRIzu "\n", keylen);
+		NITROX_LOG(ERR, "Invalid keylen %zu\n", keylen);
 		aes_keylen = -EINVAL;
 		break;
 	}

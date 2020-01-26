@@ -901,7 +901,7 @@ mlx4_mr_mem_event_free_cb(struct rte_eth_dev *dev, const void *addr, size_t len)
 	int i;
 	int rebuild = 0;
 
-	DEBUG("port %u free callback: addr=%p, len=%" RTE_PRIzu "",
+	DEBUG("port %u free callback: addr=%p, len=%zu",
 	      dev->data->port_id, addr, len);
 	msl = rte_mem_virt2memseg_list(addr);
 	/* addr and len must be page-aligned. */

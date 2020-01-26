@@ -61,12 +61,12 @@ rte_ip_frag_table_create(uint32_t bucket_num, uint32_t bucket_entries,
 	if ((tbl = rte_zmalloc_socket(__func__, sz, RTE_CACHE_LINE_SIZE,
 			socket_id)) == NULL) {
 		RTE_LOG(ERR, USER1,
-			"%s: allocation of %" RTE_PRIzu " bytes at socket %d failed do\n",
+			"%s: allocation of %zu bytes at socket %d failed do\n",
 			__func__, sz, socket_id);
 		return NULL;
 	}
 
-	RTE_LOG(INFO, USER1, "%s: allocated of %" RTE_PRIzu " bytes at socket %d\n",
+	RTE_LOG(INFO, USER1, "%s: allocated of %zu bytes at socket %d\n",
 		__func__, sz, socket_id);
 
 	tbl->max_cycles = max_cycles;

@@ -77,7 +77,7 @@ enum i40e_status_code i40e_acquire_nvm(struct i40e_hw *hw,
 
 	if (ret_code)
 		i40e_debug(hw, I40E_DEBUG_NVM,
-			   "NVM acquire type %d failed time_left=%" RTE_PRIllu " ret=%d aq_err=%d\n",
+			   "NVM acquire type %d failed time_left=%llu ret=%d aq_err=%d\n",
 			   access, time_left, ret_code, hw->aq.asq_last_status);
 
 	if (ret_code && time_left) {
@@ -99,7 +99,7 @@ enum i40e_status_code i40e_acquire_nvm(struct i40e_hw *hw,
 		if (ret_code != I40E_SUCCESS) {
 			hw->nvm.hw_semaphore_timeout = 0;
 			i40e_debug(hw, I40E_DEBUG_NVM,
-				   "NVM acquire timed out, wait %" RTE_PRIllu " ms before trying again. status=%d aq_err=%d\n",
+				   "NVM acquire timed out, wait %llu ms before trying again. status=%d aq_err=%d\n",
 				   time_left, ret_code, hw->aq.asq_last_status);
 		}
 	}

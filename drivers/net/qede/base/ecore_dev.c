@@ -6125,7 +6125,7 @@ enum _ecore_status_t ecore_chain_alloc(struct ecore_dev *p_dev,
 	if (rc) {
 		DP_NOTICE(p_dev, false,
 			  "Cannot allocate a chain with the given arguments:\n"
-			  "[use_mode %d, mode %d, cnt_type %d, num_elems %d, elem_size %" RTE_PRIzu "]\n",
+			  "[use_mode %d, mode %d, cnt_type %d, num_elems %d, elem_size %zu]\n",
 			  intended_use, mode, cnt_type, num_elems, elem_size);
 		return rc;
 	}

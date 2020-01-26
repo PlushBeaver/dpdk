@@ -1681,7 +1681,7 @@ run_test_case(test_case_function *test_case_func)
 	/* Alloc op_params */
 	struct test_op_params *op_params = rte_zmalloc(NULL,
 			sizeof(struct test_op_params), RTE_CACHE_LINE_SIZE);
-	TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %" RTE_PRIzu "B for op_params",
+	TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
 			RTE_ALIGN(sizeof(struct test_op_params),
 				RTE_CACHE_LINE_SIZE));
 
@@ -2466,7 +2466,7 @@ throughput_test(struct active_device *ad,
 	/* Allocate memory for thread parameters structure */
 	t_params = rte_zmalloc(NULL, num_lcores * sizeof(struct thread_params),
 			RTE_CACHE_LINE_SIZE);
-	TEST_ASSERT_NOT_NULL(t_params, "Failed to alloc %" RTE_PRIzu "B for t_params",
+	TEST_ASSERT_NOT_NULL(t_params, "Failed to alloc %zuB for t_params",
 			RTE_ALIGN(sizeof(struct thread_params) * num_lcores,
 				RTE_CACHE_LINE_SIZE));
 

@@ -65,7 +65,7 @@ rte_devargs_layers_parse(struct rte_devargs *devargs,
 	/* Split each sub-lists. */
 	nblayer = devargs_layer_count(devstr);
 	if (nblayer > RTE_DIM(layers)) {
-		RTE_LOG(ERR, EAL, "Invalid format: too many layers (%"RTE_PRIzu")\n",
+		RTE_LOG(ERR, EAL, "Invalid format: too many layers (%zu)\n",
 			nblayer);
 		ret = -E2BIG;
 		goto get_out;
@@ -202,7 +202,7 @@ rte_devargs_parse(struct rte_devargs *da, const char *dev)
 		da->name[i] = devname[i];
 		i++;
 		if (i == maxlen) {
-			RTE_LOG(WARNING, EAL, "Parsing \"%s\": device name should be shorter than %"RTE_PRIzu"\n",
+			RTE_LOG(WARNING, EAL, "Parsing \"%s\": device name should be shorter than %zu\n",
 				dev, maxlen);
 			da->name[i - 1] = '\0';
 			return -EINVAL;

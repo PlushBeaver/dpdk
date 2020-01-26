@@ -252,7 +252,7 @@ rte_acl_create(const struct rte_acl_param *param)
 
 		if (ctx == NULL) {
 			RTE_LOG(ERR, ACL,
-				"allocation of %" RTE_PRIzu " bytes on socket %d for %s failed\n",
+				"allocation of %zu bytes on socket %d for %s failed\n",
 				sz, param->socket_id, name);
 			rte_free(te);
 			goto exit;

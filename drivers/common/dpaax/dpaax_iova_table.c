@@ -81,7 +81,7 @@ read_memory_node(unsigned int *count)
 		/* Either more than one memory@<addr> node found, or none.
 		 * In either case, cannot work ahead.
 		 */
-		DPAAX_DEBUG("Found (%" RTE_PRIzu ") entries in device-tree. Not supported!",
+		DPAAX_DEBUG("Found (%zu) entries in device-tree. Not supported!",
 			    result.gl_pathc);
 		goto out;
 	}
@@ -187,7 +187,7 @@ dpaax_iova_table_populate(void)
 	for (i = 0; i < node_count; i++)
 		tot_memory_size += nodes[i].len;
 
-	DPAAX_DEBUG("Total available PA memory size: %" RTE_PRIzu "", tot_memory_size);
+	DPAAX_DEBUG("Total available PA memory size: %zu", tot_memory_size);
 
 	/* Total table size = meta data + tot_memory_size/8 */
 	total_table_size = sizeof(struct dpaax_iova_table) +
@@ -311,8 +311,8 @@ dpaax_iova_table_update(phys_addr_t paddr, void *vaddr, size_t length)
 			 */
 			entry[i].pages[e_offset] = align_vaddr;
 #ifdef RTE_COMMON_DPAAX_DEBUG
-			DPAAX_DEBUG("Added: vaddr=%" RTE_PRIzu " for Phy:%"PRIu64" at %" RTE_PRIzu ""
-				    " remaining len %" RTE_PRIzu "", align_vaddr,
+			DPAAX_DEBUG("Added: vaddr=%zu for Phy:%"PRIu64" at %zu"
+				    " remaining len %zu", align_vaddr,
 				    align_paddr, e_offset, req_length);
 #endif
 			/* Incoming request can be larger than the
@@ -342,8 +342,8 @@ dpaax_iova_table_update(phys_addr_t paddr, void *vaddr, size_t length)
 		return -1;
 	}
 #ifdef RTE_COMMON_DPAAX_DEBUG
-	DPAAX_DEBUG("Add: Found slot at (%"PRIu64")[(%" RTE_PRIzu ")] for vaddr:(%p),"
-		    " phy(%"PRIu64"), len(%" RTE_PRIzu ")", entry[i].start, e_offset,
+	DPAAX_DEBUG("Add: Found slot at (%"PRIu64")[(%zu)] for vaddr:(%p),"
+		    " phy(%"PRIu64"), len(%zu)", entry[i].start, e_offset,
 		    vaddr, paddr, length);
 #endif
 	return 0;
@@ -399,7 +399,7 @@ dpaax_memevent_cb(enum rte_mem_event type, const void *addr, size_t len,
 	void *virt_addr;
 	int ret;
 
-	DPAAX_DEBUG("Called with addr=%p, len=%" RTE_PRIzu "", addr, len);
+	DPAAX_DEBUG("Called with addr=%p, len=%zu", addr, len);
 
 	msl = rte_mem_virt2memseg_list(addr);
 
@@ -412,7 +412,7 @@ dpaax_memevent_cb(enum rte_mem_event type, const void *addr, size_t len,
 		map_len = ms->len;
 #ifdef RTE_COMMON_DPAAX_DEBUG
 		DPAAX_DEBUG("Request for %s, va=%p, virt_addr=%p,"
-			    "iova=%"PRIu64", map_len=%" RTE_PRIzu "",
+			    "iova=%"PRIu64", map_len=%zu",
 			    type == RTE_MEM_EVENT_ALLOC ?
 			    "alloc" : "dealloc",
 			    va, virt_addr, phys_addr, map_len);
@@ -428,7 +428,7 @@ dpaax_memevent_cb(enum rte_mem_event type, const void *addr, size_t len,
 
 		if (ret != 0) {
 			DPAAX_DEBUG("PA-Table entry update failed. "
-				    "Map=%d, addr=%p, len=%" RTE_PRIzu ", err:(%d)",
+				    "Map=%d, addr=%p, len=%zu, err:(%d)",
 				    type, va, map_len, ret);
 			return;
 		}
@@ -442,7 +442,7 @@ dpaax_memevent_walk_memsegs(const struct rte_memseg_list *msl __rte_unused,
 			    const struct rte_memseg *ms, size_t len,
 			    void *arg __rte_unused)
 {
-	DPAAX_DEBUG("Walking for %p (pa=%"PRIu64") and len %" RTE_PRIzu "",
+	DPAAX_DEBUG("Walking for %p (pa=%"PRIu64") and len %zu",
 		    ms->addr, ms->phys_addr, len);
 	dpaax_iova_table_update(rte_mem_virt2phy(ms->addr), ms->addr, len);
 	return 0;

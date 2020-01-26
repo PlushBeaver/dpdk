@@ -188,7 +188,7 @@ eal_mem_commit(void *requested_addr, size_t size, int socket_id)
 		flags = MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER;
 		if ((info.RegionSize > size) &&
 			!VirtualFree(requested_addr, size, flags)) {
-			RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %" RTE_PRIzu ", "
+			RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %zu, "
 				"<split placeholder>)", requested_addr, size);
 			return NULL;	
 		}
@@ -208,7 +208,7 @@ eal_mem_commit(void *requested_addr, size_t size, int socket_id)
 	addr = VirtualAlloc2(GetCurrentProcess(), requested_addr, size,
 		flags, PAGE_READWRITE, &param, param_count);
 	if (addr == NULL) {
-		RTE_LOG_SYSTEM_ERROR("VirtualAlloc2(%p, %" RTE_PRIzu ", "
+		RTE_LOG_SYSTEM_ERROR("VirtualAlloc2(%p, %zu, "
 			"<replace placeholder>)", addr, size);
 		rte_errno = win32_alloc_error_to_errno(GetLastError());
 		return NULL;
@@ -226,7 +226,7 @@ eal_mem_decommit(void *addr, size_t size)
 	}
 
 	if (!VirtualFree(addr, size, MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)) {
-		RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %" RTE_PRIzu ", ...)",
+		RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %zu, ...)",
 			addr, size);
 		return -1;
 	}
@@ -262,7 +262,7 @@ eal_mem_free(void *addr, size_t size, bool reserved)
 
 	/* Split the part to be freed and the remaining reservation. */
 	if (!VirtualFree(addr, size, MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)) {
-		RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %" RTE_PRIzu ", "
+		RTE_LOG_SYSTEM_ERROR("VirtualFree(%p, %zu, "
 			"MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)", addr, size);
 		return -1;
 	}
@@ -277,7 +277,7 @@ eal_mem_free(void *addr, size_t size, bool reserved)
 }
 
 void*
-rte_mem_reserve(void *requested_addr, size_t size,
+eal_mem_reserve(void *requested_addr, size_t size,
 	enum rte_mem_reserve_flags flags)
 {
 	void *virt;
@@ -535,7 +535,7 @@ memseg_alloc_list(struct rte_memseg_list *msl, uint64_t page_sz,
 	msl->base_va = NULL;
 	msl->heap = 1; /* mark it as a heap segment */
 
-	RTE_LOG(DEBUG, EAL, "Memseg list allocated: 0x%"RTE_PRIzx"kB at socket %i\n",
+	RTE_LOG(DEBUG, EAL, "Memseg list allocated: 0x%zx kB at socket %i\n",
 			(size_t)page_sz >> 10, socket_id);
 
 	return 0;
@@ -554,8 +554,8 @@ memseg_alloc_va_space(struct rte_memseg_list *msl)
 	addr = eal_get_virtual_area(msl->base_va, &mem_sz, page_sz, 0, 0);
 	if (addr == NULL) {
 		if (rte_errno == EADDRNOTAVAIL)
-			RTE_LOG(ERR, EAL, "Could not mmap %" RTE_PRIzu
-				" bytes at [%p] - use '--" OPT_BASE_VIRTADDR "'"
+			RTE_LOG(ERR, EAL, "Could not mmap %zu bytes "
+				"at [%p] - use '--" OPT_BASE_VIRTADDR "'"
 				" option\n", mem_sz, msl->base_va);
 		else
 			RTE_LOG(ERR, EAL, "Cannot reserve memory\n");
@@ -1062,8 +1062,8 @@ eal_hugepage_init(void)
 				continue;
 
 			RTE_LOG(DEBUG, EAL,
-					"Allocating %u pages of size %" PRIu64 "M on socket %i\n",
-					num_pages, hpi->hugepage_sz >> 20, socket_id);
+				"Allocating %u pages of size %" PRIu64 "M on socket %i\n",
+				num_pages, hpi->hugepage_sz >> 20, socket_id);
 
 			/* we may not be able to allocate all pages in one go,
 			 * because we break up our memory map into multiple
@@ -1148,7 +1148,7 @@ eal_nohuge_init(void)
 
 	addr = rte_mem_alloc(internal_config.memory, 0);
 	if (addr == NULL) {
-		RTE_LOG(ERR, EAL, "Cannot allocate %" RTE_PRIzu " bytes",
+		RTE_LOG(ERR, EAL, "Cannot allocate %zu bytes",
 			internal_config.memory);
 		return -1;
 	}

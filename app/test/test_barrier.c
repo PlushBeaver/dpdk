@@ -170,9 +170,9 @@ plock_test1_lcore(void *data)
 	tm = rte_get_timer_cycles() - tm;
 
 	printf("%s(%u): %" PRIu64 " iterations finished, in %" PRIu64
-		" cycles, %" RTE_PRILf " cycles/iteration, "
+		" cycles, %Lf cycles/iteration, "
 		"local sum={%" PRIu64 ", %" PRIu64 "}\n",
-		__func__, lc, i, tm, (rte_long_double)tm / i,
+		__func__, lc, i, tm, (long double)tm / i,
 		lpt->sum[0], lpt->sum[1]);
 	return 0;
 }

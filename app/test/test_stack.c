@@ -23,7 +23,7 @@ test_stack_push_pop(struct rte_stack *s, void **obj_table, unsigned int bulk_sz)
 
 	popped_objs = rte_calloc(NULL, STACK_SIZE, sizeof(void *), 0);
 	if (popped_objs == NULL) {
-		printf("[%s():%u] failed to calloc %" RTE_PRIzu " bytes\n",
+		printf("[%s():%u] failed to calloc %zu bytes\n",
 		       __func__, __LINE__, STACK_SIZE * sizeof(void *));
 		return -1;
 	}
@@ -106,7 +106,7 @@ test_stack_basic(uint32_t flags)
 
 	obj_table = rte_calloc(NULL, STACK_SIZE, sizeof(void *), 0);
 	if (obj_table == NULL) {
-		printf("[%s():%u] failed to calloc %" RTE_PRIzu " bytes\n",
+		printf("[%s():%u] failed to calloc %zu bytes\n",
 		       __func__, __LINE__, STACK_SIZE * sizeof(void *));
 		goto fail_test;
 	}
@@ -285,7 +285,7 @@ stack_thread_push_pop(void *args)
 
 	obj_table = rte_calloc(NULL, STACK_SIZE, sizeof(void *), 0);
 	if (obj_table == NULL) {
-		printf("[%s():%u] failed to calloc %" RTE_PRIzu " bytes\n",
+		printf("[%s():%u] failed to calloc %zu bytes\n",
 		       __func__, __LINE__, STACK_SIZE * sizeof(void *));
 		return -1;
 	}
@@ -346,7 +346,7 @@ test_stack_multithreaded(uint32_t flags)
 
 	args = rte_malloc(NULL, sizeof(struct test_args) * RTE_MAX_LCORE, 0);
 	if (args == NULL) {
-		printf("[%s():%u] failed to malloc %" RTE_PRIzu " bytes\n",
+		printf("[%s():%u] failed to malloc %zu bytes\n",
 		       __func__, __LINE__,
 		       sizeof(struct test_args) * RTE_MAX_LCORE);
 		return -1;

@@ -53,7 +53,7 @@ worker_generic(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
+		printf("  worker %u thread done. RX=%zu TX=%zu\n",
 				rte_lcore_id(), received, sent);
 
 	return 0;
@@ -113,7 +113,7 @@ worker_generic_burst(void *arg)
 	}
 
 	if (!cdata.quiet)
-		printf("  worker %u thread done. RX=%" RTE_PRIzu " TX=%" RTE_PRIzu "\n",
+		printf("  worker %u thread done. RX=%zu TX=%zu\n",
 				rte_lcore_id(), received, sent);
 
 	return 0;

@@ -52,7 +52,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 	if (system_page_sz == 0)
 		system_page_sz = rte_get_page_size();
 
-	RTE_LOG(DEBUG, EAL, "Ask a virtual area of 0x%" RTE_PRIzx " bytes\n", *size);
+	RTE_LOG(DEBUG, EAL, "Ask a virtual area of 0x%zx bytes\n", *size);
 
 	addr_is_hint = (flags & EAL_VIRTUAL_AREA_ADDR_IS_HINT) > 0;
 	allow_shrink = (flags & EAL_VIRTUAL_AREA_ALLOW_SHRINK) > 0;
@@ -94,7 +94,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 			return NULL;
 		}
 
-		mapped_addr = rte_mem_reserve(
+		mapped_addr = eal_mem_reserve(
 				requested_addr, (size_t)map_sz, reserve_flags);
 		if ((mapped_addr == NULL) && allow_shrink)
 			size -= page_sz;
@@ -142,7 +142,7 @@ eal_get_virtual_area(void *requested_addr, size_t *size,
 		next_baseaddr = RTE_PTR_ADD(aligned_addr, *size);
 	}
 
-	RTE_LOG(DEBUG, EAL, "Virtual area found at %p (size = 0x%" RTE_PRIzx ")\n",
+	RTE_LOG(DEBUG, EAL, "Virtual area found at %p (size = 0x%zx)\n",
 		aligned_addr, *size);
 
 	if (unmap) {
@@ -328,7 +328,7 @@ dump_memseg(const struct rte_memseg_list *msl, const struct rte_memseg *ms,
 		return -1;
 
 	fd = eal_memalloc_get_seg_fd(msl_idx, ms_idx);
-	fprintf(f, "Segment %i-%i: IOVA:0x%"PRIx64", len:%"RTE_PRIzu", "
+	fprintf(f, "Segment %i-%i: IOVA:0x%"PRIx64", len:%zu, "
 			"virt:%p, socket_id:%"PRId32", "
 			"hugepage_sz:%"PRIu64", nchannel:%"PRIx32", "
 			"nrank:%"PRIx32" fd:%i\n",
@@ -419,7 +419,7 @@ check_iova(const struct rte_memseg_list *msl __rte_unused,
 	if (!(iova & *mask))
 		return 0;
 
-	RTE_LOG(DEBUG, EAL, "memseg iova %"PRIx64", len %"RTE_PRIzx", out of range\n",
+	RTE_LOG(DEBUG, EAL, "memseg iova %"PRIx64", len %zx, out of range\n",
 			    ms->iova, ms->len);
 
 	RTE_LOG(DEBUG, EAL, "\tusing dma mask %"PRIx64"\n", *mask);

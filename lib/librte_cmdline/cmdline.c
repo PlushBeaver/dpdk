@@ -277,63 +277,66 @@ cmdline_poll_char_console(HANDLE handle)
 
 	if (!PeekConsoleInput(handle, &record, 1, &events)) {
 		/* Simulate poll(3) behavior on EOF. */
-		if (GetLastError() == ERROR_HANDLE_EOF)
-			return 0;
-
-		errno = EIO;
-		return -1;
+		return (GetLastError() == ERROR_HANDLE_EOF) ? 1 : -1;
 	}
 	
-	if ((events == 0) || !cmdline_is_key_down(&record)) {
-		errno = EAGAIN;
+	if ((events == 0) || !cmdline_is_key_down(&record))
 		return 0;
-	}
+
 	return 1;
 }
 
 static int
-cmdline_poll_char_file(HANDLE handle)
+cmdline_poll_char_file(struct cmdline *cl, HANDLE handle)
 {
-	char dummy;
-	DWORD bytes_read;
-	OVERLAPPED overlapped;
+	DWORD type = GetFileType(handle);
 
-	ZeroMemory(&overlapped, sizeof(overlapped));
-	if (!ReadFile(handle, &dummy, 0, NULL, &overlapped)) {
-		switch (GetLastError()) {
-		case ERROR_INSUFFICIENT_BUFFER:
-			/* Operation completed immediately. */
-			return 1;
-		case ERROR_IO_PENDING:
-			/* Asynchronous operation started. */
-			break;
-		default:
-			/* Failed to start an asynchronous operation. */
-			errno = EIO;
-			return -1;
+	/* Since console is handled by cmdline_poll_char_console(),
+	 * this is either a serial port or input handle had been replaced.
+	 */
+	if (type == FILE_TYPE_CHAR) {
+		return cmdline_poll_char_console(handle);
+	}
+
+	/* PeekNamedPipe() can handle all pipes and also sockets. */
+	if (type == FILE_TYPE_PIPE) {
+		DWORD bytes_available;
+		if (!PeekNamedPipe(
+		    handle, NULL, 0, NULL, &bytes_available, NULL))
+			return (GetLastError() == ERROR_BROKEN_PIPE) ? 1 : -1;
+		return bytes_available ? 1 : 0;
+	}
+
+	/* There is no straightforward way to peek a file in Windows
+	 * I/O model. Read the byte, if it is not the end of file,
+	 * buffer it for subsequent read. This will not work with
+	 * a file being appended and probably some other edge cases.
+	 */
+	if (type == FILE_TYPE_DISK) {
+		char c;
+		int ret;
+
+		ret = read(cl->s_in, &c, sizeof(c));
+		if (ret == 1) {
+			cl->repeat_count = 1;
+			cl->repeated_char = c;
 		}
+		return ret;
 	}
 
-	if (GetOverlappedResult(
-		/* Operation completed, result does not matter. */
-		handle, &overlapped, &bytes_read, FALSE)) {
-		return 1;
-	}
-
-	CancelIo(handle);
-
-	/* Simulate poll(3) behavior with zero timeout. */
-	errno = EAGAIN;
-	return 0;
+	/* GetFileType() failed or file of unknown type,
+	 * which we do not know how to peek anyway.
+	 */
+	return -1;
 }
 
 static int
 cmdline_poll_char(struct cmdline *cl)
 {
 	HANDLE handle = (HANDLE)_get_osfhandle(cl->s_in);
-	return cl->oldterm.is_console ?
+	return cl->oldterm.is_console_input ?
 		cmdline_poll_char_console(handle) :
-		cmdline_poll_char_file(handle);
+		cmdline_poll_char_file(cl, handle);
 }
 
 static ssize_t
@@ -344,7 +347,7 @@ cmdline_read_char(struct cmdline *cl, char *c)
 	KEY_EVENT_RECORD *key;
     	DWORD events;
 
-	if (!cl->oldterm.is_console)
+	if (!cl->oldterm.is_console_input)
 		return read(cl->s_in, c, 1);
 
 	/* Return repeated strokes from previous event. */
@@ -358,13 +361,14 @@ cmdline_read_char(struct cmdline *cl, char *c)
 	key = &record.Event.KeyEvent;
 	do {
 		if (!ReadConsoleInput(handle, &record, 1, &events)) {
-			if (GetLastError() == ERROR_HANDLE_EOF)
+			if (GetLastError() == ERROR_HANDLE_EOF) {
+				*c = EOF;
 				return 0;
+			}
 
 			errno = EIO;
 			return -1;
 		}
-		// printf("down=%u count=%u\n", key->bKeyDown, key->wRepeatCount);
 	} while (!cmdline_is_key_down(&record));
 
 	*c = key->uChar.AsciiChar;

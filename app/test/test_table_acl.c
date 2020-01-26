@@ -411,7 +411,7 @@ setup_acl_pipeline(void)
 		RTE_LOG(INFO, PIPELINE, "miss_action=%x\n",
 			table_entry_miss_action);
 
-		printf("RTE_ACL_RULE_SZ(%" RTE_PRIzu ") = %" RTE_PRIzu "\n", DIM(ipv4_defs),
+		printf("RTE_ACL_RULE_SZ(%zu) = %zu\n", DIM(ipv4_defs),
 			RTE_ACL_RULE_SZ(DIM(ipv4_defs)));
 
 		struct rte_table_acl_params acl_params;

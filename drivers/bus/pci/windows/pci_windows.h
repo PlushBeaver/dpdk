@@ -8,8 +8,8 @@
  * for communication with the driver, direct path must be stored.
  */
 struct windows_pci_device {
-	struct rte_pci_device device;   /* inherit public structure */
-	wchar_t path[PATH_MAX];     /* path to device object to open */
+	struct rte_pci_device device; /* inherit public structure */
+	wchar_t path[PATH_MAX];       /* path to device object to open */
 };
 
 #endif

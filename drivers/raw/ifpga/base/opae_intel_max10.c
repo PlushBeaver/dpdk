@@ -471,7 +471,7 @@ max10_sensor_init(struct intel_max10_device *dev, int parent)
 				raw->id, raw->multiplier);
 
 		for (i = SENSOR_REG_VALUE; i < SENSOR_REG_MAX; i++)
-			dev_debug(dev, "sensor reg[%d]: %x: %" RTE_PRIzu "\n",
+			dev_debug(dev, "sensor reg[%d]: %x: %zu\n",
 					i, raw->regs[i].regoff,
 					raw->regs[i].size);
 

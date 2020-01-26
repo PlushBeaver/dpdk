@@ -217,7 +217,7 @@ fslmc_memevent_cb(enum rte_mem_event type, const void *addr, size_t len,
 
 		DPAA2_BUS_DEBUG("Request for %s, va=%p, "
 				"virt_addr=0x%" PRIx64 ", "
-				"iova=0x%" PRIx64 ", map_len=%" RTE_PRIzu "",
+				"iova=0x%" PRIx64 ", map_len=%zu",
 				type == RTE_MEM_EVENT_ALLOC ?
 					"alloc" : "dealloc",
 				va, virt_addr, iova_addr, map_len);
@@ -236,7 +236,7 @@ fslmc_memevent_cb(enum rte_mem_event type, const void *addr, size_t len,
 
 		if (ret != 0) {
 			DPAA2_BUS_ERR("DMA Mapping/Unmapping failed. "
-					"Map=%d, addr=%p, len=%" RTE_PRIzu ", err:(%d)",
+					"Map=%d, addr=%p, len=%zu, err:(%d)",
 					type, va, map_len, ret);
 			return;
 		}
@@ -245,10 +245,10 @@ fslmc_memevent_cb(enum rte_mem_event type, const void *addr, size_t len,
 	}
 
 	if (type == RTE_MEM_EVENT_ALLOC)
-		DPAA2_BUS_DEBUG("Total Mapped: addr=%p, len=%" RTE_PRIzu "",
+		DPAA2_BUS_DEBUG("Total Mapped: addr=%p, len=%zu",
 				addr, len);
 	else
-		DPAA2_BUS_DEBUG("Total Unmapped: addr=%p, len=%" RTE_PRIzu "",
+		DPAA2_BUS_DEBUG("Total Unmapped: addr=%p, len=%zu",
 				addr, len);
 }
 
@@ -347,7 +347,7 @@ fslmc_dmamap_seg(const struct rte_memseg_list *msl __rte_unused,
 
 	ret = fslmc_map_dma(ms->addr_64, ms->iova, ms->len);
 	if (ret)
-		DPAA2_BUS_ERR("Unable to VFIO map (addr=%p, len=%" RTE_PRIzu ")",
+		DPAA2_BUS_ERR("Unable to VFIO map (addr=%p, len=%zu)",
 				ms->addr, ms->len);
 	else
 		(*n_segs)++;

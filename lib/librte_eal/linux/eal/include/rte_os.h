@@ -32,23 +32,6 @@ typedef cpu_set_t rte_cpuset_t;
 } while (0)
 
 /**
- * The most precise floating-point type supported by target platform.
- * 
- * @see RTE_PRILf
- */
-typedef long double rte_long_double;
-
-/**
- * Formatting specifiers portable across compilers and environments.
- */
-#define RTE_PRILf  "Lf"
-#define RTE_PRIF   "F"
-#define RTE_PRIllu "llu"
-#define RTE_PRIzd  "zd"
-#define RTE_PRIzu  "zu"
-#define RTE_PRIzx  "zx"
-
-/**
  * Dynamically loded module descriptor.
  */
 typedef void* rte_module;

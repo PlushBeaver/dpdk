@@ -50,7 +50,7 @@
 #define BPF_DIV_ZERO_CHECK(bpf, reg, ins, type) do { \
 	if ((type)(reg)[(ins)->src_reg] == 0) { \
 		RTE_BPF_LOG(ERR, \
-			"%s(%p): division by 0 at pc: %#" RTE_PRIzx ";\n", \
+			"%s(%p): division by 0 at pc: %#zx;\n", \
 			__func__, bpf, \
 			(uintptr_t)(ins) - (uintptr_t)(bpf)->prm.ins); \
 		return 0; \
@@ -412,7 +412,7 @@ bpf_exec(const struct rte_bpf *bpf, uint64_t reg[EBPF_REG_NUM])
 			return reg[EBPF_REG_0];
 		default:
 			RTE_BPF_LOG(ERR,
-				"%s(%p): invalid opcode %#x at pc: %#" RTE_PRIzx ";\n",
+				"%s(%p): invalid opcode %#x at pc: %#zx;\n",
 				__func__, bpf, ins->code,
 				(uintptr_t)ins - (uintptr_t)bpf->prm.ins);
 			return 0;

@@ -167,7 +167,7 @@ enum rte_mem_reserve_flags {
  *  Starting address of the reserved area on success, NULL on failure.
  * 	Callers must not this memory until remapping it.
  */
-void* rte_mem_reserve(void *requested_addr, size_t size,
+void* eal_mem_reserve(void *requested_addr, size_t size,
 		enum rte_mem_reserve_flags flags);
 
 /**

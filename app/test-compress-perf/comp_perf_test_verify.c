@@ -409,7 +409,7 @@ cperf_verify_test_runner(void *test_ctx)
 		RTE_LOG(ERR, USER1,
 	   "Decompressed data length not equal to input data length\n");
 		RTE_LOG(ERR, USER1,
-			"Decompressed size = %" RTE_PRIzu ", expected = %" RTE_PRIzu "\n",
+			"Decompressed size = %zu, expected = %zu\n",
 			ctx->decomp_data_sz, test_data->input_data_sz);
 		ret = EXIT_FAILURE;
 		goto end;
@@ -432,7 +432,7 @@ cperf_verify_test_runner(void *test_ctx)
 			printf("%12s%6s%12s%17s\n",
 			    "lcore id", "Level", "Comp size", "Comp ratio [%]");
 		}
-		printf("%12u%6u%12" RTE_PRIzu "%17.2f\n",
+		printf("%12u%6u%12zu%17.2f\n",
 		       ctx->mem.lcore_id,
 		       test_data->level, ctx->comp_data_sz, ctx->ratio);
 	}
