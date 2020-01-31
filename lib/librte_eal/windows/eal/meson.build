@@ -6,6 +6,7 @@ eal_inc += include_directories('include')
 env_objs = []
 env_headers = files(
 	'include/rte_os.h',
+	'include/rte_windows.h',
 )
 common_sources = files(
 	'../../common/eal_common_bus.c',
