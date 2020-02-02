@@ -26,4 +26,14 @@ void eal_create_cpu_map(void);
  */
 int eal_thread_create(pthread_t *thread);
 
+/**
+ * Get system NUMA node number for a socket ID.
+ *
+ * @param socket_id
+ *  Valid EAL socket ID.
+ * @return
+ *  NUMA node number to use with Win32 API.
+ */
+unsigned int eal_socket_numa_node(unsigned int socket_id);
+
 #endif /* _EAL_WINDOWS_H_ */
