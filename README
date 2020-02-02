@@ -9,3 +9,12 @@ API documentation, and sample application information.
 
 For questions and usage discussions, subscribe to: users@dpdk.org
 Report bugs and issues to the development mailing list: dev@dpdk.org
+
+---
+
+Note on Windows support patches ("windows" branch)
+
+These patches are provided for DPDK community to assess an alternate approach
+to Windows implementation. The patches are provided "as-is" for the purposes of
+research, experiments, and DPDK upstream integration. Their quality is below
+usual DPDK standards and any use in production is strongly discouraged.
