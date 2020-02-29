@@ -36,4 +36,41 @@ int eal_thread_create(pthread_t *thread);
  */
 unsigned int eal_socket_numa_node(unsigned int socket_id);
 
+/**
+ * Allocate new memory in hugepages on the specified NUMa node.
+ */
+void * eal_mem_alloc(size_t size, int socket_id);
+
+/**
+ * Commit memory previously reserved with @ref eal_mem_reserve()
+ * or decommitted from hugepages by @ref eal_mem_decommit().
+ *
+ * @param requested_addr
+ *  Address within a reserved region. Must not be NULL.
+ * @param size
+ *  Number of bytes to commit. Must be a multiple of page size.
+ * @param socket_id
+ *  Socket ID to allocate on. Can be SOCKET_ID_ANY.
+ * @return
+ *  On success, address of the committed memory, that is, requested_addr.
+ *  On failure, NULL and @code rte_errno @endcode is set.
+ */
+void * eal_mem_commit(void *requested_addr, size_t size, int socket_id);
+
+/**
+ * Put allocated or committed memory back into reserved state.
+ *
+ * @param addr
+ *  Address of the region to decommit.
+ * @param size
+ *  Number of bytes to decommit.
+ *
+ * The @code addr @endcode and @code param @endcode must match
+ * location and size of previously allocated or commited region.
+ *
+ * @return
+ *  0 on success, (-1) on failure.
+ */
+int eal_mem_decommit(void *addr, size_t size);
+
 #endif /* _EAL_WINDOWS_H_ */

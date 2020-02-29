@@ -3,7 +3,135 @@
 #include <rte_errno.h>
 #include <rte_memory.h>
 
+#include "eal_private.h"
 #include "eal_windows.h"
+
+/* Approximate error mapping from VirtualAlloc2() to POSIX mmap(3). */
+static int
+win32_alloc_error_to_errno(DWORD code)
+{
+	switch (code) {
+	case ERROR_SUCCESS:
+		return 0;
+
+	case ERROR_INVALID_ADDRESS:
+		/* A valid requested address is not available. */
+	case ERROR_COMMITMENT_LIMIT:
+		/* May occcur when commiting regular memory. */
+	case ERROR_NO_SYSTEM_RESOURCES:
+		/* Occurs when the system runs out of hugepages. */
+		return ENOMEM;
+
+	case ERROR_INVALID_PARAMETER:
+	default:
+		return EINVAL;
+	}
+}
+
+void *
+eal_mem_reserve(void *requested_addr, size_t size,
+	enum rte_mem_reserve_flags flags)
+{
+	void *virt;
+
+	/* Windows requires hugepages to be committed. */
+	if (flags & RTE_RESERVE_HUGEPAGES) {
+		RTE_LOG(ERR, EAL, "Hugepage reservation is not supported\n");
+		rte_errno = ENOTSUP;
+		return NULL;
+	}
+
+	virt = VirtualAlloc2(GetCurrentProcess(), requested_addr, size,
+		MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS,
+		NULL, 0);
+	if (virt == NULL) {
+		RTE_LOG_WIN32_ERR("VirtualAlloc2()");
+		rte_errno = win32_alloc_error_to_errno(GetLastError());
+	}
+
+	if ((flags & RTE_RESERVE_EXACT_ADDRESS) && (virt != requested_addr)) {
+		if (!VirtualFree(virt, 0, MEM_RELEASE)) {
+			RTE_LOG_WIN32_ERR("VirtualFree()");
+		}
+		rte_errno = ENOMEM;
+		return NULL;
+	}
+
+    return virt;
+}
+
+void *
+eal_mem_alloc(size_t size, int socket_id)
+{
+	DWORD flags = MEM_RESERVE | MEM_COMMIT;
+	void *addr;
+
+	flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+	addr = VirtualAllocExNuma(GetCurrentProcess(), NULL, size, flags,
+		PAGE_READWRITE, eal_socket_numa_node(socket_id));
+	if (addr == NULL)
+		rte_errno = ENOMEM;
+	return addr;
+}
+
+void*
+eal_mem_commit(void *requested_addr, size_t size, int socket_id)
+{
+	MEM_EXTENDED_PARAMETER param;
+	DWORD param_count = 0;
+	DWORD flags;
+	void *addr;
+
+	if (requested_addr != NULL) {
+		MEMORY_BASIC_INFORMATION info;
+		if (VirtualQuery(requested_addr, &info, sizeof(info)) == 0) {
+			RTE_LOG_WIN32_ERR("VirtualQuery()");
+			return NULL;
+		}
+
+		/* Split reserved region if only a part is committed. */
+		flags = MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER;
+		if ((info.RegionSize > size) &&
+			!VirtualFree(requested_addr, size, flags)) {
+			RTE_LOG_WIN32_ERR("VirtualFree(%p, %zu, "
+				"<split placeholder>)", requested_addr, size);
+			return NULL;	
+		}
+	}
+
+	if (socket_id != SOCKET_ID_ANY) {
+		param_count = 1;
+		memset(&param, 0, sizeof(param));
+		param.Type = MemExtendedParameterNumaNode;
+		param.ULong = eal_socket_numa_node(socket_id);
+	}
+
+	flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+	if (requested_addr != NULL) {
+		flags |= MEM_REPLACE_PLACEHOLDER;
+	}
+	addr = VirtualAlloc2(GetCurrentProcess(), requested_addr, size,
+		flags, PAGE_READWRITE, &param, param_count);
+	if (addr == NULL) {
+		int err = GetLastError();
+		RTE_LOG_WIN32_ERR("VirtualAlloc2(%p, %zu, "
+			"<replace placeholder>)", addr, size);
+		rte_errno = win32_alloc_error_to_errno(err);
+		return NULL;
+	}
+
+	return addr;
+}
+
+int
+eal_mem_decommit(void *addr, size_t size)
+{
+	if (!VirtualFree(addr, size, MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER)) {
+		RTE_LOG_WIN32_ERR("VirtualFree(%p, %zu, ...)", addr, size);
+		return -1;
+	}
+	return 0;
+}
 
 /**
  * Free a reserved memory region in full or in part.
@@ -12,13 +140,15 @@
  *  Starting address of the area to free.
  * @param size
  *  Number of bytes to free. Must be a multiple of page size.
+ * @param reserved
+ *  Fail if the region is not in reserved state.
  * @return
  *  * 0 on successful deallocation;
- *  * 1 if region is not in reserved state;
+ *  * 1 if region mut be in reserved state but it is not;
  *  * (-1) on system API failures.
  */
 static int
-mem_free(void *addr, size_t size)
+mem_free(void *addr, size_t size, bool reserved)
 {
 	MEMORY_BASIC_INFORMATION info;
 	if (VirtualQuery(addr, &info, sizeof(info)) == 0) {
@@ -26,7 +156,7 @@ mem_free(void *addr, size_t size)
 		return -1;
 	}
 
-	if (info.State != MEM_RESERVE) {
+	if (reserved && (info.State != MEM_RESERVE)) {
 		return 1;
 	}
 	
@@ -53,6 +183,12 @@ mem_free(void *addr, size_t size)
 	}
 
 	return 0;
+}
+
+void
+eal_mem_free(void *virt, size_t size)
+{
+	mem_free(virt, size, false);
 }
 
 void *
@@ -108,7 +244,7 @@ rte_mem_map(void *requested_addr, size_t size, enum rte_mem_prot prot,
 	 * private mappings.
 	 */
 	if (requested_addr != NULL) {
-		int ret = mem_free(requested_addr, size);
+		int ret = mem_free(requested_addr, size, true);
 		if (ret) {
 			if (ret > 0) {
 				RTE_LOG(ERR, EAL, "Cannot map memory "

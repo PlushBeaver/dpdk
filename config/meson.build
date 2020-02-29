@@ -248,7 +248,8 @@ if is_freebsd
 endif
 
 if is_windows
-	add_project_link_arguments('-ladvapi32', language: 'c')
+	# Contrary to docs, VirtualAlloc2() is exported by mincore.lib.
+	add_project_link_arguments('-ladvapi32', '-lmincore', language: 'c')
 endif
 
 if get_option('b_lto')

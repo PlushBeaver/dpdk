@@ -11,6 +11,7 @@
 
 #include <rte_dev.h>
 #include <rte_lcore.h>
+#include <rte_memory.h>
 
 /**
  * Structure storing internal configuration (per-lcore)
@@ -203,6 +204,16 @@ int rte_eal_alarm_init(void);
 int rte_eal_check_module(const char *module_name);
 
 /**
+ * Memory reservation flags.
+ */
+enum rte_mem_reserve_flags {
+	/**< Reserve hugepages. */
+	RTE_RESERVE_HUGEPAGES = 1 << 0,
+	/**< Fail if requested address is not available. */
+	RTE_RESERVE_EXACT_ADDRESS = 1 << 1
+};
+
+/**
  * Get virtual area of specified size from the OS.
  *
  * This function is private to the EAL.
@@ -215,8 +226,8 @@ int rte_eal_check_module(const char *module_name);
  *   Page size on which to align requested virtual area.
  * @param flags
  *   EAL_VIRTUAL_AREA_* flags.
- * @param mmap_flags
- *   Extra flags passed directly to mmap().
+ * @param reserve_flags
+ *   Extra flags passed directly to eal_mem_reserve().
  *
  * @return
  *   Virtual area address if successful.
@@ -232,8 +243,8 @@ int rte_eal_check_module(const char *module_name);
 #define EAL_VIRTUAL_AREA_UNMAP (1 << 2)
 /**< immediately unmap reserved virtual area. */
 void *
-eal_get_virtual_area(void *requested_addr, size_t *size,
-		size_t page_sz, int flags, int mmap_flags);
+eal_get_virtual_area(void *requested_addr, size_t *size, size_t page_sz,
+	int flags, enum rte_mem_reserve_flags reserve_flags);
 
 /**
  * Get cpu core_id.
@@ -487,5 +498,57 @@ int eal_file_lock(int fd, enum rte_flock_op op, enum rte_flock_mode mode);
  * 	0 on success, (-1) on failure.
  */
 int eal_file_truncate(int fd, ssize_t size);
+
+/**
+ * Reserve a region of virtual memory.
+ *
+ * Use eal_mem_free() to free reserved memory.
+ *
+ * @param requested_addr
+ *  A desired reservation address. The system may not respect it.
+ *  NULL means the address will be chosen by the system.
+ * @param size
+ *  Reservation size. Must be a multiple of system page size.
+ * @param flags
+ *  Reservation options.
+ * @returns
+ *  Starting address of the reserved area on success, NULL on failure.
+ *  Callers must not access this memory until remapping it.
+ */
+void * eal_mem_reserve(void *requested_addr, size_t size,
+	enum rte_mem_reserve_flags flags);
+
+/**
+ * Allocate a contiguous chunk of virtual memory.
+ *
+ * Use eal_mem_free() to free allocated memory.
+ *
+ * @param size
+ *  Number of bytes to allocate.
+ * @param page_size
+ *  If non-zero, means memory must be allocated in hugepages
+ *  of the specified size. The @code size @endcode parameter
+ *  must then be a multiple of the largest hugepage size requested.
+ * @return
+ *  Address of allocated memory or NULL on failure (rte_errno is set).
+ */
+void * eal_mem_alloc(size_t size, enum rte_page_sizes page_size);
+
+/**
+ * Free memory obtained by eal_mem_reserve() or eal_mem_alloc().
+ *
+ * If @code virt @endcode and @code size @endcode describe a part of the
+ * reserved region, only this part of the region is freed (accurately
+ * up to the system page size). If @code virt @endcode points to allocated
+ * memory, @code size @endcode must match the one specified on allocation.
+ * The behavior is undefined if the memory pointed by @code virt @endcode
+ * is obtained from another source than listed above.
+ *
+ * @param virt
+ *  A virtual address in a region previously reserved.
+ * @param size
+ *  Number of bytes to unreserve.
+ */
+void eal_mem_free(void *virt, size_t size);
 
 #endif /* _EAL_PRIVATE_H_ */

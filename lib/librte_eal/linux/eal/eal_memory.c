@@ -2464,21 +2464,6 @@ rte_eal_memseg_init(void)
 			memseg_secondary_init();
 }
 
-static int
-mem_rte_to_sys_prot(enum rte_mem_prot prot)
-{
-	int sys_prot = 0;
-
-	if (prot & RTE_PROT_READ)
-		sys_prot |= PROT_READ;
-	if (prot & RTE_PROT_WRITE)
-		sys_prot |= PROT_WRITE;
-	if (prot & RTE_PROT_EXECUTE)
-		sys_prot |= PROT_EXEC;
-
-	return sys_prot;
-}
-
 static void *
 mem_map(void *requested_addr, size_t size, int prot, int flags,
 	int fd, size_t offset)
@@ -2504,6 +2489,57 @@ mem_unmap(void *virt, size_t size)
 		rte_errno = errno;
 	}
 	return ret;
+}
+
+void *
+eal_mem_reserve(void *requested_addr, size_t size,
+	enum rte_mem_reserve_flags flags)
+{
+	int sys_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+
+	if (flags & RTE_RESERVE_HUGEPAGES)
+		sys_flags |= MAP_HUGETLB;
+	if (flags & RTE_RESERVE_EXACT_ADDRESS)
+		sys_flags |= MAP_FIXED;
+
+	return mem_map(requested_addr, size, PROT_READ, sys_flags, -1, 0);
+}
+
+void *
+eal_mem_alloc(size_t size, enum rte_page_sizes page_size)
+{
+	int flags = MAP_ANONYMOUS | MAP_PRIVATE;
+
+	if (page_size != 0) {
+		/* as per mmap() manpage, all page sizes are log2 of page size
+		 * shifted by MAP_HUGE_SHIFT
+		 */
+		int page_flag = rte_log2_u64(page_size) << MAP_HUGE_SHIFT;
+		flags |= MAP_HUGETLB | page_flag;
+	}
+
+	return mem_map(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+}
+
+void
+eal_mem_free(void *virt, size_t size)
+{
+	mem_unmap(virt, size);
+}
+
+static int
+mem_rte_to_sys_prot(enum rte_mem_prot prot)
+{
+	int sys_prot = 0;
+
+	if (prot & RTE_PROT_READ)
+		sys_prot |= PROT_READ;
+	if (prot & RTE_PROT_WRITE)
+		sys_prot |= PROT_WRITE;
+	if (prot & RTE_PROT_EXECUTE)
+		sys_prot |= PROT_EXEC;
+
+	return sys_prot;
 }
 
 void *
