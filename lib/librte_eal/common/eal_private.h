@@ -443,4 +443,49 @@ rte_option_usage(void);
 uint64_t
 eal_get_baseaddr(void);
 
+/** File locking operation. */
+enum rte_flock_op {
+	RTE_FLOCK_SHARED,    /**< Acquire a shared lock. */
+	RTE_FLOCK_EXCLUSIVE, /**< Acquire an exclusive lock. */
+	RTE_FLOCK_UNLOCK     /**< Release a previously taken lock. */
+};
+
+/** Behavior on file locking conflict. */
+enum rte_flock_mode {
+	RTE_FLOCK_WAIT,  /**< Wait until the file gets unlocked to lock it. */
+	RTE_FLOCK_RETURN /**< Return immediately if the file is locked. */
+};
+
+/**
+ * Lock or unlock the file.
+ * 
+ * On failure @code rte_errno @endcode is set to the error code
+ * specified by POSIX flock(3) description.
+ * 
+ * @param fd
+ * 	Opened file descriptor.
+ * @param op
+ * 	Operation to perform.
+ * @param mode
+ * 	Behavior on conflict.
+ * @return
+ * 	0 on success, (-1) on failure.
+ */
+int eal_file_lock(int fd, enum rte_flock_op op, enum rte_flock_mode mode);
+
+/**
+ * Truncate or extend the file to the specified size.
+ *
+ * On failure @code rte_errno @endcode is set to the error code
+ * specified by POSIX ftruncate(3) description.
+ * 
+ * @param fd
+ * 	Opened file descriptor.
+ * @param size
+ * 	Desired file size.
+ * @return
+ * 	0 on success, (-1) on failure.
+ */
+int eal_file_truncate(int fd, ssize_t size);
+
 #endif /* _EAL_PRIVATE_H_ */
