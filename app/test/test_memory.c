@@ -4,6 +4,11 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#ifndef RTE_EXEC_ENV_WINDOWS
+#include <unistd.h>
+#else
+#include <windows.h>
+#endif
 
 #include <rte_eal.h>
 #include <rte_memory.h>
@@ -70,6 +75,29 @@ check_seg_fds(const struct rte_memseg_list *msl, const struct rte_memseg *ms,
 }
 
 static int
+test_get_page_size(void)
+{
+	int eal_page_size, sys_page_size;
+
+#ifndef RTE_EXEC_ENV_WINDOWS
+	sys_page_size = getpagesize();
+#else
+	SYSTEM_INFO si;
+
+    	GetSystemInfo(&si);
+	sys_page_size = si.dwPageSize;
+#endif
+	eal_page_size = rte_get_page_size();
+
+	if (eal_page_size != sys_page_size) {
+		printf("EAL page size (%d) != system page size (%d)\n",
+			eal_page_size, sys_page_size);
+		return -1;
+	}
+	return 0;
+}
+
+static int
 test_memory(void)
 {
 	uint64_t s;
@@ -98,6 +126,11 @@ test_memory(void)
 		printf("Segment fd API is unsupported\n");
 	} else if (ret == -1) {
 		printf("Error getting segment fd's\n");
+		return -1;
+	}
+
+	if (test_get_page_size() < 0) {
+		printf("rte_get_page_size() test failed\n");
 		return -1;
 	}
 

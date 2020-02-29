@@ -86,6 +86,69 @@ struct rte_memseg_list {
 };
 
 /**
+ * Memory protection flags.
+ */
+enum rte_mem_prot {
+	RTE_PROT_READ = 1 << 0,   /**< Read access. */
+	RTE_PROT_WRITE = 1 << 1,   /**< Write access. */
+	RTE_PROT_EXECUTE = 1 << 2 /**< Code execution. */
+};
+
+/**
+ * Memory mapping additional flags.
+ * 
+ * In Linux and FreeBSD, each flag is semantically equivalent
+ * to OS-specific mmap(3) flag with the same or similar name.
+ * In Windows, POSIX and MAP_ANONYMOUS semantics are followed.
+ */
+enum rte_map_flags {
+	/** Changes of mapped memory are visible to other processes. */
+	RTE_MAP_SHARED = 1 << 0,
+	/** Mapping is not backed by a regular file. */
+	RTE_MAP_ANONYMOUS = 1 << 1,
+	/** Copy-on-write mapping, changes are not visible to other processes. */
+	RTE_MAP_PRIVATE = 1 << 2,
+	/** Fail if requested address cannot be taken. */
+	RTE_MAP_FIXED = 1 << 3
+};
+
+/**
+ * OS-independent implementation of POSIX mmap(3)
+ * with MAP_ANONYMOUS Linux/FreeBSD extension.
+ */
+__rte_experimental
+void * rte_mem_map(void* requested_addr, size_t size, enum rte_mem_prot prot,
+	enum rte_map_flags flags, int fd, size_t offset);
+
+/**
+ * OS-independent implementation of POSIX munmap(3).
+ */
+__rte_experimental
+int rte_mem_unmap(void* virt, size_t size);
+
+/**
+ * Get system page size. This function never failes.
+ * 
+ * @return
+ * 	Positive page size in bytes.
+ */
+__rte_experimental
+int rte_get_page_size(void);
+
+/**
+ * Lock region in physical memory and prevent it from swapping.
+ * 
+ * @param virt
+ * 	The virtual address.
+ * @param size
+ * 	Size of the region.
+ * @return
+ * 	0 on success, negative on error.
+ */
+__rte_experimental
+int rte_mem_lock(const void* virt, size_t size);
+
+/**
  * Lock page in physical memory and prevent from swapping.
  *
  * @param virt

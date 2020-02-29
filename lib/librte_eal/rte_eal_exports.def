@@ -5,5 +5,9 @@ EXPORTS
 	rte_eal_mp_remote_launch
 	rte_eal_mp_wait_lcore
 	rte_eal_remote_launch
+	rte_get_page_size
 	rte_log
+	rte_mem_lock
+	rte_mem_map
+	rte_mem_unmap
 	rte_vlog

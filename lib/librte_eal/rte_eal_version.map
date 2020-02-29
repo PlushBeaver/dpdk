@@ -335,4 +335,10 @@ EXPERIMENTAL {
 
 	# added in 20.02
 	rte_thread_is_intr;
+
+	# added in 20.05
+	rte_get_page_size;
+	rte_mem_lock;
+	rte_mem_map;
+	rte_mem_unmap;
 };
