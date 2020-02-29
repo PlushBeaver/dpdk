@@ -34,8 +34,19 @@ enum rte_page_sizes {
 	RTE_PGSIZE_256M  = 1ULL << 28,
 	RTE_PGSIZE_512M  = 1ULL << 29,
 	RTE_PGSIZE_1G    = 1ULL << 30,
+/* Clang on Windows follows MS ABI where enum values are signed 32-bit,
+ * and EAL cannot use -fno-ms-compatibility because it's OS-dependent.
+ * Definitions outside of enum prohibit using -fstrict-enums.
+ * One also cannot use enum rte_page_size as a type to hold page size,
+ * because on Windows it won't be able to hold the values below.
+ */
+#if !defined(RTE_TOOLCHAIN_CLANG) || !defined(RTE_EXEC_ENV_WINDOWS)
 	RTE_PGSIZE_4G    = 1ULL << 32,
 	RTE_PGSIZE_16G   = 1ULL << 34,
+#else
+#define RTE_PGSIZE_4G  (1ULL << 32)
+#define RTE_PGSIZE_16G (1ULL << 34)
+#endif
 };
 
 #define SOCKET_ID_ANY -1                    /**< Any NUMA socket. */

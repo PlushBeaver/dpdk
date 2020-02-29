@@ -20,6 +20,7 @@ endif
 if cc.has_function('getentropy', prefix : '#include <unistd.h>')
 	cflags += '-DRTE_LIBEAL_USE_GETENTROPY'
 endif
+cflags += '-fno-strict-enums'
 sources = common_sources + env_sources
 objs = common_objs + env_objs
 headers = common_headers + env_headers
