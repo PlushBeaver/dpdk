@@ -91,6 +91,24 @@ eal_proc_type_detect(void)
 	return ptype;
 }
 
+enum rte_proc_type_t
+rte_eal_process_type(void)
+{
+	return rte_config.process_type;
+}
+
+int
+rte_eal_has_hugepages(void)
+{
+	return !internal_config.no_hugetlbfs;
+}
+
+enum rte_iova_mode
+rte_eal_iova_mode(void)
+{
+	return rte_config.iova_mode;
+}
+
 /* display usage */
 static void
 eal_usage(const char *prgname)
@@ -335,6 +353,30 @@ rte_eal_init(int argc, char **argv)
 	if (internal_config.memory == 0 && !internal_config.force_sockets) {
 		if (internal_config.no_hugetlbfs)
 			internal_config.memory = MEMSIZE_IF_NO_HUGE_PAGE;
+	}
+
+	if (rte_eal_memzone_init() < 0) {
+		rte_eal_init_alert("Cannot init memzone");
+		rte_errno = ENODEV;
+		return -1;
+	}
+
+	if (rte_eal_memory_init() < 0) {
+		rte_eal_init_alert("Cannot init memory");
+		rte_errno = ENOMEM;
+		return -1;
+	}
+
+	if (rte_eal_malloc_heap_init() < 0) {
+		rte_eal_init_alert("Cannot init malloc heap");
+		rte_errno = ENODEV;
+		return -1;
+	}
+
+	if (rte_eal_tailqs_init() < 0) {
+		rte_eal_init_alert("Cannot init tail queues for objects");
+		rte_errno = EFAULT;
+		return -1;
 	}
 
 	eal_thread_init_master(rte_config.master_lcore);

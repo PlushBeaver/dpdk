@@ -393,7 +393,6 @@ alloc_va_space(struct rte_memseg_list *msl)
 	return 0;
 }
 
-
 static int
 memseg_primary_init(void)
 {

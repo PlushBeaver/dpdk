@@ -9,7 +9,17 @@
  * @file Facilities private to Windows EAL
  */
 
+#include <rte_errno.h>
 #include <rte_windows.h>
+
+/**
+ * Log current function as not implemented and set rte_errno.
+ */
+#define EAL_LOG_NOT_IMPLEMENTED() \
+	do { \
+		RTE_LOG(DEBUG, EAL, "%s() is not implemented\n", __func__); \
+		rte_errno = ENOTSUP; \
+	} while (0)
 
 /**
  * Create a map of processors and cores on the system.
@@ -35,6 +45,13 @@ int eal_thread_create(pthread_t *thread);
  *  NUMA node number to use with Win32 API.
  */
 unsigned int eal_socket_numa_node(unsigned int socket_id);
+
+/**
+ * Open virt2phys driver interface device.
+ *
+ * @return 0 on success, (-1) on failure.
+ */
+int eal_mem_virt2iova_init(void);
 
 /**
  * Allocate new memory in hugepages on the specified NUMa node.

@@ -10,6 +10,7 @@ subdir('common') # defines common_sources, common_objs, etc.
 # Now do OS/exec-env specific settings, including building kernel modules
 # The <exec-env>/eal/meson.build file should define env_sources, etc.
 dpdk_conf.set('RTE_EXEC_ENV_' + exec_env.to_upper(), 1)
+dpdk_conf.set10('RTE_EAL_NUMA_AWARE_HUGEPAGES', true)
 subdir(exec_env + '/eal')
 
 allow_experimental_apis = true

@@ -36,6 +36,10 @@ extern "C" {
 
 #define strncasecmp(s1, s2, count)        _strnicmp(s1, s2, count)
 
+#define open _open
+#define close _close
+#define unlink _unlink
+
 /* cpu_set macros implementation */
 #define RTE_CPU_AND(dst, src1, src2) CPU_AND(dst, src1, src2)
 #define RTE_CPU_OR(dst, src1, src2) CPU_OR(dst, src1, src2)

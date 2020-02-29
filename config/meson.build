@@ -249,7 +249,9 @@ endif
 
 if is_windows
 	# Contrary to docs, VirtualAlloc2() is exported by mincore.lib.
-	add_project_link_arguments('-ladvapi32', '-lmincore', language: 'c')
+	add_project_link_arguments(
+		'-ladvapi32', '-lmincore', '-lsetupapi',
+		language: 'c')
 endif
 
 if get_option('b_lto')
