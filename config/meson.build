@@ -247,6 +247,10 @@ if is_freebsd
 	add_project_arguments('-D__BSD_VISIBLE', language: 'c')
 endif
 
+if is_windows
+	add_project_link_arguments('-ladvapi32', language: 'c')
+endif
+
 if get_option('b_lto')
 	if cc.has_argument('-ffat-lto-objects')
 		add_project_arguments('-ffat-lto-objects', language: 'c')

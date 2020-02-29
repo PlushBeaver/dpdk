@@ -16,7 +16,10 @@
 #include <eal_options.h>
 #include <eal_private.h>
 
+#include "eal_hugepages.h"
 #include "eal_windows.h"
+
+#define MEMSIZE_IF_NO_HUGE_PAGE (64ULL * 1024ULL * 1024ULL)
 
  /* Allow the application to print its usage message too if set */
 static rte_usage_hook_t	rte_application_usage_hook;
@@ -239,6 +242,17 @@ rte_eal_init(int argc, char **argv)
 	fctret = eal_parse_args(argc, argv);
 	if (fctret < 0)
 		exit(1);
+
+	if (!internal_config.no_hugetlbfs && (eal_hugepage_info_init() < 0)) {
+		rte_eal_init_alert("Cannot get hugepage information.");
+		rte_errno = EACCES;
+		return -1;
+	}
+
+	if (internal_config.memory == 0 && !internal_config.force_sockets) {
+		if (internal_config.no_hugetlbfs)
+			internal_config.memory = MEMSIZE_IF_NO_HUGE_PAGE;
+	}
 
 	eal_thread_init_master(rte_config.master_lcore);
 

@@ -22,6 +22,7 @@ common_sources = files(
 )
 env_sources = files('eal.c',
 	'eal_debug.c',
+	'eal_hugepages.c',
 	'eal_lcore.c',
 	'eal_thread.c',
 	'getopt.c',
