@@ -67,6 +67,7 @@ EXPORTS
 	rte_vlog
 	rte_realloc
 	rte_strscpy
+	rte_thread_is_intr
 	rte_zmalloc
 	rte_zmalloc_socket
 
