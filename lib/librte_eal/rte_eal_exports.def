@@ -13,6 +13,8 @@ EXPORTS
 	rte_dev_is_probed
 	rte_devargs_next
 	rte_devargs_remove
+	rte_eal_alarm_set
+	rte_eal_alarm_cancel
 	rte_eal_get_configuration
 	rte_eal_has_hugepages
 	rte_eal_has_pci
