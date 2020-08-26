@@ -72,6 +72,7 @@ EXPORTS
 	rte_realloc
 	rte_rtm_supported
 	rte_strscpy
+	rte_thread_is_intr
 	rte_zmalloc
 	rte_zmalloc_socket
 
