@@ -12,6 +12,8 @@ EXPORTS
 	rte_devargs_next
 	rte_devargs_parse
 	rte_devargs_remove
+	rte_eal_alarm_set
+	rte_eal_alarm_cancel
 	rte_eal_has_hugepages
 	rte_eal_has_pci
 	rte_eal_init
