@@ -31,6 +31,8 @@ EXPORTS
 	rte_get_tsc_hz
 	rte_hexdump
 	rte_intr_rx_ctl
+	rte_intr_callback_register
+	rte_intr_callback_unregister
 	rte_log_register
 	rte_log_set_level
 	rte_malloc

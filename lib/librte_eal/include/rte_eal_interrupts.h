@@ -79,7 +79,7 @@ struct rte_intr_handle {
 			};
 			int fd;	/**< interrupt event file descriptor */
 		};
-		void *handle; /**< device driver handle (Windows) */
+		void *handle; /**< device driver interface handle (Windows) */
 	};
 	enum rte_intr_handle_type type;  /**< handle type */
 	uint32_t max_intr;             /**< max interrupt requested */
