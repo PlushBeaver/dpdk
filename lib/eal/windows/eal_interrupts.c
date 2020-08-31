@@ -3,21 +3,354 @@
  */
 
 #include <rte_interrupts.h>
+#include <rte_spinlock.h>
+#include <rte_tailq.h>
+
+#include <rte_eal_trace.h>
 
 #include "eal_private.h"
 #include "eal_windows.h"
 
 #define IOCP_KEY_SHUTDOWN UINT32_MAX
 
+struct rte_intr_callback {
+	TAILQ_ENTRY(rte_intr_callback) next;
+	rte_intr_callback_fn cb_fn;
+	void *cb_arg;
+	rte_intr_unregister_callback_fn ucb_fn;
+	int pending_delete;
+};
+
+TAILQ_HEAD(rte_intr_cb_list, rte_intr_callback);
+
+struct intr_source {
+	TAILQ_ENTRY(intr_source) next;
+	struct rte_intr_handle *intr_handle;
+	struct rte_intr_cb_list callbacks;
+	uint32_t active;
+
+	/*
+	 * A handle can be added to IOCP only once. If we use device handle
+	 * directly, remove the source, and then add it again, associating
+	 * the handle with IOCP will fail. So we use a duplicated handle,
+	 * which is closed when interrupt source is removed.
+	 */
+	HANDLE handle;
+	OVERLAPPED overlapped;
+};
+
+TAILQ_HEAD(rte_intr_source_list, intr_source);
+
+static struct rte_intr_source_list intr_sources;
+
+static rte_spinlock_t intr_lock = RTE_SPINLOCK_INITIALIZER;
+
 static pthread_t intr_thread;
 
 static HANDLE intr_iocp;
 static HANDLE intr_thread_handle;
 
-static void
-eal_intr_process(const OVERLAPPED_ENTRY *event)
+static bool
+intr_callback_matches(const struct rte_intr_callback *cb,
+		rte_intr_callback_fn cb_fn, void *cb_arg)
 {
-	RTE_SET_USED(event);
+	bool any_arg = cb_arg == (void *)(-1);
+	return cb->cb_fn == cb_fn && (any_arg || cb->cb_arg == cb_arg);
+}
+
+static bool
+intr_handle_valid(const struct rte_intr_handle *intr_handle)
+{
+	return intr_handle != NULL &&
+			intr_handle->handle != NULL &&
+			intr_handle->handle != INVALID_HANDLE_VALUE;
+}
+
+/* Copy the device handle with overlapped mode added. */
+static int
+eal_intr_dup_handle(const struct rte_intr_handle *intr_handle, HANDLE *handle)
+{
+	*handle = ReOpenFile(intr_handle->handle, GENERIC_READ | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			FILE_FLAG_OVERLAPPED);
+	if (*handle == INVALID_HANDLE_VALUE) {
+		RTE_LOG_WIN32_ERR("ReOpenFile(handle=%p, flags|=OVERLAPPED)",
+				intr_handle->handle);
+		rte_errno = EINVAL;
+		return -1;
+	}
+	return 0;
+}
+
+static int
+intr_source_init(struct intr_source *src,
+		const struct rte_intr_handle *intr_handle)
+{
+	HANDLE handle;
+	int ret;
+
+	ret = eal_intr_dup_handle(intr_handle, &handle);
+	if (ret < 0)
+		return ret;
+	/* Attach the new handle to the common IOCP. */
+	if (CreateIoCompletionPort(handle, intr_iocp, 0, 0) ==
+			INVALID_HANDLE_VALUE) {
+		RTE_LOG_WIN32_ERR("CreateIoCompletionPort(add %p)", handle);
+		CloseHandle(handle);
+		rte_errno = EINVAL;
+		return -1;
+	}
+
+	/* TODO: the cast will not be needed after rebase. */
+	src->intr_handle = (struct rte_intr_handle *)(uintptr_t)intr_handle;
+	src->handle = handle;
+	TAILQ_INIT(&src->callbacks);
+	return 0;
+}
+
+static int
+intr_source_cancel(struct intr_source *src)
+{
+	DWORD bytes_transferred;
+	BOOL ret;
+
+	if (!CancelIoEx(src->handle, &src->overlapped)) {
+		RTE_LOG_WIN32_ERR("CancelIoEx(handle=%p)", src->handle);
+		return -1;
+	}
+	ret = GetOverlappedResult(src->handle, &src->overlapped,
+			&bytes_transferred, TRUE);
+	if (!ret && GetLastError() != ERROR_OPERATION_ABORTED) {
+		RTE_LOG_WIN32_ERR("GetOverlappedResult(handle=%p)",
+			src->handle);
+		return -1;
+	}
+	return 0;
+}
+
+static int
+intr_source_close(struct intr_source *src)
+{
+	if (!CloseHandle(src->handle)) {
+		RTE_LOG_WIN32_ERR("CloseHandle(%p)", src->handle);
+		return -1;
+	}
+	return 0;
+}
+
+static void
+intr_source_free(struct intr_source *src)
+{
+	if (src->handle != NULL) {
+		if (intr_source_cancel(src) < 0)
+			RTE_LOG(ERR, EAL, "Cannot cancel interrupt request\n");
+
+		if (intr_source_close(src) < 0)
+			RTE_LOG(ERR, EAL, "Cannot close interrupt source handle\n");
+	}
+
+	free(src);
+}
+
+static struct intr_source *
+intr_source_lookup(const struct rte_intr_handle *intr_handle)
+{
+	struct intr_source *src;
+
+	TAILQ_FOREACH(src, &intr_sources, next)
+		if (src->intr_handle->handle == intr_handle->handle)
+			break;
+	return src;
+}
+
+int
+rte_intr_callback_register(const struct rte_intr_handle *intr_handle,
+	rte_intr_callback_fn cb_fn, void *cb_arg)
+{
+	struct intr_source *src;
+	bool new_src = false;
+	struct rte_intr_callback *cb = NULL;
+	int ret;
+
+	if (!intr_handle_valid(intr_handle) || cb_fn == NULL) {
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	cb = calloc(1, sizeof(*cb));
+	if (cb == NULL) {
+		RTE_LOG(ERR, EAL, "Cannot allocate interrupt callback\n");
+		ret = -ENOMEM;
+		goto exit;
+	}
+
+	rte_spinlock_lock(&intr_lock);
+	src = intr_source_lookup(intr_handle);
+	if (src == NULL) {
+		new_src = true;
+		src = calloc(1, sizeof(*src));
+		if (src == NULL) {
+			RTE_LOG(ERR, EAL, "Cannot allocate interrupt source\n");
+			ret = -ENOMEM;
+			goto exit;
+		}
+
+		ret = intr_source_init(src, intr_handle);
+		if (ret < 0) {
+			RTE_LOG(ERR, EAL, "Cannot initialize interrupt source\n");
+			goto exit;
+		}
+		TAILQ_INSERT_TAIL(&intr_sources, src, next);
+	}
+
+	cb->cb_fn = cb_fn;
+	cb->cb_arg = cb_arg;
+	TAILQ_INSERT_TAIL(&src->callbacks, cb, next);
+	ret = 0;
+
+exit:
+	rte_spinlock_unlock(&intr_lock);
+	if (ret < 0) {
+		if (new_src && src != NULL)
+			intr_source_free(src);
+		if (cb != NULL)
+			free(cb);
+	}
+	rte_eal_trace_intr_callback_register(intr_handle, cb_fn, cb_arg, ret);
+	return ret;
+}
+
+int
+rte_intr_callback_unregister(const struct rte_intr_handle *intr_handle,
+		rte_intr_callback_fn cb_fn, void *cb_arg)
+{
+	struct intr_source *src;
+	struct rte_intr_callback *cb, *tmp;
+	struct rte_intr_cb_list cbs;
+	bool free_src = false;
+	int ret = 0;
+
+	TAILQ_INIT(&cbs);
+	if (!intr_handle_valid(intr_handle)) {
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	rte_spinlock_lock(&intr_lock);
+	src = intr_source_lookup(intr_handle);
+	if (src == NULL) {
+		ret = -ENOENT;
+		goto unlock;
+	}
+	if (src->active == 1) {
+		ret = -EAGAIN;
+		goto unlock;
+	}
+	TAILQ_FOREACH(cb, &src->callbacks, next)
+		if (intr_callback_matches(cb, cb_fn, cb_arg)) {
+			TAILQ_REMOVE(&src->callbacks, cb, next);
+			TAILQ_INSERT_HEAD(&cbs, cb, next);
+			ret++;
+		}
+	if (TAILQ_EMPTY(&src->callbacks)) {
+		TAILQ_REMOVE(&intr_sources, src, next);
+		free_src = true;
+	}
+
+unlock:
+	rte_spinlock_unlock(&intr_lock);
+	RTE_TAILQ_FOREACH_SAFE(cb, &cbs, next, tmp)
+		free(cb);
+	if (free_src)
+		intr_source_free(src);
+exit:
+	rte_eal_trace_intr_callback_unregister(intr_handle, cb_fn, cb_arg, ret);
+	return ret;
+}
+
+int
+rte_intr_callback_unregister_pending(const struct rte_intr_handle *intr_handle,
+		rte_intr_callback_fn cb_fn, void *cb_arg,
+		rte_intr_unregister_callback_fn ucb_fn)
+{
+	struct intr_source *src;
+	struct rte_intr_callback *cb;
+	int ret = 0;
+
+	if (!intr_handle_valid(intr_handle))
+		return -EINVAL;
+	rte_spinlock_lock(&intr_lock);
+	src = intr_source_lookup(intr_handle);
+	if (src == NULL) {
+		ret = -ENOENT;
+		goto exit;
+	}
+	if (src->active == 0) {
+		ret = -EAGAIN;
+		goto exit;
+	}
+	TAILQ_FOREACH(cb, &src->callbacks, next)
+		if (intr_callback_matches(cb, cb_fn, cb_arg)) {
+			cb->pending_delete = 1;
+			cb->ucb_fn = ucb_fn;
+			ret++;
+		}
+exit:
+	rte_spinlock_unlock(&intr_lock);
+	return ret;
+}
+
+static void
+eal_intr_process(const OVERLAPPED_ENTRY *entry)
+{
+	struct intr_source *src;
+	struct rte_intr_callback *cb, *tmp;
+	struct rte_intr_callback active_cb;
+	struct rte_intr_cb_list cbs;
+	bool free_src = false;
+
+	/*
+	 * It's not thread-safe to obtain "src" using container_of(),
+	 * because intr_source_free() is called without holding the lock.
+	 */
+	rte_spinlock_lock(&intr_lock);
+	TAILQ_INIT(&cbs);
+	TAILQ_FOREACH(src, &intr_sources, next)
+		if (&src->overlapped == entry->lpOverlapped)
+			break;
+	if (src == NULL) {
+		rte_spinlock_unlock(&intr_lock);
+		return;
+	}
+
+	src->active = 1;
+	TAILQ_FOREACH(cb, &src->callbacks, next) {
+		active_cb = *cb;
+		rte_spinlock_unlock(&intr_lock);
+
+		active_cb.cb_fn(active_cb.cb_arg);
+
+		rte_spinlock_lock(&intr_lock);
+	}
+	src->active = 0;
+
+	TAILQ_FOREACH(cb, &src->callbacks, next)
+		if (cb->pending_delete) {
+			TAILQ_REMOVE(&src->callbacks, cb, next);
+			TAILQ_INSERT_HEAD(&cbs, cb, next);
+			if (cb->ucb_fn != NULL)
+				cb->ucb_fn(src->intr_handle, cb->cb_arg);
+		}
+	if (TAILQ_EMPTY(&src->callbacks)) {
+		TAILQ_REMOVE(&intr_sources, src, next);
+		free_src = true;
+	}
+	rte_spinlock_unlock(&intr_lock);
+
+	RTE_TAILQ_FOREACH_SAFE(cb, &cbs, next, tmp)
+		free(cb);
+	if (free_src)
+		intr_source_free(src);
 }
 
 static int
@@ -91,6 +424,8 @@ rte_eal_intr_init(void)
 {
 	int ret = 0;
 
+	TAILQ_INIT(&intr_sources);
+
 	intr_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
 	if (intr_iocp == NULL) {
 		RTE_LOG_WIN32_ERR("CreateIoCompletionPort()");
@@ -148,31 +483,6 @@ eal_intr_thread_cancel(void)
 }
 
 int
-rte_intr_callback_register(
-	__rte_unused const struct rte_intr_handle *intr_handle,
-	__rte_unused rte_intr_callback_fn cb, __rte_unused void *cb_arg)
-{
-	return -ENOTSUP;
-}
-
-int
-rte_intr_callback_unregister_pending(
-	__rte_unused const struct rte_intr_handle *intr_handle,
-	__rte_unused rte_intr_callback_fn cb_fn, __rte_unused void *cb_arg,
-	__rte_unused rte_intr_unregister_callback_fn ucb_fn)
-{
-	return -ENOTSUP;
-}
-
-int
-rte_intr_callback_unregister(
-	__rte_unused const struct rte_intr_handle *intr_handle,
-	__rte_unused rte_intr_callback_fn cb_fn, __rte_unused void *cb_arg)
-{
-	return 0;
-}
-
-int
 rte_intr_callback_unregister_sync(
 	__rte_unused const struct rte_intr_handle *intr_handle,
 	__rte_unused rte_intr_callback_fn cb_fn, __rte_unused void *cb_arg)
@@ -183,19 +493,19 @@ rte_intr_callback_unregister_sync(
 int
 rte_intr_enable(__rte_unused const struct rte_intr_handle *intr_handle)
 {
-	return -ENOTSUP;
+       return -ENOTSUP;
 }
 
 int
 rte_intr_ack(__rte_unused const struct rte_intr_handle *intr_handle)
 {
-	return -ENOTSUP;
+       return -ENOTSUP;
 }
 
 int
 rte_intr_disable(__rte_unused const struct rte_intr_handle *intr_handle)
 {
-	return -ENOTSUP;
+       return -ENOTSUP;
 }
 
 int
