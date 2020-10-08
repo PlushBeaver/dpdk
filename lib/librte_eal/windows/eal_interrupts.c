@@ -11,6 +11,8 @@
 #include "eal_private.h"
 #include "eal_windows.h"
 
+#include <winioctl.h>
+
 TAILQ_HEAD(rte_intr_cb_list, rte_intr_callback);
 TAILQ_HEAD(rte_intr_source_list, rte_intr_source);
 
@@ -291,11 +293,55 @@ exit:
 	return ret;
 }
 
+/** Request delivery of device interrupts. */
+#define IOCTL_NETUIO_INTR_ENABLE \
+		CTL_CODE(FILE_DEVICE_NETWORK, 53, METHOD_BUFFERED, \
+			FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
 static int
-eal_intr_source_control(const struct rte_intr_handle *ih __rte_unused,
-	DWORD state __rte_unused)
+eal_intr_netuio_control(struct rte_intr_source *src, DWORD state)
 {
-	return -ENOTSUP;
+	BOOL ret = DeviceIoControl(
+		src->handle, IOCTL_NETUIO_INTR_ENABLE,
+		&state, sizeof(state), NULL, 0,
+		NULL, &src->overlapped);
+	if (!ret) {
+		RTE_LOG_WIN32_ERR("DeviceIoControl(handle=%p, code=IOCTL_NETUIO_INTR_ENABLE, state=%lu)",
+			src->handle, state);
+		return -1;
+	}
+	return 0;
+}
+
+static int
+eal_intr_source_control(const struct rte_intr_handle *ih, DWORD state)
+{
+	struct rte_intr_source *src;
+	int ret;
+
+	switch (ih->type) {
+	case RTE_INTR_HANDLE_UIO:
+	case RTE_INTR_HANDLE_UIO_INTX:
+	case RTE_INTR_HANDLE_VFIO_LEGACY:
+	case RTE_INTR_HANDLE_VFIO_MSI:
+	case RTE_INTR_HANDLE_VFIO_MSIX:
+		rte_spinlock_lock(&intr_lock);
+
+		ret = -ENOENT;
+		TAILQ_FOREACH(src, &intr_sources, next)
+			if(intr_source_matches(src, ih))
+				break;
+		if (src != NULL)
+			ret = eal_intr_netuio_control(src, state);
+
+		rte_spinlock_unlock(&intr_lock);
+		break;
+
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
 }
 
 int
@@ -315,9 +361,10 @@ rte_intr_disable(const struct rte_intr_handle *ih)
 }
 
 int
-rte_intr_ack(const struct rte_intr_handle *ih __rte_unused)
+rte_intr_ack(const struct rte_intr_handle *ih)
 {
-	return -ENOTSUP;
+	/* All supported interrupt sources require a request per event. */
+	return rte_intr_enable(ih);
 }
 
 static void
