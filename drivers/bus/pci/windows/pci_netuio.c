@@ -168,6 +168,8 @@ get_netuio_device_info(HDEVINFO dev_info, PSP_DEVINFO_DATA dev_info_data,
 		dev->mem_resource[idx].len = hw_info.hw[idx].size;
 	}
 
+	dev->intr_handle.handle = netuio;
+	dev->intr_handle.type = RTE_INTR_HANDLE_NETUIO;
 	ret = ERROR_SUCCESS;
 end:
 	if (ret != ERROR_SUCCESS) {

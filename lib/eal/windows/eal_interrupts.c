@@ -11,6 +11,8 @@
 #include "eal_private.h"
 #include "eal_windows.h"
 
+#include <winioctl.h>
+
 #define IOCP_KEY_SHUTDOWN UINT32_MAX
 
 struct rte_intr_callback {
@@ -37,6 +39,10 @@ struct intr_source {
 	 */
 	HANDLE handle;
 	OVERLAPPED overlapped;
+	/*
+	 * Whether at least one request to deliver interrupts was issued.
+	 */
+	bool queried;
 };
 
 TAILQ_HEAD(rte_intr_source_list, intr_source);
@@ -114,7 +120,8 @@ intr_source_cancel(struct intr_source *src)
 	DWORD bytes_transferred;
 	BOOL ret;
 
-	if (!CancelIoEx(src->handle, &src->overlapped)) {
+	ret = CancelIoEx(src->handle, &src->overlapped);
+	if (!ret && GetLastError() != ERROR_NOT_FOUND) {
 		RTE_LOG_WIN32_ERR("CancelIoEx(handle=%p)", src->handle);
 		return -1;
 	}
@@ -148,7 +155,6 @@ intr_source_free(struct intr_source *src)
 		if (intr_source_close(src) < 0)
 			RTE_LOG(ERR, EAL, "Cannot close interrupt source handle\n");
 	}
-
 	free(src);
 }
 
@@ -296,6 +302,115 @@ rte_intr_callback_unregister_pending(const struct rte_intr_handle *intr_handle,
 			ret++;
 		}
 exit:
+	rte_spinlock_unlock(&intr_lock);
+	return ret;
+}
+
+/** Enable or disable delivery of device interrupts. */
+#define IOCTL_NETUIO_INTR_CONTROL CTL_CODE(FILE_DEVICE_NETWORK, 53, \
+					   METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+struct netuio_intr_control {
+	uint32_t enable;
+};
+
+static int
+eal_intr_netuio_control(HANDLE handle, bool state)
+{
+	struct netuio_intr_control in = { .enable = state ? 1 : 0 };
+	BOOL ret;
+
+	ret = DeviceIoControl(handle, IOCTL_NETUIO_INTR_CONTROL,
+			&in, sizeof(in), NULL, 0, NULL, NULL);
+	if (!ret) {
+		RTE_LOG_WIN32_ERR("DeviceIoControl(handle=%p, code=IOCTL_NETUIO_INTR_CONTROL, enable=%u)",
+				handle, in.enable);
+		return -1;
+	}
+	return 0;
+}
+
+/** Request delivery of an interrupt event. */
+#define IOCTL_NETUIO_INTR_QUERY CTL_CODE(FILE_DEVICE_NETWORK, 54, \
+					 METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+struct netuio_intr_query {
+	uint32_t vector;
+};
+
+static int
+eal_intr_netuio_query(HANDLE handle, uint32_t vector, OVERLAPPED *overlapped)
+{
+	struct netuio_intr_query in = { .vector = vector };
+	BOOL ret;
+
+	ret = DeviceIoControl(handle, IOCTL_NETUIO_INTR_QUERY,
+			&in, sizeof(in), NULL, 0, NULL, overlapped);
+	if (!ret && GetLastError() != ERROR_IO_PENDING) {
+		RTE_LOG_WIN32_ERR("DeviceIoControl(handle=%p, code=IOCTL_NETUIO_INTR_QUERY, vector=%u)",
+				handle, in.vector);
+		return -1;
+	}
+	return 0;
+}
+
+int
+rte_intr_enable(const struct rte_intr_handle *intr_handle)
+{
+	struct intr_source *src;
+	int ret;
+
+	rte_spinlock_lock(&intr_lock);
+	src = intr_source_lookup(intr_handle);
+	if (src == NULL) {
+		ret = -ENOENT;
+		goto exit;
+	}
+	ret = eal_intr_netuio_control(src->handle, true);
+	if (ret == 0 && !src->queried) {
+		ret = eal_intr_netuio_query(src->handle, 0, &src->overlapped);
+		if (ret == 0)
+			src->queried = true;
+	}
+exit:
+	rte_spinlock_unlock(&intr_lock);
+	rte_eal_trace_intr_enable(intr_handle, ret);
+	return ret;
+}
+
+int
+rte_intr_disable(const struct rte_intr_handle *intr_handle)
+{
+	struct intr_source *src;
+	int ret;
+
+	rte_spinlock_lock(&intr_lock);
+	src = intr_source_lookup(intr_handle);
+	if (src == NULL) {
+		ret = -ENOENT;
+		goto exit;
+	}
+	ret = eal_intr_netuio_control(src->handle, false);
+exit:
+	rte_spinlock_unlock(&intr_lock);
+	rte_eal_trace_intr_disable(intr_handle, ret);
+	return ret;
+}
+
+int
+rte_intr_ack(const struct rte_intr_handle *intr_handle)
+{
+	struct intr_source *src;
+	int ret = -ENOENT;
+
+	/*
+	 * TODO: making a syscall under a lock is bad. It is probably worth
+	 * storing the handle duplicate in the interrupt handle.
+	 */
+	rte_spinlock_lock(&intr_lock);
+	src = intr_source_lookup(intr_handle);
+	if (src != NULL)
+		ret = eal_intr_netuio_query(src->handle, 0, &src->overlapped);
 	rte_spinlock_unlock(&intr_lock);
 	return ret;
 }
@@ -488,24 +603,6 @@ rte_intr_callback_unregister_sync(
 	__rte_unused rte_intr_callback_fn cb_fn, __rte_unused void *cb_arg)
 {
 	return 0;
-}
-
-int
-rte_intr_enable(__rte_unused const struct rte_intr_handle *intr_handle)
-{
-       return -ENOTSUP;
-}
-
-int
-rte_intr_ack(__rte_unused const struct rte_intr_handle *intr_handle)
-{
-       return -ENOTSUP;
-}
-
-int
-rte_intr_disable(__rte_unused const struct rte_intr_handle *intr_handle)
-{
-       return -ENOTSUP;
 }
 
 int
