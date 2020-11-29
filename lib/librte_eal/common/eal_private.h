@@ -745,4 +745,22 @@ void __rte_thread_init(unsigned int lcore_id, rte_cpuset_t *cpuset);
  */
 void __rte_thread_uninit(void);
 
+/**
+ * Allocate a buffer large enough to hold the formatted string
+ * and perform formatting, equivalent to Unix asprintf(3).
+ *
+ * @param buffer
+ *  Receives a pointer to allocated memory, call free(buffer) to deallocate.
+ * @param format
+ *  Format string.
+ * @return
+ *  Number of bytes allocated on success, (-1) on failure.
+ */
+#ifdef RTE_EXEC_ENV_WINDOWS
+__rte_format_printf(2, 3)
+int eal_asprintf(char **buffer, const char *format, ...);
+#else
+#define eal_asprintf asprintf
+#endif
+
 #endif /* _EAL_PRIVATE_H_ */

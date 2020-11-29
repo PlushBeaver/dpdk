@@ -1435,7 +1435,7 @@ available_cores(void)
 		return NULL;
 
 	/* first sequence */
-	if (asprintf(&str, "%d", idx) < 0)
+	if (eal_asprintf(&str, "%d", idx) < 0)
 		return NULL;
 	previous = idx;
 	sequence = 0;
@@ -1452,7 +1452,7 @@ available_cores(void)
 
 		/* finish current sequence */
 		if (sequence) {
-			if (asprintf(&tmp, "%s-%d", str, previous) < 0) {
+			if (eal_asprintf(&tmp, "%s-%d", str, previous) < 0) {
 				free(str);
 				return NULL;
 			}
@@ -1461,7 +1461,7 @@ available_cores(void)
 		}
 
 		/* new sequence */
-		if (asprintf(&tmp, "%s,%d", str, idx) < 0) {
+		if (eal_asprintf(&tmp, "%s,%d", str, idx) < 0) {
 			free(str);
 			return NULL;
 		}
@@ -1473,7 +1473,7 @@ available_cores(void)
 
 	/* finish last sequence */
 	if (sequence) {
-		if (asprintf(&tmp, "%s-%d", str, previous) < 0) {
+		if (eal_asprintf(&tmp, "%s-%d", str, previous) < 0) {
 			free(str);
 			return NULL;
 		}

@@ -282,7 +282,7 @@ rte_lcore_callback_register(const char *name, rte_lcore_init_cb init,
 	callback = calloc(1, sizeof(*callback));
 	if (callback == NULL)
 		return NULL;
-	if (asprintf(&callback->name, "%s-%p", name, arg) == -1) {
+	if (eal_asprintf(&callback->name, "%s-%p", name, arg) == -1) {
 		free(callback);
 		return NULL;
 	}

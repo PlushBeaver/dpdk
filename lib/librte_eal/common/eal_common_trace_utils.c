@@ -253,7 +253,7 @@ eal_trace_dir_args_save(char const *val)
 		return -ENAMETOOLONG;
 	}
 
-	if (asprintf(&dir_path, "%s/", val) == -1) {
+	if (eal_asprintf(&dir_path, "%s/", val) == -1) {
 		trace_err("failed to copy directory: %s", strerror(errno));
 		return -ENOMEM;
 	}

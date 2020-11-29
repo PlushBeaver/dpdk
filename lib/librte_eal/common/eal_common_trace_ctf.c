@@ -389,7 +389,7 @@ char *trace_metadata_fixup_field(const char *field)
 	for (i = 0; i < RTE_DIM(ctf_reserved_words); i++) {
 		if (strcmp(field, ctf_reserved_words[i]) != 0)
 			continue;
-		if (asprintf(&out, "_%s", ctf_reserved_words[i]) == -1)
+		if (eal_asprintf(&out, "_%s", ctf_reserved_words[i]) == -1)
 			out = NULL;
 		return out;
 	}
