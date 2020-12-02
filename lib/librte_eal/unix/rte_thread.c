@@ -3,9 +3,11 @@
  */
 
 #include <errno.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <pthread.h>
+#include <unistd.h>
 
 #include <rte_common.h>
 #include <rte_errno.h>
@@ -83,4 +85,10 @@ rte_thread_tls_value_get(rte_tls_key key)
 		return NULL;
 	}
 	return pthread_getspecific(key->thread_index);
+}
+
+void
+rte_thread_sleep(unsigned int sec)
+{
+	sleep(sec);
 }
