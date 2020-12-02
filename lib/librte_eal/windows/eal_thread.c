@@ -11,9 +11,10 @@
 #include <rte_per_lcore.h>
 #include <rte_common.h>
 #include <rte_memory.h>
-#include <eal_thread.h>
+#include <rte_thread.h>
 
 #include "eal_private.h"
+#include "eal_thread.h"
 #include "eal_windows.h"
 
 /*
@@ -153,4 +154,10 @@ rte_thread_setname(__rte_unused pthread_t id, __rte_unused const char *name)
 	/* TODO */
 	/* This is a stub, not the expected result */
 	return 0;
+}
+
+void
+rte_thread_sleep(unsigned int sec)
+{
+	return Sleep(MS_PER_S * sec);
 }

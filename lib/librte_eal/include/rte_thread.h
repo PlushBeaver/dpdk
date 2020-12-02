@@ -110,6 +110,17 @@ int rte_thread_tls_value_set(rte_tls_key key, const void *value);
 __rte_experimental
 void *rte_thread_tls_value_get(rte_tls_key key);
 
+/**
+ * Suspend current OS thread for the specified time, yielding CPU to scheduler.
+ *
+ * @param sec
+ *  Number of seconds to sleep. The system may return control later,
+ *  but not earlier. Zero value always yields the CPU, but control may be
+ *  returned immediately.
+ */
+__rte_experimental
+void rte_thread_sleep(unsigned int sec);
+
 #ifdef __cplusplus
 }
 #endif

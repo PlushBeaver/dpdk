@@ -415,6 +415,7 @@ EXPERIMENTAL {
 	rte_thread_tls_value_set;
 
 	# added in 21.05
+	rte_thread_sleep;
 	rte_version_minor;
 	rte_version_month;
 	rte_version_prefix;
