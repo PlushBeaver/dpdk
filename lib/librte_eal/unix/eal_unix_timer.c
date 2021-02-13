@@ -4,7 +4,10 @@
 
 #include <time.h>
 
+#include <sys/time.h>
+
 #include <rte_cycles.h>
+#include <rte_time.h>
 
 void
 rte_delay_us_sleep(unsigned int us)
@@ -26,4 +29,14 @@ rte_delay_us_sleep(unsigned int us)
 		 */
 		ind = 1 - ind;
 	}
+}
+
+void
+rte_time_get_us(struct rte_time_us *now)
+{
+	struct timeval sys;
+
+	gettimeofday(&sys, NULL);
+	now->sec = sys.tv_sec;
+	now->usec = sys.tv_usec;
 }

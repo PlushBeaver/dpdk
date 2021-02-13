@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <rte_compat.h>
+
 #define NSEC_PER_SEC             1000000000L
 
 /**
@@ -97,5 +99,20 @@ rte_ns_to_timespec(uint64_t nsec)
 
 	return ts;
 }
+
+/* Point of time with microsecond precision. */
+struct rte_time_us {
+	int64_t sec;  /**< Number of whole seconds. */
+	int64_t usec; /**< Fractional part of second in [0, 999999]. */
+};
+
+/**
+ * Get current system time.
+ *
+ * @param now
+ *  Receives current system time.
+ */
+__rte_internal
+void rte_time_get_us(struct rte_time_us *now);
 
 #endif /* _RTE_TIME_H_ */

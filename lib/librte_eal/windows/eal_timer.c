@@ -9,6 +9,7 @@
 #include <rte_cycles.h>
 #include <rte_eal.h>
 #include <rte_errno.h>
+#include <rte_time.h>
 #include "eal_private.h"
 
 #define US_PER_SEC 1E6
@@ -85,10 +86,28 @@ get_tsc_freq(void)
 	return RTE_ALIGN_MUL_NEAR(tsc_hz, CYC_PER_10MHZ);
 }
 
-
 int
 rte_eal_timer_init(void)
 {
 	set_tsc_freq();
 	return 0;
+}
+
+void
+rte_time_get_us(struct rte_time_us *now)
+{
+	/* 100ns ticks from 1601-01-01 to 1970-01-01 */
+	static const uint64_t EPOCH = 116444736000000000ULL;
+	static const uint64_t TICKS_PER_USEC = 10;
+	static const uint64_t USEC_PER_SEC = 1000000;
+
+	FILETIME ft;
+	uint64_t ticks, sec;
+
+	GetSystemTimePreciseAsFileTime(&ft);
+	ticks = ((uint64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+	ticks -= EPOCH;
+	sec = ticks / (TICKS_PER_USEC * USEC_PER_SEC);
+	now->sec = sec;
+	now->usec = ticks / TICKS_PER_USEC - sec * USEC_PER_SEC;
 }

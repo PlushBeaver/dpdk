@@ -336,3 +336,4 @@ EXPORTS
 	rte_mem_unmap
 
 	rte_thread_sleep
+	rte_time_get_us
