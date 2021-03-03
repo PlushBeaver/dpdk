@@ -99,6 +99,9 @@ API Changes
    Also, make sure to start the actual text at the margin.
    =======================================================
 
+* eal/windows: Removed POSIX symbol export from ``<rte_os.h>``.
+  It has been incorrect and could conflict with consumer POSIX implementations.
+
 
 ABI Changes
 -----------
