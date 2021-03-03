@@ -17,11 +17,15 @@
 
 #include <stdint.h>
 
+#ifdef RTE_EXEC_ENV_WINDOWS
+#include <ws2tcpip.h>
+#else
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#endif
 
 #include <rte_byteorder.h>
 #include <rte_mbuf.h>
