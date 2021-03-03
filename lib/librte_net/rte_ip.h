@@ -17,11 +17,26 @@
 
 #include <stdint.h>
 
+#ifndef RTE_EXEC_ENV_WINDOWS
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+
+#else
+
+#include <ws2tcpip.h>
+
+#ifdef RTE_BUILD_INTERNAL
+#define IPVERSION	4   /* missing from Windows SDK */
+#define IPPROTO_IPIP	4   /* missing from Windows SDK and MinGW */
+#define IPPROTO_GRE	47  /* ditto */
+#define IPPROTO_SCTP	132 /* missing from MinGW */
+#endif
+
+#endif /* RTE_EXEC_ENV_WINDOWS */
 
 #include <rte_byteorder.h>
 #include <rte_mbuf.h>
