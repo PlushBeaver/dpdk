@@ -3,12 +3,12 @@
  * Copyright 2016 Mellanox Technologies, Ltd
  */
 
-#include <netinet/in.h>
-#include <sys/queue.h>
 #include <stdalign.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+
+#include <sys/queue.h>
 
 #include <rte_common.h>
 #include <rte_ether.h>
