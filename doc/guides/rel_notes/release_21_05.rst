@@ -101,6 +101,10 @@ New Features
   * Added command to display Rx queue used descriptor count.
     ``show port (port_id) rxq (queue_id) desc used count``
 
+* **Enabled libpcap-based PMD on Windows.**
+
+   A libpcap distribution, such as Npcap or WinPcap, is required to run the PMD.
+
 
 Removed Items
 -------------

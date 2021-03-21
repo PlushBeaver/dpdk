@@ -179,7 +179,8 @@ endif
 pcap_dep = dependency('libpcap', required: false, method: 'pkg-config')
 if not pcap_dep.found()
 	# pcap got a pkg-config file only in 1.9.0
-	pcap_dep = cc.find_library('pcap', required: false)
+	pcap_lib = is_windows ? 'wpcap' : 'pcap'
+	pcap_dep = cc.find_library(pcap_lib, required: false)
 endif
 if pcap_dep.found() and cc.has_header('pcap.h', dependencies: pcap_dep)
 	dpdk_conf.set('RTE_PORT_PCAP', 1)
