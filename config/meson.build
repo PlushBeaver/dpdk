@@ -183,7 +183,6 @@ if not pcap_dep.found()
 endif
 if pcap_dep.found() and cc.has_header('pcap.h', dependencies: pcap_dep)
 	dpdk_conf.set('RTE_PORT_PCAP', 1)
-	dpdk_extra_ldflags += '-lpcap'
 endif
 
 # for clang 32-bit compiles we need libatomic for 64-bit atomic ops
