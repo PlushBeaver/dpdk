@@ -58,13 +58,13 @@ __rte_ring_move_prod_head(struct rte_ring *r, unsigned int is_sp,
 {
 	const uint32_t capacity = r->capacity;
 	uint32_t cons_tail;
-	unsigned int max = n;
+	unsigned int maximum = n;
 	int success;
 
 	*old_head = __atomic_load_n(&r->prod.head, __ATOMIC_RELAXED);
 	do {
 		/* Reset n to the initial burst count */
-		n = max;
+		n = maximum;
 
 		/* Ensure the head is read before tail */
 		__atomic_thread_fence(__ATOMIC_ACQUIRE);
@@ -132,7 +132,7 @@ __rte_ring_move_cons_head(struct rte_ring *r, int is_sc,
 		uint32_t *old_head, uint32_t *new_head,
 		uint32_t *entries)
 {
-	unsigned int max = n;
+	unsigned int maximum = n;
 	uint32_t prod_tail;
 	int success;
 
@@ -140,7 +140,7 @@ __rte_ring_move_cons_head(struct rte_ring *r, int is_sc,
 	*old_head = __atomic_load_n(&r->cons.head, __ATOMIC_RELAXED);
 	do {
 		/* Restore n as it may change every loop */
-		n = max;
+		n = maximum;
 
 		/* Ensure the head is read before tail */
 		__atomic_thread_fence(__ATOMIC_ACQUIRE);

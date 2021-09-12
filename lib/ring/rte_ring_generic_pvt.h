@@ -58,12 +58,12 @@ __rte_ring_move_prod_head(struct rte_ring *r, unsigned int is_sp,
 		uint32_t *free_entries)
 {
 	const uint32_t capacity = r->capacity;
-	unsigned int max = n;
+	unsigned int maximum = n;
 	int success;
 
 	do {
 		/* Reset n to the initial burst count */
-		n = max;
+		n = maximum;
 
 		*old_head = r->prod.head;
 
@@ -127,13 +127,13 @@ __rte_ring_move_cons_head(struct rte_ring *r, unsigned int is_sc,
 		uint32_t *old_head, uint32_t *new_head,
 		uint32_t *entries)
 {
-	unsigned int max = n;
+	unsigned int maximum = n;
 	int success;
 
 	/* move cons.head atomically */
 	do {
 		/* Restore n as it may change every loop */
-		n = max;
+		n = maximum;
 
 		*old_head = r->cons.head;
 

@@ -53,11 +53,11 @@ static __rte_always_inline void
 __rte_ring_rts_head_wait(const struct rte_ring_rts_headtail *ht,
 	union __rte_ring_rts_poscnt *h)
 {
-	uint32_t max;
+	uint32_t maximum;
 
-	max = ht->htd_max;
+	maximum = ht->htd_max;
 
-	while (h->val.pos - ht->tail.val.pos > max) {
+	while (h->val.pos - ht->tail.val.pos > maximum) {
 		rte_pause();
 		h->raw = __atomic_load_n(&ht->head.raw, __ATOMIC_ACQUIRE);
 	}
