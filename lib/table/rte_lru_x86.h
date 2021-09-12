@@ -79,8 +79,8 @@ static inline int
 f_lru_pos(uint64_t lru_list)
 {
 	__m128i lst = _mm_set_epi64x((uint64_t)-1, lru_list);
-	__m128i min = _mm_minpos_epu16(lst);
-	return _mm_extract_epi16(min, 1);
+	__m128i minimum = _mm_minpos_epu16(lst);
+	return _mm_extract_epi16(minimum, 1);
 }
 #define lru_pos(bucket) f_lru_pos(bucket->lru_list)
 
