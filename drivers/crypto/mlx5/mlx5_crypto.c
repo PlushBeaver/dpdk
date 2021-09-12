@@ -48,13 +48,13 @@ const struct rte_cryptodev_capabilities mlx5_crypto_caps[] = {
 				.algo = RTE_CRYPTO_CIPHER_AES_XTS,
 				.block_size = 16,
 				.key_size = {
-					.min = 32,
-					.max = 64,
+					.minimum = 32,
+					.maximum = 64,
 					.increment = 32
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.dataunit_set =

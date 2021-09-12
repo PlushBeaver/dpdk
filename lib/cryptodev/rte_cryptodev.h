@@ -85,8 +85,8 @@ extern const char **rte_cyptodev_names;
  * Crypto parameters range description
  */
 struct rte_crypto_param_range {
-	uint16_t min;	/**< minimum size */
-	uint16_t max;	/**< maximum size */
+	uint16_t minimum;	/**< minimum size */
+	uint16_t maximum;	/**< maximum size */
 	uint16_t increment;
 	/**< if a range of sizes are supported,
 	 * this parameter is used to indicate

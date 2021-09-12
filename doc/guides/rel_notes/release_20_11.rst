@@ -665,6 +665,9 @@ API Changes
 * compressdev: Renamed ``min`` and ``max`` fields of ``rte_param_log2_range``
   structure to ``minimum`` and ``maximum``, respectively.
 
+* cryptodev: Renamed ``min`` and ``max`` fields of ``rte_crypto_param_range``
+  structure to ``minimum`` and ``maximum``, respectively.
+
 
 ABI Changes
 -----------

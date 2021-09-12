@@ -13,13 +13,13 @@ static const struct rte_cryptodev_capabilities nitrox_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA1_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 20,
+					.minimum = 1,
+					.maximum = 20,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -34,13 +34,13 @@ static const struct rte_cryptodev_capabilities nitrox_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA224_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 28,
+					.minimum = 1,
+					.maximum = 28,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -55,13 +55,13 @@ static const struct rte_cryptodev_capabilities nitrox_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA256_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 32,
+					.minimum = 1,
+					.maximum = 32,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -76,13 +76,13 @@ static const struct rte_cryptodev_capabilities nitrox_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_AES_CBC,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -96,13 +96,13 @@ static const struct rte_cryptodev_capabilities nitrox_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_3DES_CBC,
 				.block_size = 8,
 				.key_size = {
-					.min = 24,
-					.max = 24,
+					.minimum = 24,
+					.maximum = 24,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 8,
-					.max = 8,
+					.minimum = 8,
+					.maximum = 8,
 					.increment = 0
 				}
 			}, }
@@ -116,23 +116,23 @@ static const struct rte_cryptodev_capabilities nitrox_capabilities[] = {
 				.algo = RTE_CRYPTO_AEAD_AES_GCM,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 16,
+					.minimum = 1,
+					.maximum = 16,
 					.increment = 1
 				},
 				.aad_size = {
-					.min = 0,
-					.max = 512,
+					.minimum = 0,
+					.maximum = 512,
 					.increment = 1
 				},
 				.iv_size = {
-					.min = 12,
-					.max = 16,
+					.minimum = 12,
+					.maximum = 16,
 					.increment = 4
 				},
 			}, }

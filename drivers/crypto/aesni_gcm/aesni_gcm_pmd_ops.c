@@ -19,18 +19,18 @@ static const struct rte_cryptodev_capabilities aesni_gcm_pmd_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_AES_GMAC,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 16,
+					.minimum = 1,
+					.maximum = 16,
 					.increment = 1
 				},
 				.iv_size = {
-					.min = 12,
-					.max = 12,
+					.minimum = 12,
+					.maximum = 12,
 					.increment = 0
 				}
 			}, }
@@ -44,23 +44,23 @@ static const struct rte_cryptodev_capabilities aesni_gcm_pmd_capabilities[] = {
 				.algo = RTE_CRYPTO_AEAD_AES_GCM,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 16,
+					.minimum = 1,
+					.maximum = 16,
 					.increment = 1
 				},
 				.aad_size = {
-					.min = 0,
-					.max = 65535,
+					.minimum = 0,
+					.maximum = 65535,
 					.increment = 1
 				},
 				.iv_size = {
-					.min = 12,
-					.max = 12,
+					.minimum = 12,
+					.maximum = 12,
 					.increment = 0
 				}
 			}, }

@@ -19,13 +19,13 @@ static const struct rte_cryptodev_capabilities kasumi_pmd_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_KASUMI_F9,
 				.block_size = 8,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 4,
+					.minimum = 4,
+					.maximum = 4,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -40,13 +40,13 @@ static const struct rte_cryptodev_capabilities kasumi_pmd_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_KASUMI_F8,
 				.block_size = 8,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 8,
-					.max = 8,
+					.minimum = 8,
+					.maximum = 8,
 					.increment = 0
 				}
 			}, }

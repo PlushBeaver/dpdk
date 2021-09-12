@@ -1996,8 +1996,8 @@ check_iv_param(const struct rte_crypto_param_range *iv_range_size,
 	 */
 	if (iv_param) {
 		if (check_supported_size(iv_length,
-				iv_range_size->min,
-				iv_range_size->max,
+				iv_range_size->minimum,
+				iv_range_size->maximum,
 				iv_range_size->increment)
 					!= 0)
 			return -1;
@@ -2007,8 +2007,8 @@ check_iv_param(const struct rte_crypto_param_range *iv_range_size,
 	 */
 	} else if (iv_random_size != -1) {
 		if (check_supported_size(iv_random_size,
-				iv_range_size->min,
-				iv_range_size->max,
+				iv_range_size->minimum,
+				iv_range_size->maximum,
 				iv_range_size->increment)
 					!= 0)
 			return -1;
@@ -2050,8 +2050,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		if (options->aead_key_param) {
 			if (check_supported_size(
 					options->aead_xform.aead.key.length,
-					cap->sym.aead.key_size.min,
-					cap->sym.aead.key_size.max,
+					cap->sym.aead.key_size.minimum,
+					cap->sym.aead.key_size.maximum,
 					cap->sym.aead.key_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2066,8 +2066,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		 */
 		} else if (options->aead_key_random_size != -1) {
 			if (check_supported_size(options->aead_key_random_size,
-					cap->sym.aead.key_size.min,
-					cap->sym.aead.key_size.max,
+					cap->sym.aead.key_size.minimum,
+					cap->sym.aead.key_size.maximum,
 					cap->sym.aead.key_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2085,8 +2085,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		 */
 		if (options->aad_param) {
 			if (check_supported_size(options->aad.length,
-					cap->sym.aead.aad_size.min,
-					cap->sym.aead.aad_size.max,
+					cap->sym.aead.aad_size.minimum,
+					cap->sym.aead.aad_size.maximum,
 					cap->sym.aead.aad_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2101,8 +2101,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		 */
 		} else if (options->aad_random_size != -1) {
 			if (check_supported_size(options->aad_random_size,
-					cap->sym.aead.aad_size.min,
-					cap->sym.aead.aad_size.max,
+					cap->sym.aead.aad_size.minimum,
+					cap->sym.aead.aad_size.maximum,
 					cap->sym.aead.aad_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2116,8 +2116,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		/* Check if digest size is supported by the algorithm. */
 		if (options->digest_size != -1) {
 			if (check_supported_size(options->digest_size,
-					cap->sym.aead.digest_size.min,
-					cap->sym.aead.digest_size.max,
+					cap->sym.aead.digest_size.minimum,
+					cap->sym.aead.digest_size.maximum,
 					cap->sym.aead.digest_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2160,8 +2160,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		if (options->ckey_param) {
 			if (check_supported_size(
 					options->cipher_xform.cipher.key.length,
-					cap->sym.cipher.key_size.min,
-					cap->sym.cipher.key_size.max,
+					cap->sym.cipher.key_size.minimum,
+					cap->sym.cipher.key_size.maximum,
 					cap->sym.cipher.key_size.increment)
 						!= 0) {
 				if (dev_info.feature_flags &
@@ -2185,8 +2185,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		 */
 		} else if (options->ckey_random_size != -1) {
 			if (check_supported_size(options->ckey_random_size,
-					cap->sym.cipher.key_size.min,
-					cap->sym.cipher.key_size.max,
+					cap->sym.cipher.key_size.minimum,
+					cap->sym.cipher.key_size.maximum,
 					cap->sym.cipher.key_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2262,8 +2262,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		if (options->akey_param) {
 			if (check_supported_size(
 					options->auth_xform.auth.key.length,
-					cap->sym.auth.key_size.min,
-					cap->sym.auth.key_size.max,
+					cap->sym.auth.key_size.minimum,
+					cap->sym.auth.key_size.maximum,
 					cap->sym.auth.key_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2278,8 +2278,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		 */
 		} else if (options->akey_random_size != -1) {
 			if (check_supported_size(options->akey_random_size,
-					cap->sym.auth.key_size.min,
-					cap->sym.auth.key_size.max,
+					cap->sym.auth.key_size.minimum,
+					cap->sym.auth.key_size.maximum,
 					cap->sym.auth.key_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2293,8 +2293,8 @@ check_capabilities(struct l2fwd_crypto_options *options, uint8_t cdev_id)
 		/* Check if digest size is supported by the algorithm. */
 		if (options->digest_size != -1) {
 			if (check_supported_size(options->digest_size,
-					cap->sym.auth.digest_size.min,
-					cap->sym.auth.digest_size.max,
+					cap->sym.auth.digest_size.minimum,
+					cap->sym.auth.digest_size.maximum,
 					cap->sym.auth.digest_size.increment)
 						!= 0) {
 				RTE_LOG(DEBUG, USER1,
@@ -2448,7 +2448,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->aead_iv.length =
-						cap->sym.aead.iv_size.min;
+						cap->sym.aead.iv_size.minimum;
 			}
 
 			/* Set key if not provided from command line */
@@ -2459,7 +2459,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->aead_xform.aead.key.length =
-						cap->sym.aead.key_size.min;
+						cap->sym.aead.key_size.minimum;
 
 				generate_random_key(options->aead_key,
 					options->aead_xform.aead.key.length);
@@ -2473,7 +2473,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->aad.length =
-						cap->sym.auth.aad_size.min;
+						cap->sym.auth.aad_size.minimum;
 			}
 
 			options->aead_xform.aead.aad_length =
@@ -2486,7 +2486,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 			else
 				options->aead_xform.aead.digest_length =
-						cap->sym.aead.digest_size.min;
+						cap->sym.aead.digest_size.minimum;
 		}
 
 		/* Set cipher parameters */
@@ -2505,7 +2505,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->cipher_iv.length =
-						cap->sym.cipher.iv_size.min;
+						cap->sym.cipher.iv_size.minimum;
 			}
 
 			/* Set key if not provided from command line */
@@ -2516,7 +2516,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->cipher_xform.cipher.key.length =
-						cap->sym.cipher.key_size.min;
+						cap->sym.cipher.key_size.minimum;
 
 				generate_random_key(options->cipher_key,
 					options->cipher_xform.cipher.key.length);
@@ -2538,7 +2538,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->auth_iv.length =
-						cap->sym.auth.iv_size.min;
+						cap->sym.auth.iv_size.minimum;
 			}
 
 			/* Set key if not provided from command line */
@@ -2549,7 +2549,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 				else
 					options->auth_xform.auth.key.length =
-						cap->sym.auth.key_size.min;
+						cap->sym.auth.key_size.minimum;
 
 				generate_random_key(options->auth_key,
 					options->auth_xform.auth.key.length);
@@ -2562,7 +2562,7 @@ initialize_cryptodevs(struct l2fwd_crypto_options *options, unsigned nb_ports,
 				/* No size provided, use minimum size. */
 			else
 				options->auth_xform.auth.digest_length =
-						cap->sym.auth.digest_size.min;
+						cap->sym.auth.digest_size.minimum;
 		}
 
 		retval = rte_cryptodev_configure(cdev_id, &conf);

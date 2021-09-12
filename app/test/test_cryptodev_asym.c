@@ -1041,8 +1041,8 @@ static inline void print_asym_capa(
 		case RTE_CRYPTO_ASYM_XFORM_DH:
 		case RTE_CRYPTO_ASYM_XFORM_DSA:
 			printf(" modlen: min %d max %d increment %d",
-					capa->modlen.min,
-					capa->modlen.max,
+					capa->modlen.minimum,
+					capa->modlen.maximum,
 					capa->modlen.increment);
 		break;
 		case RTE_CRYPTO_ASYM_XFORM_ECDSA:

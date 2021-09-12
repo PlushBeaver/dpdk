@@ -45,23 +45,23 @@ static struct rte_cryptodev_capabilities otx2_eth_sec_crypto_caps[] = {
 				.algo = RTE_CRYPTO_AEAD_AES_GCM,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.digest_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.aad_size = {
-					.min = 8,
-					.max = 12,
+					.minimum = 8,
+					.maximum = 12,
 					.increment = 4
 				},
 				.iv_size = {
-					.min = 12,
-					.max = 12,
+					.minimum = 12,
+					.maximum = 12,
 					.increment = 0
 				}
 			}, }
@@ -75,13 +75,13 @@ static struct rte_cryptodev_capabilities otx2_eth_sec_crypto_caps[] = {
 				.algo = RTE_CRYPTO_CIPHER_AES_CBC,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -95,13 +95,13 @@ static struct rte_cryptodev_capabilities otx2_eth_sec_crypto_caps[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA1_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 20,
-					.max = 64,
+					.minimum = 20,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 12,
-					.max = 12,
+					.minimum = 12,
+					.maximum = 12,
 					.increment = 0
 				},
 			}, }

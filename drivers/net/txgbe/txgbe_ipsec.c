@@ -486,18 +486,18 @@ txgbe_crypto_capabilities_get(void *device __rte_unused)
 					.algo = RTE_CRYPTO_AUTH_AES_GMAC,
 					.block_size = 16,
 					.key_size = {
-						.min = 16,
-						.max = 16,
+						.minimum = 16,
+						.maximum = 16,
 						.increment = 0
 					},
 					.digest_size = {
-						.min = 16,
-						.max = 16,
+						.minimum = 16,
+						.maximum = 16,
 						.increment = 0
 					},
 					.iv_size = {
-						.min = 12,
-						.max = 12,
+						.minimum = 12,
+						.maximum = 12,
 						.increment = 0
 					}
 				}, }
@@ -511,23 +511,23 @@ txgbe_crypto_capabilities_get(void *device __rte_unused)
 					.algo = RTE_CRYPTO_AEAD_AES_GCM,
 					.block_size = 16,
 					.key_size = {
-						.min = 16,
-						.max = 16,
+						.minimum = 16,
+						.maximum = 16,
 						.increment = 0
 					},
 					.digest_size = {
-						.min = 16,
-						.max = 16,
+						.minimum = 16,
+						.maximum = 16,
 						.increment = 0
 					},
 					.aad_size = {
-						.min = 0,
-						.max = 65535,
+						.minimum = 0,
+						.maximum = 65535,
 						.increment = 1
 					},
 					.iv_size = {
-						.min = 12,
-						.max = 12,
+						.minimum = 12,
+						.maximum = 12,
 						.increment = 0
 					}
 				}, }

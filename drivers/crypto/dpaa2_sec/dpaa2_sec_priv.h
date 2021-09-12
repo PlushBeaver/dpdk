@@ -209,13 +209,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_NULL,
 				.block_size = 1,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -230,13 +230,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_MD5,
 				.block_size = 64,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -251,13 +251,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_MD5_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 16,
+					.minimum = 1,
+					.maximum = 16,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -272,13 +272,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA1,
 				.block_size = 64,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 20,
-					.max = 20,
+					.minimum = 20,
+					.maximum = 20,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -293,13 +293,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA1_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 20,
+					.minimum = 1,
+					.maximum = 20,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -314,13 +314,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA224,
 				.block_size = 64,
 					.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 28,
-					.max = 28,
+					.minimum = 28,
+					.maximum = 28,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -335,13 +335,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA224_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 28,
+					.minimum = 1,
+					.maximum = 28,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -356,13 +356,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA256,
 				.block_size = 64,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 32,
-					.max = 32,
+					.minimum = 32,
+					.maximum = 32,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -377,13 +377,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA256_HMAC,
 				.block_size = 64,
 				.key_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 32,
+					.minimum = 1,
+					.maximum = 32,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -398,13 +398,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA384,
 				.block_size = 64,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 48,
-					.max = 48,
+					.minimum = 48,
+					.maximum = 48,
 					.increment = 0
 					},
 				.iv_size = { 0 }
@@ -419,13 +419,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA384_HMAC,
 				.block_size = 128,
 				.key_size = {
-					.min = 1,
-					.max = 128,
+					.minimum = 1,
+					.maximum = 128,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 48,
+					.minimum = 1,
+					.maximum = 48,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -440,13 +440,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA512,
 				.block_size = 128,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 64,
-					.max = 64,
+					.minimum = 64,
+					.maximum = 64,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -461,13 +461,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SHA512_HMAC,
 				.block_size = 128,
 				.key_size = {
-					.min = 1,
-					.max = 128,
+					.minimum = 1,
+					.maximum = 128,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 1,
-					.max = 64,
+					.minimum = 1,
+					.maximum = 64,
 					.increment = 1
 				},
 				.iv_size = { 0 }
@@ -482,23 +482,23 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AEAD_AES_GCM,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.digest_size = {
-					.min = 8,
-					.max = 16,
+					.minimum = 8,
+					.maximum = 16,
 					.increment = 4
 				},
 				.aad_size = {
-					.min = 0,
-					.max = 240,
+					.minimum = 0,
+					.maximum = 240,
 					.increment = 1
 				},
 				.iv_size = {
-					.min = 12,
-					.max = 12,
+					.minimum = 12,
+					.maximum = 12,
 					.increment = 0
 				},
 			}, }
@@ -512,13 +512,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_AES_XCBC_MAC,
 				.block_size = 16,
 				.key_size = {
-					.min = 1,
-					.max = 16,
+					.minimum = 1,
+					.maximum = 16,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 12,
-					.max = 16,
+					.minimum = 12,
+					.maximum = 16,
 					.increment = 4
 				},
 				.aad_size = { 0 },
@@ -534,13 +534,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_AES_CMAC,
 				.block_size = 16,
 				.key_size = {
-					.min = 1,
-					.max = 16,
+					.minimum = 1,
+					.maximum = 16,
 					.increment = 1
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 16,
+					.minimum = 4,
+					.maximum = 16,
 					.increment = 4
 				},
 				.aad_size = { 0 }
@@ -555,13 +555,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_NULL,
 				.block_size = 1,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				}
 			}, },
@@ -575,13 +575,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_AES_CBC,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -595,13 +595,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_AES_CTR,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 			}, }
@@ -615,13 +615,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_DES_CBC,
 				.block_size = 8,
 				.key_size = {
-					.min = 8,
-					.max = 8,
+					.minimum = 8,
+					.maximum = 8,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 8,
-					.max = 8,
+					.minimum = 8,
+					.maximum = 8,
 					.increment = 0
 				}
 			}, }
@@ -635,13 +635,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_3DES_CBC,
 				.block_size = 8,
 				.key_size = {
-					.min = 16,
-					.max = 24,
+					.minimum = 16,
+					.maximum = 24,
 					.increment = 8
 				},
 				.iv_size = {
-					.min = 8,
-					.max = 8,
+					.minimum = 8,
+					.maximum = 8,
 					.increment = 0
 				}
 			}, }
@@ -655,18 +655,18 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SNOW3G_UIA2,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 4,
+					.minimum = 4,
+					.maximum = 4,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -680,13 +680,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_SNOW3G_UEA2,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -700,13 +700,13 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_ZUC_EEA3,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -720,18 +720,18 @@ static const struct rte_cryptodev_capabilities dpaa2_sec_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_ZUC_EIA3,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 4,
+					.minimum = 4,
+					.maximum = 4,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -751,18 +751,18 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SNOW3G_UIA2,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 4,
+					.minimum = 4,
+					.maximum = 4,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -776,13 +776,13 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_SNOW3G_UEA2,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -796,13 +796,13 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_AES_CTR,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 32,
+					.minimum = 16,
+					.maximum = 32,
 					.increment = 8
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -816,13 +816,13 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_NULL,
 				.block_size = 1,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -837,13 +837,13 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_NULL,
 				.block_size = 1,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				}
 			}, },
@@ -857,13 +857,13 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_ZUC_EEA3,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -877,18 +877,18 @@ static const struct rte_cryptodev_capabilities dpaa2_pdcp_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_ZUC_EIA3,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 4,
+					.minimum = 4,
+					.maximum = 4,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }

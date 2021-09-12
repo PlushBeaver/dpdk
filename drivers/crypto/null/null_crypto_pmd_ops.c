@@ -19,13 +19,13 @@ static const struct rte_cryptodev_capabilities null_crypto_pmd_capabilities[] = 
 				.algo = RTE_CRYPTO_AUTH_NULL,
 				.block_size = 1,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.iv_size = { 0 }
@@ -40,8 +40,8 @@ static const struct rte_cryptodev_capabilities null_crypto_pmd_capabilities[] = 
 				.algo = RTE_CRYPTO_CIPHER_NULL,
 				.block_size = 1,
 				.key_size = {
-					.min = 0,
-					.max = 0,
+					.minimum = 0,
+					.maximum = 0,
 					.increment = 0
 				},
 				.iv_size = { 0 }

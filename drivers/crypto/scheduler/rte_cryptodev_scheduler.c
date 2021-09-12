@@ -49,16 +49,16 @@ sync_caps(struct rte_cryptodev_capabilities *caps,
 						cap->sym.auth.algo)
 					continue;
 
-				cap->sym.auth.digest_size.min =
-					s_cap->sym.auth.digest_size.min <
-					cap->sym.auth.digest_size.min ?
-					s_cap->sym.auth.digest_size.min :
-					cap->sym.auth.digest_size.min;
-				cap->sym.auth.digest_size.max =
-					s_cap->sym.auth.digest_size.max <
-					cap->sym.auth.digest_size.max ?
-					s_cap->sym.auth.digest_size.max :
-					cap->sym.auth.digest_size.max;
+				cap->sym.auth.digest_size.minimum =
+					s_cap->sym.auth.digest_size.minimum <
+					cap->sym.auth.digest_size.minimum ?
+					s_cap->sym.auth.digest_size.minimum :
+					cap->sym.auth.digest_size.minimum;
+				cap->sym.auth.digest_size.maximum =
+					s_cap->sym.auth.digest_size.maximum <
+					cap->sym.auth.digest_size.maximum ?
+					s_cap->sym.auth.digest_size.maximum :
+					cap->sym.auth.digest_size.maximum;
 
 			}
 

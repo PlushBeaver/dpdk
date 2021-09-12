@@ -14,8 +14,8 @@
 				.op_types = 0,					\
 				{						\
 				.modlen = {					\
-				.min = 1,					\
-				.max = 512,					\
+				.minimum = 1,					\
+				.maximum = 512,					\
 				.increment = 1					\
 				}, }						\
 			}							\
@@ -30,8 +30,8 @@
 				.op_types = 0,					\
 				{						\
 				.modlen = {					\
-				.min = 1,					\
-				.max = 512,					\
+				.minimum = 1,					\
+				.maximum = 512,					\
 				.increment = 1					\
 				}, }						\
 			}							\
@@ -50,9 +50,9 @@
 				{						\
 				.modlen = {					\
 				/* min length is based on openssl rsa keygen */	\
-				.min = 64,					\
+				.minimum = 64,					\
 				/* value 0 symbolizes no limit on max length */	\
-				.max = 512,					\
+				.maximum = 512,					\
 				.increment = 64					\
 				}, }						\
 			}							\

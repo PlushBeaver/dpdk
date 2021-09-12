@@ -320,10 +320,10 @@ param_range_check(uint16_t size, const struct rte_crypto_param_range *range)
 	unsigned int next_size;
 
 	/* Check lower/upper bounds */
-	if (size < range->min)
+	if (size < range->minimum)
 		return -1;
 
-	if (size > range->max)
+	if (size > range->maximum)
 		return -1;
 
 	/* If range is actually only one value, size is correct */
@@ -331,7 +331,7 @@ param_range_check(uint16_t size, const struct rte_crypto_param_range *range)
 		return 0;
 
 	/* Check if value is one of the supported sizes */
-	for (next_size = range->min; next_size <= range->max;
+	for (next_size = range->minimum; next_size <= range->maximum;
 			next_size += range->increment)
 		if (size == next_size)
 			return 0;
@@ -429,13 +429,13 @@ rte_cryptodev_asym_xform_capability_check_modlen(
 	uint16_t modlen)
 {
 	/* no need to check for limits, if min or max = 0 */
-	if (capability->modlen.min != 0) {
-		if (modlen < capability->modlen.min)
+	if (capability->modlen.minimum != 0) {
+		if (modlen < capability->modlen.minimum)
 			return -1;
 	}
 
-	if (capability->modlen.max != 0) {
-		if (modlen > capability->modlen.max)
+	if (capability->modlen.maximum != 0) {
+		if (modlen > capability->modlen.maximum)
 			return -1;
 	}
 

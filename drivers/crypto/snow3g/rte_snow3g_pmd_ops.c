@@ -19,18 +19,18 @@ static const struct rte_cryptodev_capabilities snow3g_pmd_capabilities[] = {
 				.algo = RTE_CRYPTO_AUTH_SNOW3G_UIA2,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.digest_size = {
-					.min = 4,
-					.max = 4,
+					.minimum = 4,
+					.maximum = 4,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
@@ -44,13 +44,13 @@ static const struct rte_cryptodev_capabilities snow3g_pmd_capabilities[] = {
 				.algo = RTE_CRYPTO_CIPHER_SNOW3G_UEA2,
 				.block_size = 16,
 				.key_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				},
 				.iv_size = {
-					.min = 16,
-					.max = 16,
+					.minimum = 16,
+					.maximum = 16,
 					.increment = 0
 				}
 			}, }
