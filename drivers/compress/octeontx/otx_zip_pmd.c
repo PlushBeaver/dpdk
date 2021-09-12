@@ -19,8 +19,8 @@ static const struct rte_compressdev_capabilities
 					RTE_COMP_FF_HUFFMAN_DYNAMIC,
 		/* Non sharable Priv XFORM and Stateless */
 		.window_size = {
-				.min = 1,
-				.max = 14,
+				.minimum = 1,
+				.maximum = 14,
 				.increment = 1
 				/* size supported 2^1 to 2^14 */
 		},

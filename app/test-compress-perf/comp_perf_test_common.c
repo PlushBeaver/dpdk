@@ -35,10 +35,10 @@ param_range_check(uint16_t size, const struct rte_param_log2_range *range)
 	unsigned int next_size;
 
 	/* Check lower/upper bounds */
-	if (size < range->min)
+	if (size < range->minimum)
 		return -1;
 
-	if (size > range->max)
+	if (size > range->maximum)
 		return -1;
 
 	/* If range is actually only one value, size is correct */
@@ -46,7 +46,7 @@ param_range_check(uint16_t size, const struct rte_param_log2_range *range)
 		return 0;
 
 	/* Check if value is one of the supported sizes */
-	for (next_size = range->min; next_size <= range->max;
+	for (next_size = range->minimum; next_size <= range->maximum;
 			next_size += range->increment)
 		if (size == next_size)
 			return 0;

@@ -662,6 +662,9 @@ API Changes
 * sched: Removed ``tb_rate``, ``tc_rate``, ``tc_period`` and ``tb_size``
   from ``struct rte_sched_subport_params``.
 
+* compressdev: Renamed ``min`` and ``max`` fields of ``rte_param_log2_range``
+  structure to ``minimum`` and ``maximum``, respectively.
+
 
 ABI Changes
 -----------

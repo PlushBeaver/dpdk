@@ -93,7 +93,7 @@ comp_perf_check_capabilities(struct comp_test_data *test_data, uint8_t cdev_id)
 		}
 	} else
 		/* Set window size to PMD maximum if none was specified */
-		test_data->window_sz = cap->window_size.max;
+		test_data->window_sz = cap->window_size.maximum;
 
 	/* Check if chained mbufs is supported */
 	if (test_data->max_sgl_segs > 1  &&

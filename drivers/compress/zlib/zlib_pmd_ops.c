@@ -16,8 +16,8 @@ static const struct rte_compressdev_capabilities zlib_pmd_capabilities[] = {
 					RTE_COMP_FF_HUFFMAN_FIXED |
 					RTE_COMP_FF_HUFFMAN_DYNAMIC),
 		.window_size = {
-			.min = 8,
-			.max = 15,
+			.minimum = 8,
+			.maximum = 15,
 			.increment = 1
 		},
 	},

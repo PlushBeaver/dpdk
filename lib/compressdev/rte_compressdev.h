@@ -30,8 +30,8 @@ extern "C" {
  * Final value will be 2^value.
  */
 struct rte_param_log2_range {
-	uint8_t min;	/**< Minimum log2 value */
-	uint8_t max;	/**< Maximum log2 value */
+	uint8_t minimum;	/**< Minimum log2 value */
+	uint8_t maximum;	/**< Maximum log2 value */
 	uint8_t increment;
 	/**< If a range of sizes are supported,
 	 * this parameter is used to indicate
