@@ -237,6 +237,9 @@ API Changes
   the crypto/security operation. This field will be used to communicate
   events such as soft expiry with IPsec in lookaside mode.
 
+* mempool: Added ``MEMPOOL_F_NON_IO`` flag to give a hint to DPDK components
+  that objects from this pool will not be used for device IO (e.g. DMA).
+
 
 ABI Changes
 -----------
