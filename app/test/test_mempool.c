@@ -554,7 +554,7 @@ test_mempool_events(int (*populate)(struct rte_mempool *mp))
 	rte_mempool_set_ops_byname(mp[0], rte_mbuf_best_mempool_ops(), NULL);
 	ret = populate(mp[0]);
 	RTE_TEST_ASSERT_EQUAL(ret, (int)mp[0]->size, "Failed to populate mempool %s: %s",
-			      name, rte_strerror(rte_errno));
+			      name, rte_strerror(-ret));
 	for (j = 0; j < CB_NUM; j++) {
 		RTE_TEST_ASSERT_EQUAL(data[j].invoked, true,
 					"Callback %zu not invoked on mempool %s population",
@@ -582,7 +582,7 @@ test_mempool_events(int (*populate)(struct rte_mempool *mp))
 	rte_mempool_set_ops_byname(mp[1], rte_mbuf_best_mempool_ops(), NULL);
 	ret = populate(mp[1]);
 	RTE_TEST_ASSERT_EQUAL(ret, (int)mp[1]->size, "Failed to populate mempool %s: %s",
-			      name, rte_strerror(rte_errno));
+			      name, rte_strerror(-ret));
 	RTE_TEST_ASSERT_EQUAL(data[0].invoked, false,
 			      "Unregistered callback 0 invoked on %s mempool populaton",
 			      name);
@@ -691,7 +691,7 @@ test_mempool_events_safety(void)
 	memset(&data, 0, sizeof(data));
 	ret = rte_mempool_populate_default(mp);
 	RTE_TEST_ASSERT_EQUAL(ret, (int)mp->size, "Failed to populate mempool: %s",
-			      rte_strerror(rte_errno));
+			      rte_strerror(-ret));
 
 	RTE_TEST_ASSERT_EQUAL(sdata[0].ret, 0, "Callback failed to unregister itself: %s",
 			      rte_strerror(rte_errno));
