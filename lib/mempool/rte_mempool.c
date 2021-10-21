@@ -327,6 +327,7 @@ rte_mempool_populate_iova(struct rte_mempool *mp, char *vaddr,
 	unsigned i = 0;
 	size_t off;
 	struct rte_mempool_memhdr *memhdr;
+	bool always_io, never_io;
 	int ret;
 
 	ret = mempool_ops_alloc_once(mp);
@@ -372,8 +373,10 @@ rte_mempool_populate_iova(struct rte_mempool *mp, char *vaddr,
 	STAILQ_INSERT_TAIL(&mp->mem_list, memhdr, next);
 	mp->nb_mem_chunks++;
 
-	/* At least some objects in the pool can now be used for IO. */
-	if (iova != RTE_BAD_IOVA)
+	/* Check if at least some objects in the pool are now usable for IO. */
+	never_io = mp->flags & RTE_MEMPOOL_F_NO_IOVA_CONTIG;
+	always_io = rte_eal_iova_mode() == RTE_IOVA_VA;
+	if (!never_io && (always_io || iova != RTE_BAD_IOVA))
 		mp->flags &= ~RTE_MEMPOOL_F_NON_IO;
 
 	/* Report the mempool as ready only when fully populated. */
