@@ -85,6 +85,7 @@ if is_windows
             'gro',
             'gso',
             'latencystats',
+            'power',
             'pdump',
             'stack',
             'security',

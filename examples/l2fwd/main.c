@@ -230,7 +230,11 @@ l2fwd_main_loop(void)
 		portid = qconf->rx_port_list[i];
 		RTE_LOG(INFO, L2FWD, " -- lcoreid=%u portid=%u\n", lcore_id,
 			portid);
-
+		if (rte_eth_dev_rx_intr_ctl_q(portid, 0,
+						RTE_EPOLL_PER_THREAD,
+						RTE_INTR_EVENT_ADD,
+						(void *)((uintptr_t)portid)) < 0)
+			RTE_LOG(ERR, L2FWD, "rte_eth_dev_rx_intr_ctl_q(port=%u)\n", portid);
 	}
 
 	while (!force_quit) {
@@ -276,6 +280,28 @@ l2fwd_main_loop(void)
 			prev_tsc = cur_tsc;
 		}
 		/* >8 End of draining TX queue. */
+
+		struct rte_epoll_event event[10];
+		int n;
+		uint16_t port_id;
+		// uint8_t queue_id;
+		void *data;
+
+		rte_eth_dev_rx_intr_enable(portid, 0);
+
+		RTE_LOG(INFO, L2FWD, "rte_epoll_wait() is called\n");
+		n = rte_epoll_wait(RTE_EPOLL_PER_THREAD, event, RTE_DIM(event), 10);
+		RTE_LOG(INFO, L2FWD, "rte_epoll_wait() -> %d\n", n);
+		for (i = 0; i < n; i++) {
+			data = event[i].epdata.data;
+			port_id = (uint16_t)(uintptr_t)data;
+			RTE_LOG(INFO, L2FWD,
+				"lcore %u is waked up from rx interrupt on"
+				" port %d queue %d\n",
+				rte_lcore_id(), port_id, 0);
+		}
+
+		rte_eth_dev_rx_intr_disable(portid, 0);
 
 		/* Read packet from RX queues. 8< */
 		for (i = 0; i < qconf->n_rx_port; i++) {
@@ -796,6 +822,7 @@ main(int argc, char **argv)
 			local_port_conf.txmode.offloads |=
 				DEV_TX_OFFLOAD_MBUF_FAST_FREE;
 		/* Configure the number of queues for a port. */
+		local_port_conf.intr_conf.rxq = 1;
 		ret = rte_eth_dev_configure(portid, 1, 1, &local_port_conf);
 		if (ret < 0)
 			rte_exit(EXIT_FAILURE, "Cannot configure device: err=%d, port=%u\n",

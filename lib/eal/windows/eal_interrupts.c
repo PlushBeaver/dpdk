@@ -746,6 +746,7 @@ eal_intr_thread_schedule(void (*func)(void *arg), void *arg)
 void
 eal_intr_thread_cancel(void)
 {
+	/* TODO: why the show, just close IOCP? */
 	if (!PostQueuedCompletionStatus(
 			intr_iocp, 0, IOCP_KEY_SHUTDOWN, NULL)) {
 		RTE_LOG_WIN32_ERR("PostQueuedCompletionStatus()");
