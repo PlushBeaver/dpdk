@@ -89,6 +89,13 @@ struct rte_intr_handle {
 	int efds[RTE_MAX_RXTX_INTR_VEC_ID];  /**< intr vectors/efds mapping */
 	struct rte_epoll_event elist[RTE_MAX_RXTX_INTR_VEC_ID];
 				       /**< intr vector epoll event */
+
+	/* TODO: rework when rte_intr_handle becomes opaque */
+	void *vector_handles[RTE_MAX_RXTX_INTR_VEC_ID];
+			/**< HANDLEs for each interrupt vector */
+	void *vector_overlapped;
+			/**< OVERLAPPED for each interrupt vector */
+
 	int *intr_vec;                 /**< intr vector number array */
 };
 

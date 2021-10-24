@@ -55,6 +55,7 @@ static pthread_t intr_thread;
 
 static HANDLE intr_iocp;
 static HANDLE intr_thread_handle;
+static RTE_DEFINE_PER_LCORE(HANDLE, local_iocp);
 
 static bool
 intr_callback_matches(const struct rte_intr_callback *cb,
@@ -539,12 +540,73 @@ cleanup:
 	return NULL;
 }
 
+typedef DWORD NTSTATUS;
+
+#define STATUS_SUCCESS   0x00000000
+#define STATUS_CANCELLED 0xC0000120
+
+typedef enum {
+	FileCompletionInformation = 30,
+} FILE_INFORMATION_CLASS;
+
+typedef struct _FILE_COMPLETION_INFORMATION {
+	HANDLE Port;
+	PVOID  Key;
+} FILE_COMPLETION_INFORMATION;
+
+typedef struct _IO_STATUS_BLOCK {
+	union {
+		NTSTATUS Status;
+		PVOID    Pointer;
+	};
+	ULONG_PTR Information;
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+
+__kernel_entry NTSYSCALLAPI
+NTSTATUS
+NtSetInformationFile(
+	HANDLE handle,
+	IO_STATUS_BLOCK *io_status_block,
+	void *info,
+	ULONG info_size,
+	FILE_INFORMATION_CLASS info_class
+);
+
+static typeof(NtSetInformationFile) *NtSetInformationFile_ptr;
+
+/* TODO: extract to common EAL code, reuse here and for memory manager */
+static const void *
+eal_find_system_function(const char *lib_name, const char *func_name)
+{
+	HMODULE lib;
+	const void *func;
+
+	lib = GetModuleHandle(lib_name);
+	if (lib == NULL) {
+		RTE_LOG_WIN32_ERR("GetModuleHandle(\"%s\")", lib_name);
+		return NULL;
+	}
+	func = GetProcAddress(lib, func_name);
+	if (func == NULL) {
+		RTE_LOG_WIN32_ERR("GetProcAddress(\"%s\", \"%s\")",
+				lib_name, func_name);
+	}
+	return func;
+}
+
 int
 rte_eal_intr_init(void)
 {
 	int ret = 0;
 
 	TAILQ_INIT(&intr_sources);
+
+	NtSetInformationFile_ptr = eal_find_system_function("ntdll.dll",
+			"NtSetInformationFile");
+	if (NtSetInformationFile_ptr == NULL) {
+		RTE_LOG(ERR, EAL, "Cannot locate API\n");
+		return -1;
+	}
 
 	intr_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
 	if (intr_iocp == NULL) {
@@ -569,12 +631,104 @@ rte_thread_is_intr(void)
 	return pthread_equal(intr_thread, pthread_self());
 }
 
-int
-rte_intr_rx_ctl(__rte_unused struct rte_intr_handle *intr_handle,
-		__rte_unused int epfd, __rte_unused int op,
-		__rte_unused unsigned int vec, __rte_unused void *data)
+static HANDLE
+eal_intr_tls_iocp(void)
 {
-	return -ENOTSUP;
+	HANDLE iocp, old, *target;
+
+	target = &RTE_PER_LCORE(local_iocp);
+	iocp = *target;
+	if (iocp == NULL) {
+		iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
+			0 /* (unused) completion key */,
+			1 /* number of threads for this IOCP */);
+		if (iocp == NULL) {
+			RTE_LOG_WIN32_ERR("CreateIoCompletionPort()");
+			return NULL;
+		}
+		old = (HANDLE)InterlockedCompareExchange64(
+				(LONG64 *)target, (LONG64)iocp, 0);
+		if (old != NULL) {
+			CloseHandle(iocp);
+			iocp = old;
+		}
+	}
+	return iocp;
+}
+
+static int
+eal_intr_handle_change_iocp(HANDLE handle, HANDLE iocp, void *data)
+{
+	IO_STATUS_BLOCK iosb;
+	FILE_COMPLETION_INFORMATION info;
+	NTSTATUS status;
+
+	info.Key = data;
+	info.Port = iocp;
+	status = NtSetInformationFile_ptr(handle, &iosb, &info, sizeof(info),
+			FileCompletionInformation);
+	if (status != 0) {
+		RTE_LOG(DEBUG, EAL, "NtSetInformationFile(handle=%p, type=FileCompletionInformation, {Key=%p, Port=%p}) -> %#08lx\n",
+				handle, data, iocp, status);
+		return -1;
+	}
+	return 0;
+}
+
+int
+rte_intr_rx_ctl(struct rte_intr_handle *intr_handle, int epfd, int op,
+		unsigned int vec, void *data)
+{
+	HANDLE iocp, handle;
+	OVERLAPPED *overlapped;
+	struct rte_epoll_event *event;
+	size_t index;
+	int ret;
+
+	if (intr_handle == NULL)
+		return -EINVAL;
+	if (vec >= intr_handle->max_intr)
+		return -EINVAL;
+	if (epfd != RTE_EPOLL_PER_THREAD)
+		return -ENOTSUP;
+
+	iocp = eal_intr_tls_iocp();
+	if (iocp == NULL) {
+		RTE_LOG(ERR, EAL, "Cannot create per-thread epoll instance\n");
+		return -EINVAL;
+	}
+
+	index = (vec >= RTE_INTR_VEC_RXTX_OFFSET) ?
+			(vec - RTE_INTR_VEC_RXTX_OFFSET) : vec;
+	handle = intr_handle->vector_handles[index];
+	switch (op) {
+	case RTE_INTR_EVENT_ADD:
+		ret = eal_intr_handle_change_iocp(handle, iocp, intr_handle);
+		if (ret < 0) {
+			RTE_LOG(ERR, EAL, "Cannot add interrupt to per-thread epoll\n");
+			return -EINVAL;
+		}
+		event = &intr_handle->elist[index];
+		event->epdata.data = data;
+		overlapped = (OVERLAPPED *)intr_handle->vector_overlapped + index;
+		ret = eal_intr_netuio_query(handle, vec, overlapped);
+		if (ret < 0) {
+			RTE_LOG(ERR, EAL, "Cannot query interrupt events\n");
+			return ret;
+		}
+		break;
+	case RTE_INTR_EVENT_DEL:
+		ret = eal_intr_handle_change_iocp(handle, NULL, NULL);
+		if (ret < 0) {
+			RTE_LOG(ERR, EAL, "Cannot remove interrupt from per-thread epoll\n");
+			return -EINVAL;
+		}
+		break;
+	default:
+		RTE_LOG(DEBUG, EAL, "Invalid interrupt RX control operation\n");
+		ret = -EINVAL;
+	}
+	return ret;
 }
 
 int
@@ -607,70 +761,180 @@ rte_intr_callback_unregister_sync(
 	__rte_unused const struct rte_intr_handle *intr_handle,
 	__rte_unused rte_intr_callback_fn cb_fn, __rte_unused void *cb_arg)
 {
+	/* TODO: implement */
+	return 0;
+}
+
+static int
+eal_netuio_efd_enable(struct rte_intr_handle *intr_handle, uint32_t n)
+{
+	OVERLAPPED *overlapped;
+	uint32_t i, j;
+	int ret;
+
+	/* TODO: add safety */
+	overlapped = calloc(n, sizeof(overlapped[0]));
+	if (overlapped == NULL)
+		return -ENOMEM;
+	for (i = 0; i < n; i++) {
+		ret = eal_intr_dup_handle(intr_handle,
+				&intr_handle->vector_handles[i]);
+		if (ret < 0)
+			break;
+	}
+	if (i != n) {
+		for (j = 0; j < i; j++)
+			CloseHandle(intr_handle->vector_handles[i]);
+		return ret;
+	}
+	intr_handle->vector_overlapped = overlapped;
+	intr_handle->nb_efd = n;
+	intr_handle->max_intr = 1 + n;
 	return 0;
 }
 
 int
 rte_intr_efd_enable(struct rte_intr_handle *intr_handle, uint32_t nb_efd)
 {
-	RTE_SET_USED(intr_handle);
-	RTE_SET_USED(nb_efd);
+	uint32_t n = RTE_MIN(nb_efd, (uint32_t)RTE_MAX_RXTX_INTR_VEC_ID);
 
-	return 0;
+	if (intr_handle->nb_efd != 0)
+		return -EEXIST;
+	switch (intr_handle->type) {
+	case RTE_INTR_HANDLE_NETUIO:
+		return eal_netuio_efd_enable(intr_handle, n);
+	default:
+		return 0;
+	}
 }
 
 void
 rte_intr_efd_disable(struct rte_intr_handle *intr_handle)
 {
-	RTE_SET_USED(intr_handle);
+	uint32_t i;
+
+	if (intr_handle->max_intr > intr_handle->nb_efd) {
+		for (i = 0; i < intr_handle->nb_efd; i++)
+			CloseHandle(intr_handle->vector_handles[i]);
+	}
+	free(intr_handle->vector_overlapped);
+	intr_handle->vector_overlapped = NULL;
+	intr_handle->nb_efd = 0;
+	intr_handle->max_intr = 0;
 }
 
 int
 rte_intr_dp_is_en(struct rte_intr_handle *intr_handle)
 {
-	RTE_SET_USED(intr_handle);
-
-	return 0;
+	return !(!intr_handle->nb_efd);
 }
 
 int
 rte_intr_allow_others(struct rte_intr_handle *intr_handle)
 {
-	RTE_SET_USED(intr_handle);
-
-	return 1;
+	if (!rte_intr_dp_is_en(intr_handle))
+		return 1;
+	else
+		return !!(intr_handle->max_intr - intr_handle->nb_efd);
 }
 
 int
 rte_intr_cap_multiple(struct rte_intr_handle *intr_handle)
 {
-	RTE_SET_USED(intr_handle);
+	return intr_handle->type == RTE_INTR_HANDLE_NETUIO ? 1 : 0;
+}
 
-	return 0;
+static int
+eal_epoll_wait(int epfd, struct rte_epoll_event *events,
+		int maxevents, int timeout)
+{
+	OVERLAPPED_ENTRY entries[maxevents];
+	HANDLE iocp;
+	DWORD timeout_ms;
+	ULONG event_count, i;
+	BOOL result;
+
+	if (epfd != RTE_EPOLL_PER_THREAD)
+		return -ENOTSUP;
+
+	iocp = eal_intr_tls_iocp();
+	if (iocp == NULL) {
+		RTE_LOG(ERR, EAL, "Cannot get per-thread IOCP\n");
+		return -EINVAL;
+	}
+
+	timeout_ms = timeout >= 0 ? timeout * MS_PER_S : INFINITE;
+	result = GetQueuedCompletionStatusEx(iocp,
+			entries, maxevents, &event_count,
+			timeout_ms, FALSE);
+	if (!result) {
+		if (GetLastError() == WAIT_TIMEOUT)
+			return 0;
+		RTE_LOG_WIN32_ERR("GetQueuedCompletionStatusEx()");
+		RTE_LOG(ERR, EAL, "Polling for interrupts failed\n");
+		return -EINVAL;
+	}
+
+	/*
+	 * OVERLAPPED pointer to an array member inside rte_intr_handle.
+	 * Use it to determine the vector.
+	 */
+	for (i = 0; i < event_count; i++) {
+		HANDLE handle;
+		OVERLAPPED *overlapped;
+		NTSTATUS status;
+		struct rte_intr_handle *intr_handle;
+		size_t index;
+		unsigned int vec;
+		const struct rte_epoll_event *event;
+
+		overlapped = entries[i].lpOverlapped;
+		status = overlapped->Internal;
+		intr_handle = (struct rte_intr_handle *)
+						entries[i].lpCompletionKey;
+		index = overlapped -
+				(OVERLAPPED *)intr_handle->vector_overlapped;
+		vec = index + RTE_INTR_VEC_RXTX_OFFSET;
+
+		if (status != STATUS_SUCCESS) {
+			if (status != STATUS_CANCELLED)
+				RTE_LOG(ERR, EAL, "Interrupt request for vector %u failed with status %#lx\n",
+					vec, status);
+			continue;
+		}
+
+		event = &intr_handle->elist[index];
+		events[i].status = RTE_EPOLL_VALID;
+		events[i].epdata.data = event->epdata.data;
+
+		switch (intr_handle->type) {
+		case RTE_INTR_HANDLE_NETUIO:
+			handle = intr_handle->vector_handles[index];
+			if (eal_intr_netuio_query(handle, vec, overlapped) < 0)
+				RTE_LOG(ERR, EAL, "Cannot request new interrupt events for vector %u\n",
+					vec);
+			break;
+		default:
+			RTE_LOG(DEBUG, EAL, "Not rearming interrupt vector %u\n",
+				vec);
+		}
+	}
+	return event_count;
 }
 
 int
 rte_epoll_wait(int epfd, struct rte_epoll_event *events,
 		int maxevents, int timeout)
 {
-	RTE_SET_USED(epfd);
-	RTE_SET_USED(events);
-	RTE_SET_USED(maxevents);
-	RTE_SET_USED(timeout);
-
-	return -ENOTSUP;
+	return eal_epoll_wait(epfd, events, maxevents, timeout);
 }
 
 int
 rte_epoll_wait_interruptible(int epfd, struct rte_epoll_event *events,
 			     int maxevents, int timeout)
 {
-	RTE_SET_USED(epfd);
-	RTE_SET_USED(events);
-	RTE_SET_USED(maxevents);
-	RTE_SET_USED(timeout);
-
-	return -ENOTSUP;
+	/* There are no interrupts, so there's nothing special to be done. */
+	return eal_epoll_wait(epfd, events, maxevents, timeout);
 }
 
 int
@@ -687,11 +951,30 @@ rte_epoll_ctl(int epfd, int op, int fd, struct rte_epoll_event *event)
 int
 rte_intr_tls_epfd(void)
 {
+	/*
+	 * There are per-thread IOCP, but this function is meant to return
+	 * an epoll descriptor that can be used with epoll_*() API,
+	 * which is missing on Windows, so there's nothing to provide.
+	 */
 	return -ENOTSUP;
 }
 
 void
 rte_intr_free_epoll_fd(struct rte_intr_handle *intr_handle)
 {
-	RTE_SET_USED(intr_handle);
+	size_t i;
+
+	if (intr_handle == NULL)
+		return;
+	for (i = 0; i < intr_handle->nb_efd; i++) {
+		HANDLE handle = intr_handle->vector_handles[i];
+		OVERLAPPED *overlapped = &((OVERLAPPED *)intr_handle->vector_overlapped)[i];
+
+		if (handle == NULL)
+			continue;
+		/* Ignore possible errors: maybe no IOCP is connected. */
+		eal_intr_handle_change_iocp(handle, NULL, NULL);
+		if (eal_intr_cancel(handle, overlapped) < 0)
+			RTE_LOG(ERR, EAL, "Cannot cancel request for interrupt vector %zu\n", i);
+	}
 }
