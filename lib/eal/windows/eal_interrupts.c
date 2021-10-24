@@ -115,24 +115,29 @@ intr_source_init(struct intr_source *src,
 }
 
 static int
-intr_source_cancel(struct intr_source *src)
+eal_intr_cancel(HANDLE handle, OVERLAPPED *overlapped)
 {
 	DWORD bytes_transferred;
 	BOOL ret;
 
-	ret = CancelIoEx(src->handle, &src->overlapped);
+	ret = CancelIoEx(handle, overlapped);
 	if (!ret && GetLastError() != ERROR_NOT_FOUND) {
-		RTE_LOG_WIN32_ERR("CancelIoEx(handle=%p)", src->handle);
+		RTE_LOG_WIN32_ERR("CancelIoEx(handle=%p)", handle);
 		return -1;
 	}
-	ret = GetOverlappedResult(src->handle, &src->overlapped,
+	ret = GetOverlappedResult(handle, overlapped,
 			&bytes_transferred, TRUE);
 	if (!ret && GetLastError() != ERROR_OPERATION_ABORTED) {
-		RTE_LOG_WIN32_ERR("GetOverlappedResult(handle=%p)",
-			src->handle);
+		RTE_LOG_WIN32_ERR("GetOverlappedResult(handle=%p)", handle);
 		return -1;
 	}
 	return 0;
+}
+
+static int
+intr_source_cancel(struct intr_source *src)
+{
+	return eal_intr_cancel(src->handle, &src->overlapped);
 }
 
 static int
