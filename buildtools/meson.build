@@ -18,8 +18,8 @@ map_to_win_cmd = py3 + files('map_to_win.py')
 sphinx_wrapper = py3 + files('call-sphinx-build.py')
 get_cpu_count_cmd = py3 + files('get-cpu-count.py')
 get_numa_count_cmd = py3 + files('get-numa-count.py')
-binutils_avx512_check = py3 + files('binutils-avx512-check.py') + \
-                        [objdump] + cc.cmd_array()
+binutils_avx512_check = (py3 + files('binutils-avx512-check.py') +
+                        [objdump] + cc.cmd_array())
 
 # select library and object file format
 pmdinfo = py3 + files('gen-pmdinfo-cfile.py') + [meson.current_build_dir()]
